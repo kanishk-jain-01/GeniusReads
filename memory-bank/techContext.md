@@ -10,11 +10,13 @@
 - **macOS**: Primary target platform (Tauri supports others)
 
 ### Development Setup Sequence
-1. Install Rust toolchain with Tauri CLI
-2. Install Node.js and frontend dependencies
-3. Set up PostgreSQL locally
-4. Configure Python environment for pyo3 integration
-5. Set up OpenAI API key for AI processing
+1. ✅ Install Rust toolchain with Tauri CLI
+2. ✅ Install Node.js and frontend dependencies
+3. ✅ Set up development tooling (ESLint, Prettier, rustfmt, clippy)
+4. ✅ Configure VS Code workspace settings
+5. Set up PostgreSQL locally
+6. Configure Python environment for pyo3 integration
+7. Set up OpenAI API key for AI processing
 
 ## Technology Stack Details
 
@@ -117,21 +119,26 @@ pydantic>=2.0.0
 ## Development Dependencies
 
 ### Rust Crates
-- `tauri`: Desktop app framework
-- `pyo3`: Python interop with precompiled bindings
-- `sqlx`: Async PostgreSQL with compile-time query checking
-- `tokio`: Async runtime for concurrent operations
-- `serde`: JSON serialization for IPC
-- `anyhow`: Error handling
-- `uuid`: Unique identifiers for knowledge entries
+- `tauri`: Desktop app framework (✅ Installed)
+- `serde`: JSON serialization for IPC (✅ Installed)
+- `rustfmt`: Code formatting (✅ Configured)
+- `clippy`: Advanced linting (✅ Configured)
+- `pyo3`: Python interop with precompiled bindings (Pending)
+- `sqlx`: Async PostgreSQL with compile-time query checking (Pending)
+- `tokio`: Async runtime for concurrent operations (Pending)
+- `anyhow`: Error handling (Pending)
+- `uuid`: Unique identifiers for knowledge entries (Pending)
 
 ### Frontend Packages
-- `react`: UI framework
-- `@tauri-apps/api`: Tauri frontend bindings
-- `pdf-lib` or `react-pdf`: PDF.js React integration
-- `tailwindcss`: Utility-first CSS
-- `@radix-ui/react-*`: Accessible UI primitives (via shadcn/ui)
-- `lucide-react`: Icon library
+- `react`: UI framework (✅ Installed)
+- `@tauri-apps/api`: Tauri frontend bindings (✅ Installed)
+- `eslint`: Code linting (✅ Installed & Configured)
+- `prettier`: Code formatting (✅ Installed & Configured)
+- `typescript`: Type checking (✅ Installed & Configured)
+- `pdf-lib` or `react-pdf`: PDF.js React integration (Pending)
+- `tailwindcss`: Utility-first CSS (Pending)
+- `@radix-ui/react-*`: Accessible UI primitives (via shadcn/ui) (Pending)
+- `lucide-react`: Icon library (Pending)
 
 ### Python Packages
 - `langgraph`: AI workflow orchestration

@@ -36,7 +36,7 @@
 - `.vscode/settings.json` - VS Code workspace settings for consistent development (✅ Created)
 - `.husky/pre-commit` - Pre-commit hook for automated linting and formatting
 - `lint-staged.config.js` - Configuration for running linters on staged files
-- `src-tauri/rustfmt.toml` - Rust code formatting configuration
+- `src-tauri/rustfmt.toml` - Rust code formatting configuration (✅ Created)
 
 ### Notes
 
@@ -57,9 +57,9 @@
   - [ ] 1.7 Create initial TypeScript type definitions for app-wide data structures (reference data model in `architecture-diagrams.md`)
   - [ ] 1.8 Test basic Tauri-React communication with a simple command
   - [x] 1.9 Set up ESLint and Prettier for code quality and formatting
-  - [ ] 1.10 Configure TypeScript strict mode and additional type checking
-  - [ ] 1.11 Add pre-commit hooks with husky and lint-staged
-  - [ ] 1.12 Set up Rust formatting and linting (rustfmt, clippy)
+  - [~] 1.10 Configure TypeScript strict mode and additional type checking (SKIPPED - current config sufficient)
+  - [~] 1.11 Add pre-commit hooks with husky and lint-staged (SKIPPED - manual scripts adequate)
+  - [x] 1.12 Set up Rust formatting and linting (rustfmt, clippy)
 
 - [ ] 2.0 Implement PDF Viewing and Navigation System
   - [ ] 2.1 Install and configure PDF.js for React integration
