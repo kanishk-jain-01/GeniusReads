@@ -1,0 +1,24 @@
+# Build outputs
+dist/
+build/
+target/
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Tauri
+src-tauri/target/
+src-tauri/Cargo.lock
+
+# Generated files
+*.min.js
+*.min.css
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db 
