@@ -43,8 +43,8 @@
   - [ ] 1.3 Set up tauri.conf.json for macOS-specific settings and file system permissions
   - [ ] 1.4 Configure Vite build system with React, TypeScript, and TailwindCSS
   - [ ] 1.5 Install and configure shadcn/ui component library
-  - [ ] 1.6 Set up basic window layout with main content area and collapsible sidebar
-  - [ ] 1.7 Create initial TypeScript type definitions for app-wide data structures
+  - [ ] 1.6 Set up basic window layout with main content area and collapsible sidebar (see `architecture-diagrams.md` for UI layout)
+  - [ ] 1.7 Create initial TypeScript type definitions for app-wide data structures (reference data model in `architecture-diagrams.md`)
   - [ ] 1.8 Test basic Tauri-React communication with a simple command
 
 - [ ] 2.0 Implement PDF Viewing and Navigation System
@@ -58,11 +58,11 @@
   - [ ] 2.8 Implement "remember last document" functionality with local storage
 
 - [ ] 3.0 Build Text Selection and Highlighting System
-  - [ ] 3.1 Create text selection overlay system for PDF content
+  - [ ] 3.1 Create text selection overlay system for PDF content (reference workflow in `architecture-diagrams.md`)
   - [ ] 3.2 Implement click-and-drag text highlighting functionality
   - [ ] 3.3 Add visual feedback for selected text with highlighting styles
   - [ ] 3.4 Create TextSelection component to manage selection state
-  - [ ] 3.5 Implement text extraction from PDF.js selection coordinates
+  - [ ] 3.5 Implement text extraction from PDF.js selection coordinates (store in QUESTIONS table per data model)
   - [ ] 3.6 Add selection clearing when navigating pages or opening new documents
   - [ ] 3.7 Create QuestionInput component that appears when text is selected
   - [ ] 3.8 Handle edge cases for text selection across page boundaries
@@ -70,32 +70,32 @@
 - [ ] 4.0 Integrate AI Processing with LangGraph and Python
   - [ ] 4.1 Set up Python environment with pyo3 bridge in Rust backend
   - [ ] 4.2 Create Python requirements.txt with LangGraph, LangChain, and OpenAI dependencies
-  - [ ] 4.3 Implement ai_agent.py with LangGraph workflow for processing questions
-  - [ ] 4.4 Create knowledge_processor.py for extracting definitions and concepts
+  - [ ] 4.3 Implement ai_agent.py with LangGraph workflow for processing questions (follow AI workflow in `architecture-diagrams.md`)
+  - [ ] 4.4 Create knowledge_processor.py for extracting definitions and concepts (creates KNOWLEDGE_ENTRIES per data model)
   - [ ] 4.5 Build Rust-Python bridge functions for AI communication
-  - [ ] 4.6 Implement streaming response system for real-time AI feedback
+  - [ ] 4.6 Implement streaming response system for real-time AI feedback (stores in AI_RESPONSES table)
   - [ ] 4.7 Add error handling for AI service failures and API limits
   - [ ] 4.8 Configure "Explain like I'm 5" tone in AI agent prompts
   - [ ] 4.9 Test AI integration with sample PDF text and questions
 
 - [ ] 5.0 Develop Knowledge Corpus and Local Storage
   - [ ] 5.1 Set up local PostgreSQL database connection with sqlx
-  - [ ] 5.2 Create database migration for initial schema (documents, questions, answers, definitions)
+  - [ ] 5.2 Create database migration for initial schema (use complete schema from `architecture-diagrams.md`)
   - [ ] 5.3 Implement database.rs with connection pooling and query functions
-  - [ ] 5.4 Create knowledge_store.rs for managing Q&A pairs and definitions
-  - [ ] 5.5 Build automatic knowledge extraction from AI responses
-  - [ ] 5.6 Implement search functionality for saved knowledge
-  - [ ] 5.7 Add data persistence for document metadata and user sessions
+  - [ ] 5.4 Create knowledge_store.rs for managing Q&A pairs and definitions (implement data flow from `architecture-diagrams.md`)
+  - [ ] 5.5 Build automatic knowledge extraction from AI responses (populates KNOWLEDGE_ENTRIES table)
+  - [ ] 5.6 Implement search functionality for saved knowledge (uses SEARCH_INDEX table)
+  - [ ] 5.7 Add data persistence for document metadata and user sessions (DOCUMENTS table structure)
   - [ ] 5.8 Create knowledge organization by document, date, and concept tags
   - [ ] 5.9 Test database operations and data integrity
 
 - [ ] 6.0 Create Note-Taking and Knowledge Management Interface
-  - [ ] 6.1 Build KnowledgeSidebar component with collapsible design
+  - [ ] 6.1 Build KnowledgeSidebar component with collapsible design (reference UI layout in `architecture-diagrams.md`)
   - [ ] 6.2 Create ResponseStream component for displaying AI answers
-  - [ ] 6.3 Implement NotesPanel for personal note-taking on selected text
+  - [ ] 6.3 Implement NotesPanel for personal note-taking on selected text (stores in USER_NOTES table)
   - [ ] 6.4 Add note indicators on PDF passages with associated notes
   - [ ] 6.5 Build detailed knowledge view in expandable panel or separate tab
-  - [ ] 6.6 Implement note editing and deletion functionality
-  - [ ] 6.7 Create search interface for knowledge corpus
+  - [ ] 6.6 Implement note editing and deletion functionality (USER_NOTES CRUD operations)
+  - [ ] 6.7 Create search interface for knowledge corpus (queries SEARCH_INDEX table)
   - [ ] 6.8 Add visual hierarchy for AI explanations, definitions, and user notes
-  - [ ] 6.9 Test complete user workflow from PDF reading to knowledge management 
+  - [ ] 6.9 Test complete user workflow from PDF reading to knowledge management (validate full workflow from `architecture-diagrams.md`) 
