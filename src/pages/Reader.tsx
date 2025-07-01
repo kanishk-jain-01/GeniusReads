@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,9 +15,9 @@ import {
   Send,
   Sparkles
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import PDFViewer from "@/components/PDFViewer";
-import { openPDFDialog, loadPDFDocument, updateDocumentState } from "@/lib/api";
+import { openPDFDialog, loadPDFDocument, updateDocumentState, updateDocumentTotalPages, getRecentDocuments } from "@/lib/api";
 import type { Document } from "@/lib/types";
 
 const Reader = () => {
@@ -29,6 +29,48 @@ const Reader = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const { toast } = useToast();
+  const location = useLocation();
+  const documentId = location.state?.documentId;
+
+  // Load specific document if documentId is provided via navigation state
+  useEffect(() => {
+    const loadSpecificDocument = async () => {
+      if (!documentId) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Get all documents and find the one with matching ID
+        const documents = await getRecentDocuments();
+        const targetDocument = documents.find(doc => doc.id === documentId);
+        
+        if (targetDocument) {
+          setCurrentDocument(targetDocument);
+          toast({
+            title: "Document Loaded",
+            description: `Opened "${targetDocument.title}"`,
+          });
+        } else {
+          toast({
+            title: "Document Not Found",
+            description: "The requested document could not be found.",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load specific document:', error);
+        toast({
+          title: "Failed to Load Document",
+          description: error instanceof Error ? error.message : "An unknown error occurred.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSpecificDocument();
+  }, [documentId, toast]);
 
   const sampleKnowledge = [
     {
@@ -120,9 +162,19 @@ const Reader = () => {
   }, [handleDocumentUpdate]);
 
   // Handle document load completion (when PDF.js finishes loading)
-  const handleDocumentLoad = useCallback((document: Document) => {
+  const handleDocumentLoad = useCallback(async (document: Document) => {
+    // Update local state
     handleDocumentUpdate({ totalPages: document.totalPages });
-  }, [handleDocumentUpdate]);
+    
+    // Update database with actual total pages
+    if (currentDocument && document.totalPages !== currentDocument.totalPages) {
+      try {
+        await updateDocumentTotalPages(currentDocument.id, document.totalPages);
+      } catch (error) {
+        console.error('Failed to update total pages in database:', error);
+      }
+    }
+  }, [handleDocumentUpdate, currentDocument]);
 
   // Handle text selection (placeholder for Phase 3)
   const handleTextSelect = useCallback((selectedText: string, _coordinates: any) => {
@@ -183,9 +235,9 @@ const Reader = () => {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-73px)]">
+      <div className="flex h-[calc(100vh-73px)] overflow-hidden">
         {/* Main Content Area - PDF Viewer */}
-        <div className="flex-1 flex flex-col bg-white/60 backdrop-blur-sm border-r border-slate-200">
+        <div className="flex-1 min-w-0 flex flex-col bg-white/60 backdrop-blur-sm border-r border-slate-200">
           <PDFViewer
             document={currentDocument}
             onDocumentLoad={handleDocumentLoad}
@@ -241,7 +293,7 @@ const Reader = () => {
         </div>
 
         {/* Knowledge Sidebar */}
-        <div className="w-80 bg-white/80 backdrop-blur-sm border-l border-slate-200 flex flex-col">
+        <div className="w-80 flex-shrink-0 bg-white/80 backdrop-blur-sm border-l border-slate-200 flex flex-col">
           <div className="p-6 border-b border-slate-200">
             <h3 className="font-semibold text-slate-900 mb-4 flex items-center">
               <Brain className="h-5 w-5 mr-2 text-purple-600" />

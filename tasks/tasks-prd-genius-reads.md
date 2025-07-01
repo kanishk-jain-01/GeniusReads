@@ -41,8 +41,8 @@
 - `src/lib/api.ts` - Tauri command invocations from frontend with test commands and error handling (✅ Created)
 - `src/lib/types.ts` - Comprehensive TypeScript type definitions for the application data model (✅ Created)
 
-### Feature Components (To Be Created)
-- `src/components/PDFViewer.tsx` - PDF display component using PDF.js
+### Feature Components (✅ Partially Created)
+- `src/components/PDFViewer.tsx` - PDF display component using PDF.js (✅ Created with full navigation and base64 loading)
 - `src/components/TextSelection.tsx` - Text selection and highlighting overlay system
 - `src/components/QuestionInput.tsx` - AI question input interface component
 - `src/components/KnowledgeSidebar.tsx` - Collapsible knowledge corpus display
@@ -93,15 +93,15 @@
   - [~] 1.12 Add pre-commit hooks with husky and lint-staged (SKIPPED - manual scripts adequate)
   - [x] 1.13 Set up Rust formatting and linting (rustfmt, clippy) (completed)
 
-- [ ] 2.0 Implement PDF Viewing and Navigation System
+- [x] 2.0 Implement PDF Viewing and Navigation System ✅ **COMPLETE**
   - [x] 2.1 Install and configure PDF.js for React integration
   - [x] 2.2 Create PDFViewer component with basic document display
-  - [ ] 2.3 Implement file picker dialog for opening PDF files from filesystem
-  - [ ] 2.4 Add PDF navigation controls (previous/next page, page input, zoom)
-  - [ ] 2.5 Create Tauri command to handle PDF file reading and metadata extraction
-  - [ ] 2.6 Implement document state management (current page, zoom level, file path)
-  - [ ] 2.7 Add error handling for invalid PDFs and file access issues
-  - [ ] 2.8 Implement "remember last document" functionality with local storage
+  - [x] 2.3 Implement file picker dialog for opening PDF files from filesystem (✅ Native macOS dialog with PDF filter)
+  - [x] 2.4 Add PDF navigation controls (previous/next page, page input, zoom) (✅ Complete with progress indicator)
+  - [x] 2.5 Create Tauri command to handle PDF file reading and metadata extraction (✅ Base64 transfer system)
+  - [x] 2.6 Implement document state management (current page, zoom level, file path) (✅ Database sync)
+  - [x] 2.7 Add error handling for invalid PDFs and file access issues (✅ Comprehensive error handling)
+  - [x] 2.8 Implement "remember last document" functionality with local storage (✅ Database persistence)
 
 - [ ] 3.0 Build Text Selection and Highlighting System
   - [ ] 3.1 Create text selection overlay system for PDF content (reference workflow in `architecture-diagrams.md`)
@@ -127,7 +127,7 @@
 - [ ] 5.0 Develop Knowledge Corpus and Local Storage
   - [~] 5.1 Set up local PostgreSQL database connection with sqlx (MOVED to 1.9 for early setup)
   - [~] 5.2 Create database migration for initial schema (MOVED to 1.9 for early setup)
-  - [ ] 5.3 Implement database.rs with connection pooling and query functions
+  - [x] 5.3 Implement database.rs with connection pooling and query functions (✅ Complete with document operations)
   - [ ] 5.4 Create knowledge_store.rs for managing Q&A pairs and definitions (implement data flow from `architecture-diagrams.md`)
   - [ ] 5.5 Build automatic knowledge extraction from AI responses (populates KNOWLEDGE_ENTRIES table)
   - [ ] 5.6 Implement search functionality for saved knowledge (uses SEARCH_INDEX table)

@@ -54,6 +54,9 @@ thiserror = "1.0"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 
+# Base64 encoding for PDF file transfer
+base64 = "0.22"
+
 [dev-dependencies]
 tempfile = "3.0"
 

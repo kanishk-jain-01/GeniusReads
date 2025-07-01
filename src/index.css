@@ -2,6 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+/* PDF.js TextLayer styles */
+.react-pdf__Page__textContent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 0.2;
+  line-height: 1;
+}
+
+.react-pdf__Page__textContent span {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.react-pdf__Page__textContent span::-moz-selection {
+  background: rgba(0, 0, 255, 0.3);
+}
+
+.react-pdf__Page__textContent span::selection {
+  background: rgba(0, 0, 255, 0.3);
+}
+
+/* PDF page sizing constraints */
+.react-pdf__Page {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.react-pdf__Page canvas {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */

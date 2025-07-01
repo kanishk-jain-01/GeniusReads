@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,42 +15,72 @@ import {
   ArrowRight
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getRecentDocuments, getDashboardStats } from "@/lib/api";
+import type { Document } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [recentDocuments, setRecentDocuments] = useState<Document[]>([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    documentCount: 0,
+    questionCount: 0,
+    responseCount: 0,
+    knowledgeCount: 0,
+    noteCount: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const recentDocuments = [
-    {
-      id: 1,
-      title: "Introduction to Machine Learning",
-      author: "Dr. Sarah Johnson",
-      pages: 245,
-      progress: 75,
-      lastRead: "2 hours ago",
-      questions: 12,
-      concepts: 8
-    },
-    {
-      id: 2,
-      title: "Quantum Physics Fundamentals",
-      author: "Prof. Michael Chen",
-      pages: 180,
-      progress: 45,
-      lastRead: "1 day ago",
-      questions: 8,
-      concepts: 15
-    },
-    {
-      id: 3,
-      title: "Advanced Calculus",
-      author: "Dr. Emily Davis",
-      pages: 320,
-      progress: 90,
-      lastRead: "3 days ago",
-      questions: 25,
-      concepts: 22
+  // Helper function to calculate reading progress
+  const calculateProgress = (currentPage: number, totalPages: number): number => {
+    if (totalPages === 0) return 0;
+    return Math.round((currentPage / totalPages) * 100);
+  };
+
+  // Helper function to format last accessed time
+  const formatLastAccessed = (date: Date): string => {
+    const now = new Date();
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+    
+    if (diffInHours < 1) {
+      return 'Just now';
+    } else if (diffInHours < 24) {
+      return `${Math.floor(diffInHours)} hours ago`;
+    } else if (diffInHours < 48) {
+      return 'Yesterday';
+    } else {
+      const days = Math.floor(diffInHours / 24);
+      return `${days} days ago`;
     }
-  ];
+  };
+
+  // Load dashboard data on component mount
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [documents, stats] = await Promise.all([
+          getRecentDocuments(),
+          getDashboardStats()
+        ]);
+        
+        setRecentDocuments(documents);
+        setDashboardStats(stats);
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+        toast({
+          title: "Failed to Load Dashboard",
+          description: "Could not load recent documents and statistics.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [toast]);
 
   const recentQuestions = [
     {
@@ -77,10 +107,10 @@ const Dashboard = () => {
   ];
 
   const knowledgeStats = [
-    { label: "Total Concepts", value: 156, icon: Brain, color: "text-purple-600" },
-    { label: "Questions Asked", value: 89, icon: MessageSquare, color: "text-blue-600" },
-    { label: "Documents Read", value: 12, icon: BookOpen, color: "text-green-600" },
-    { label: "Study Hours", value: 47, icon: Clock, color: "text-orange-600" }
+    { label: "Total Concepts", value: dashboardStats.knowledgeCount, icon: Brain, color: "text-purple-600" },
+    { label: "Questions Asked", value: dashboardStats.questionCount, icon: MessageSquare, color: "text-blue-600" },
+    { label: "Documents Read", value: dashboardStats.documentCount, icon: BookOpen, color: "text-green-600" },
+    { label: "AI Responses", value: dashboardStats.responseCount, icon: Clock, color: "text-orange-600" }
   ];
 
   return (
@@ -135,15 +165,25 @@ const Dashboard = () => {
           {knowledgeStats.map((stat, index) => (
             <Card key={index} className="bg-white/60 backdrop-blur-sm border-slate-200 hover:shadow-lg transition-all duration-300">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-600 mb-1">{stat.label}</p>
-                    <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                {loading ? (
+                  <div className="flex items-center justify-between animate-pulse">
+                    <div>
+                      <div className="h-4 bg-slate-200 rounded w-20 mb-2"></div>
+                      <div className="h-8 bg-slate-200 rounded w-12"></div>
+                    </div>
+                    <div className="p-3 rounded-full bg-slate-200 w-12 h-12"></div>
                   </div>
-                  <div className={`p-3 rounded-full bg-slate-100 ${stat.color}`}>
-                    <stat.icon className="h-6 w-6" />
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600 mb-1">{stat.label}</p>
+                      <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
+                    </div>
+                    <div className={`p-3 rounded-full bg-slate-100 ${stat.color}`}>
+                      <stat.icon className="h-6 w-6" />
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -163,44 +203,89 @@ const Dashboard = () => {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                {recentDocuments.map((doc) => (
-                  <div key={doc.id} className="p-4 bg-white rounded-lg border border-slate-100 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-slate-900 mb-1">{doc.title}</h3>
-                        <p className="text-sm text-slate-600 mb-2">{doc.author} • {doc.pages} pages</p>
-                        <div className="flex items-center space-x-4 text-xs text-slate-500">
-                          <span className="flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {doc.lastRead}
-                          </span>
-                          <span className="flex items-center">
-                            <MessageSquare className="h-3 w-3 mr-1" />
-                            {doc.questions} questions
-                          </span>
-                          <span className="flex items-center">
-                            <Brain className="h-3 w-3 mr-1" />
-                            {doc.concepts} concepts
-                          </span>
+                {loading ? (
+                  // Loading state
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="p-4 bg-white rounded-lg border border-slate-100 animate-pulse">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                            <div className="h-3 bg-slate-200 rounded w-1/2 mb-2"></div>
+                            <div className="flex space-x-4">
+                              <div className="h-3 bg-slate-200 rounded w-16"></div>
+                              <div className="h-3 bg-slate-200 rounded w-20"></div>
+                              <div className="h-3 bg-slate-200 rounded w-18"></div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <div className="h-6 bg-slate-200 rounded w-12"></div>
+                            <div className="h-8 bg-slate-200 rounded w-8"></div>
+                          </div>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-2"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : recentDocuments.length === 0 ? (
+                  // Empty state
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">No documents yet</h3>
+                    <p className="text-slate-600 mb-4">Start your learning journey by uploading your first PDF.</p>
+                    <Link to="/reader">
+                      <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Upload PDF
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  // Real documents
+                  recentDocuments.map((doc) => {
+                    const progress = calculateProgress(doc.currentPage, doc.totalPages);
+                    return (
+                      <div key={doc.id} className="p-4 bg-white rounded-lg border border-slate-100 hover:shadow-md transition-all duration-200">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-slate-900 mb-1">{doc.title}</h3>
+                            <p className="text-sm text-slate-600 mb-2">
+                              {doc.author || 'Unknown Author'} • {doc.totalPages} pages
+                            </p>
+                            <div className="flex items-center space-x-4 text-xs text-slate-500">
+                              <span className="flex items-center">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {formatLastAccessed(doc.lastAccessed)}
+                              </span>
+                              <span className="flex items-center">
+                                <FileText className="h-3 w-3 mr-1" />
+                                Page {doc.currentPage} of {doc.totalPages}
+                              </span>
+                              <span className="flex items-center">
+                                <MessageSquare className="h-3 w-3 mr-1" />
+                                0 questions
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="secondary">{progress}%</Badge>
+                            <Link to="/reader" state={{ documentId: doc.id }}>
+                              <Button size="sm" variant="ghost">
+                                <ArrowRight className="h-4 w-4" />
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                        <div className="w-full bg-slate-200 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${progress}%` }}
+                          ></div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Badge variant="secondary">{doc.progress}%</Badge>
-                        <Link to="/reader">
-                          <Button size="sm" variant="ghost">
-                            <ArrowRight className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div 
-                        className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${doc.progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </CardContent>
             </Card>
           </div>

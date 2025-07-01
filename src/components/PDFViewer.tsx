@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import { readPDFFile } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +44,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [pageInput, setPageInput] = useState<string>('1');
+  const [pdfData, setPdfData] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -54,6 +56,31 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       setPageInput(document.currentPage.toString());
     }
   }, [document]);
+
+  // Load PDF data when document changes
+  useEffect(() => {
+    if (document?.filePath) {
+      setLoading(true);
+      setError(null);
+      setPdfData(null);
+      
+      readPDFFile(document.filePath)
+        .then((data) => {
+          setPdfData(data);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error('Failed to load PDF data:', error);
+          setError('Failed to load PDF file');
+          setLoading(false);
+          toast({
+            title: "Failed to Load PDF",
+            description: "Could not read the PDF file. Please check file permissions.",
+            variant: "destructive",
+          });
+        });
+    }
+  }, [document?.filePath, toast]);
 
   // Handle successful PDF load
   const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
@@ -202,8 +229,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
       {/* PDF Content */}
       <div className="flex-1 overflow-auto bg-slate-100 p-6">
-        <div className="flex justify-center">
-          <Card className="bg-white shadow-lg">
+        <div className="flex justify-center min-h-0">
+          <Card className="bg-white shadow-lg max-w-full">
             <CardContent className="p-0">
               {loading && (
                 <div className="flex items-center justify-center h-96">
@@ -218,9 +245,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 </div>
               )}
               
-              {document.filePath && (
+              {pdfData && (
                 <Document
-                  file={document.filePath}
+                  file={pdfData}
                   onLoadSuccess={onDocumentLoadSuccess}
                   onLoadError={onDocumentLoadError}
                   loading={

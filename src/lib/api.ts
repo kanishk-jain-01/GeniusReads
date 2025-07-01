@@ -81,6 +81,16 @@ export const loadPDFDocument = async (filePath: string): Promise<Document> => {
   }
 };
 
+export const readPDFFile = async (filePath: string): Promise<string> => {
+  try {
+    const result = await invoke<string>('read_pdf_file', { filePath });
+    return result;
+  } catch (error) {
+    console.error('Failed to read PDF file:', error);
+    throw new Error(`Failed to read PDF file: ${error}`);
+  }
+};
+
 export const updateDocumentState = async (
   documentId: string,
   currentPage: number,
@@ -95,6 +105,21 @@ export const updateDocumentState = async (
   } catch (error) {
     console.error('Failed to update document state:', error);
     throw new Error(`Failed to update document state: ${error}`);
+  }
+};
+
+export const updateDocumentTotalPages = async (
+  documentId: string,
+  totalPages: number
+): Promise<void> => {
+  try {
+    await invoke('update_document_total_pages', {
+      documentId,
+      totalPages
+    });
+  } catch (error) {
+    console.error('Failed to update document total pages:', error);
+    throw new Error(`Failed to update document total pages: ${error}`);
   }
 };
 
@@ -123,6 +148,28 @@ export const getRecentDocuments = async (): Promise<Document[]> => {
   } catch (error) {
     console.error('Failed to get recent documents:', error);
     throw new Error(`Failed to get recent documents: ${error}`);
+  }
+};
+
+export const getDashboardStats = async (): Promise<{
+  documentCount: number;
+  questionCount: number;
+  responseCount: number;
+  knowledgeCount: number;
+  noteCount: number;
+}> => {
+  try {
+    const result = await invoke<any>('get_database_stats');
+    return {
+      documentCount: result.document_count || 0,
+      questionCount: result.question_count || 0,
+      responseCount: result.response_count || 0,
+      knowledgeCount: result.knowledge_count || 0,
+      noteCount: result.note_count || 0
+    };
+  } catch (error) {
+    console.error('Failed to get dashboard stats:', error);
+    throw new Error(`Failed to get dashboard stats: ${error}`);
   }
 };
 

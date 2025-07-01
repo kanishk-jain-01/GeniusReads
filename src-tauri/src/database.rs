@@ -171,6 +171,16 @@ impl Database {
         Ok(document)
     }
 
+    /// Get document by file path
+    pub async fn get_document_by_path(&self, file_path: &str) -> Result<Option<Document>> {
+        let document = sqlx::query_as!(Document, "SELECT * FROM documents WHERE file_path = $1", file_path)
+            .fetch_optional(&self.pool)
+            .await
+            .context("Failed to fetch document by path")?;
+
+        Ok(document)
+    }
+
     /// Create a new document record
     pub async fn create_document(
         &self,
@@ -225,6 +235,28 @@ impl Database {
         .execute(&self.pool)
         .await
         .context("Failed to update document position")?;
+
+        Ok(())
+    }
+
+    /// Update document total pages (when PDF.js loads and determines actual page count)
+    pub async fn update_document_total_pages(
+        &self,
+        id: Uuid,
+        total_pages: i32,
+    ) -> Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE documents 
+            SET total_pages = $2, updated_at = NOW()
+            WHERE id = $1
+            "#,
+            id,
+            total_pages
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to update document total pages")?;
 
         Ok(())
     }
