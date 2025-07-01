@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Brain, BookOpen, Lightbulb, MessageSquare, TestTube2, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { greet, testTauriCommunication } from "@/lib/api";
+import { testGreet, testTauriCommunication } from "@/lib/api";
 
 interface TestResults {
   success: boolean;
@@ -35,7 +35,7 @@ const Index = () => {
 
   const handleGreet = async () => {
     try {
-      const result = await greet("GeniusReads User");
+      const result = await testGreet("GeniusReads User");
       setGreetResult(result);
     } catch (error) {
       setGreetResult(`Error: ${error}`);

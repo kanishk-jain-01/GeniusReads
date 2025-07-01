@@ -3,103 +3,243 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import type { 
-  TauriResponse,
-  ExtractTextCommand,
-  ProcessQuestionCommand,
-  AppError
+  Document, 
+  TauriResponse, 
+  AppError 
 } from './types';
 
 // ============================================================================
-// Test Commands (for validating Tauri-React communication)
+// Test Commands (for foundation validation)
 // ============================================================================
 
-/**
- * Simple greeting command to test basic Tauri communication
- */
-export async function greet(name: string): Promise<string> {
+export const testGreet = async (name: string): Promise<string> => {
   try {
     return await invoke<string>('greet', { name });
   } catch (error) {
-    throw new Error(`Tauri communication failed: ${error}`);
+    console.error('Failed to greet:', error);
+    throw error;
   }
-}
+};
 
-/**
- * Get application information from Rust backend
- */
-export async function getAppInfo(): Promise<Record<string, unknown>> {
+export const getAppInfo = async (): Promise<any> => {
   try {
     return await invoke('get_app_info');
   } catch (error) {
-    throw new Error(`Failed to get app info: ${error}`);
+    console.error('Failed to get app info:', error);
+    throw error;
   }
-}
+};
 
-/**
- * Get system information from Rust backend
- */
-export async function getSystemInfo(): Promise<Record<string, unknown>> {
+export const getSystemInfo = async (): Promise<any> => {
   try {
     return await invoke('get_system_info');
   } catch (error) {
-    throw new Error(`Failed to get system info: ${error}`);
+    console.error('Failed to get system info:', error);
+    throw error;
   }
-}
+};
 
-/**
- * Test database connection
- */
-export async function testDatabaseConnection(): Promise<Record<string, unknown>> {
+// ============================================================================
+// PDF Operations
+// ============================================================================
+
+export const openPDFDialog = async (): Promise<string | null> => {
   try {
-    return await invoke('test_database_connection');
+    const result = await invoke<string | null>('open_pdf_dialog');
+    return result;
   } catch (error) {
-    throw new Error(`Failed to test database connection: ${error}`);
+    console.error('Failed to open PDF dialog:', error);
+    throw new Error(`Failed to open file dialog: ${error}`);
   }
-}
+};
 
-/**
- * Get database statistics
- */
-export async function getDatabaseStats(): Promise<Record<string, unknown>> {
+export const loadPDFDocument = async (filePath: string): Promise<Document> => {
+  try {
+    const result = await invoke<any>('load_pdf_document', { filePath });
+    
+    // Convert the response to our Document type
+    const document: Document = {
+      id: result.id,
+      title: result.title,
+      author: result.author,
+      filePath: result.filePath,
+      fileName: result.fileName,
+      fileSize: result.fileSize,
+      totalPages: result.totalPages,
+      currentPage: result.currentPage,
+      zoomLevel: result.zoomLevel,
+      lastAccessed: new Date(result.lastAccessed),
+      createdAt: new Date(result.createdAt),
+      updatedAt: new Date(result.updatedAt),
+      metadata: result.metadata
+    };
+    
+    return document;
+  } catch (error) {
+    console.error('Failed to load PDF document:', error);
+    throw new Error(`Failed to load PDF: ${error}`);
+  }
+};
+
+export const updateDocumentState = async (
+  documentId: string,
+  currentPage: number,
+  zoomLevel: number
+): Promise<void> => {
+  try {
+    await invoke('update_document_state', {
+      documentId,
+      currentPage,
+      zoomLevel: Math.round(zoomLevel)
+    });
+  } catch (error) {
+    console.error('Failed to update document state:', error);
+    throw new Error(`Failed to update document state: ${error}`);
+  }
+};
+
+export const getRecentDocuments = async (): Promise<Document[]> => {
+  try {
+    const result = await invoke<any[]>('get_recent_documents');
+    
+    // Convert the response to our Document type array
+    const documents: Document[] = result.map((doc: any) => ({
+      id: doc.id,
+      title: doc.title,
+      author: doc.author,
+      filePath: doc.file_path,
+      fileName: doc.file_name || doc.title,
+      fileSize: doc.file_size,
+      totalPages: doc.total_pages,
+      currentPage: doc.last_page_viewed || 1,
+      zoomLevel: doc.zoom_level || 100,
+      lastAccessed: new Date(doc.last_accessed),
+      createdAt: new Date(doc.created_at),
+      updatedAt: new Date(doc.created_at),
+      metadata: doc.metadata || {}
+    }));
+    
+    return documents;
+  } catch (error) {
+    console.error('Failed to get recent documents:', error);
+    throw new Error(`Failed to get recent documents: ${error}`);
+  }
+};
+
+// ============================================================================
+// Database Test Commands
+// ============================================================================
+
+export const testDatabaseConnection = async (): Promise<TauriResponse> => {
+  try {
+    return await invoke<TauriResponse>('test_database_connection');
+  } catch (error) {
+    console.error('Failed to test database connection:', error);
+    throw error;
+  }
+};
+
+export const getDatabaseStats = async (): Promise<any> => {
   try {
     return await invoke('get_database_stats');
   } catch (error) {
-    throw new Error(`Failed to get database stats: ${error}`);
+    console.error('Failed to get database stats:', error);
+    throw error;
   }
-}
+};
 
-/**
- * Get all documents from database
- */
-export async function getDocuments(): Promise<Record<string, unknown>> {
+export const getDocuments = async (): Promise<any[]> => {
   try {
-    return await invoke('get_documents');
+    return await invoke<any[]>('get_documents');
   } catch (error) {
-    throw new Error(`Failed to get documents: ${error}`);
+    console.error('Failed to get documents:', error);
+    throw error;
   }
-}
+};
+
+// ============================================================================
+// Error Handling Utilities
+// ============================================================================
+
+export const handleApiError = (error: unknown): AppError => {
+  const timestamp = new Date();
+  
+  if (typeof error === 'string') {
+    return {
+      code: 'UNKNOWN_ERROR',
+      message: error,
+      timestamp,
+      details: error
+    };
+  }
+  
+  if (error instanceof Error) {
+    // Try to determine error type from message
+    let code: AppError['code'] = 'UNKNOWN_ERROR';
+    
+    if (error.message.includes('PDF')) {
+      code = 'PDF_LOAD_FAILED';
+    } else if (error.message.includes('database') || error.message.includes('Database')) {
+      code = 'DATABASE_CONNECTION_FAILED';
+    } else if (error.message.includes('file') || error.message.includes('File')) {
+      code = 'FILE_NOT_FOUND';
+    } else if (error.message.includes('permission') || error.message.includes('Permission')) {
+      code = 'PERMISSION_DENIED';
+    }
+    
+    return {
+      code,
+      message: error.message,
+      timestamp,
+      details: error.stack
+    };
+  }
+  
+  return {
+    code: 'UNKNOWN_ERROR',
+    message: 'An unknown error occurred',
+    timestamp,
+    details: error
+  };
+};
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+export const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+export const formatLastAccessed = (date: Date): string => {
+  const now = new Date();
+  const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+  
+  if (diffInHours < 1) {
+    return 'Just now';
+  } else if (diffInHours < 24) {
+    return `${Math.floor(diffInHours)} hours ago`;
+  } else if (diffInHours < 48) {
+    return 'Yesterday';
+  } else {
+    return date.toLocaleDateString();
+  }
+};
 
 // ============================================================================
 // PDF Management Commands (Future Implementation)
 // ============================================================================
 
 /**
- * Open and load a PDF file
- * @param filePath - Path to the PDF file
+ * Extract text from PDF selection coordinates (Future Implementation - Phase 3)
  */
-export async function openPDF(filePath: string): Promise<TauriResponse> {
-  try {
-    const command = { filePath } as Record<string, unknown>;
-    return await invoke<TauriResponse>('open_pdf', command);
-  } catch (error) {
-    throw new Error(`Failed to open PDF: ${error}`);
-  }
-}
-
-/**
- * Extract text from PDF selection coordinates
- */
-export async function extractText(command: ExtractTextCommand): Promise<TauriResponse<string>> {
+export async function extractText(command: any): Promise<TauriResponse<string>> {
   try {
     const args = command as unknown as Record<string, unknown>;
     return await invoke<TauriResponse<string>>('extract_text', args);
@@ -113,9 +253,9 @@ export async function extractText(command: ExtractTextCommand): Promise<TauriRes
 // ============================================================================
 
 /**
- * Process a question with AI and get streaming response
+ * Process a question with AI and get streaming response (Future Implementation - Phase 4)
  */
-export async function processQuestion(command: ProcessQuestionCommand): Promise<TauriResponse> {
+export async function processQuestion(command: any): Promise<TauriResponse> {
   try {
     const args = command as unknown as Record<string, unknown>;
     return await invoke<TauriResponse>('process_question', args);
@@ -151,42 +291,6 @@ export async function searchKnowledge(query: string): Promise<TauriResponse> {
 }
 
 // ============================================================================
-// Error Handling Utilities
-// ============================================================================
-
-/**
- * Create a standardized app error from Tauri invoke errors
- */
-export function createAppError(error: unknown, context: string): AppError {
-  return {
-    code: 'TAURI_INVOKE_FAILED',
-    message: `Tauri command failed in ${context}`,
-    details: error,
-    timestamp: new Date(),
-    context: {
-      component: 'TauriAPI',
-      action: context
-    }
-  };
-}
-
-/**
- * Wrapper for invoke calls with standardized error handling
- */
-export async function safeInvoke<T>(
-  command: string, 
-  args?: Record<string, unknown>, 
-  context?: string
-): Promise<T> {
-  try {
-    return await invoke<T>(command, args);
-  } catch (error) {
-    const appError = createAppError(error, context || command);
-    throw appError;
-  }
-}
-
-// ============================================================================
 // Communication Test Suite
 // ============================================================================
 
@@ -203,7 +307,7 @@ export async function testTauriCommunication(): Promise<{
 
   // Test 1: Basic greeting
   try {
-    const greetResult = await greet("GeniusReads");
+    const greetResult = await testGreet("GeniusReads");
     results.greet = { success: true, data: greetResult };
   } catch (error) {
     results.greet = { success: false, error: String(error) };

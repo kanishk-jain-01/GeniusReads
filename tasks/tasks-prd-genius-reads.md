@@ -94,8 +94,8 @@
   - [x] 1.13 Set up Rust formatting and linting (rustfmt, clippy) (completed)
 
 - [ ] 2.0 Implement PDF Viewing and Navigation System
-  - [ ] 2.1 Install and configure PDF.js for React integration
-  - [ ] 2.2 Create PDFViewer component with basic document display
+  - [x] 2.1 Install and configure PDF.js for React integration
+  - [x] 2.2 Create PDFViewer component with basic document display
   - [ ] 2.3 Implement file picker dialog for opening PDF files from filesystem
   - [ ] 2.4 Add PDF navigation controls (previous/next page, page input, zoom)
   - [ ] 2.5 Create Tauri command to handle PDF file reading and metadata extraction

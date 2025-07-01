@@ -1,35 +1,34 @@
-
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
 import { 
-  ChevronLeft, 
-  ChevronRight, 
-  ZoomIn, 
-  ZoomOut, 
   Upload, 
   Brain, 
   MessageSquare, 
   Search,
-  BookOpen,
   Lightbulb,
   Save,
   Send,
   Sparkles
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import PDFViewer from "@/components/PDFViewer";
+import { openPDFDialog, loadPDFDocument, updateDocumentState } from "@/lib/api";
+import type { Document } from "@/lib/types";
 
 const Reader = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages] = useState(245);
-  const [zoomLevel, setZoomLevel] = useState(100);
+  const [currentDocument, setCurrentDocument] = useState<Document | undefined>();
   const [selectedText, setSelectedText] = useState("");
   const [question, setQuestion] = useState("");
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { toast } = useToast();
 
   const sampleKnowledge = [
     {
@@ -55,17 +54,94 @@ const Reader = () => {
     }
   ];
 
-  const handleAskQuestion = () => {
+  // Handle PDF file upload
+  const handleUploadPDF = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      
+      // Open file dialog
+      const filePath = await openPDFDialog();
+      if (!filePath) {
+        setIsLoading(false);
+        return; // User cancelled
+      }
+      
+      // Load PDF document
+      const document = await loadPDFDocument(filePath);
+      setCurrentDocument(document);
+      
+      toast({
+        title: "PDF Loaded Successfully",
+        description: `Opened "${document.title}" with ${document.totalPages} pages.`,
+      });
+      
+    } catch (error) {
+      console.error('Failed to load PDF:', error);
+      toast({
+        title: "Failed to Load PDF",
+        description: error instanceof Error ? error.message : "An unknown error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  // Handle document state updates (page, zoom) with database sync
+  const handleDocumentUpdate = useCallback(async (updates: Partial<Document>) => {
+    if (!currentDocument) return;
+    
+    const updatedDocument = { ...currentDocument, ...updates };
+    setCurrentDocument(updatedDocument);
+    
+    // Sync with database
+    try {
+      if (updates.currentPage !== undefined || updates.zoomLevel !== undefined) {
+        await updateDocumentState(
+          currentDocument.id,
+          updates.currentPage ?? currentDocument.currentPage,
+          updates.zoomLevel ?? currentDocument.zoomLevel
+        );
+      }
+    } catch (error) {
+      console.error('Failed to sync document state:', error);
+      // Don't show error to user for sync failures - just log them
+    }
+  }, [currentDocument]);
+
+  // Handle page changes
+  const handlePageChange = useCallback((page: number) => {
+    handleDocumentUpdate({ currentPage: page });
+  }, [handleDocumentUpdate]);
+
+  // Handle zoom changes
+  const handleZoomChange = useCallback((zoom: number) => {
+    handleDocumentUpdate({ zoomLevel: zoom });
+  }, [handleDocumentUpdate]);
+
+  // Handle document load completion (when PDF.js finishes loading)
+  const handleDocumentLoad = useCallback((document: Document) => {
+    handleDocumentUpdate({ totalPages: document.totalPages });
+  }, [handleDocumentUpdate]);
+
+  // Handle text selection (placeholder for Phase 3)
+  const handleTextSelect = useCallback((selectedText: string, _coordinates: any) => {
+    setSelectedText(selectedText);
+    // Phase 3 will implement coordinate storage and question interface
+  }, []);
+
+  // Handle AI question processing (placeholder for Phase 4)
+  const handleAskQuestion = useCallback(() => {
     if (!question.trim()) return;
     
     setIsAiThinking(true);
-    // Simulate AI processing
+    // Simulate AI processing for now
     setTimeout(() => {
       setIsAiThinking(false);
       setQuestion("");
       setSelectedText("");
     }, 3000);
-  };
+  }, [question]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -90,9 +166,17 @@ const Reader = () => {
               <Link to="/dashboard">
                 <Button variant="outline">Dashboard</Button>
               </Link>
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                <Upload className="mr-2 h-4 w-4" />
-                Upload PDF
+              <Button 
+                onClick={handleUploadPDF}
+                disabled={isLoading}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                {isLoading ? (
+                  <Sparkles className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Upload className="mr-2 h-4 w-4" />
+                )}
+                {isLoading ? "Loading..." : "Upload PDF"}
               </Button>
             </div>
           </div>
@@ -100,101 +184,15 @@ const Reader = () => {
       </header>
 
       <div className="flex h-[calc(100vh-73px)]">
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col">
-          {/* PDF Viewer */}
-          <div className="flex-1 bg-white/60 backdrop-blur-sm border-r border-slate-200">
-            <div className="p-6 border-b border-slate-200">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-slate-900">Introduction to Machine Learning</h2>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setZoomLevel(Math.max(50, zoomLevel - 10))}
-                  >
-                    <ZoomOut className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm text-slate-600 min-w-[60px] text-center">
-                    {zoomLevel}%
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setZoomLevel(Math.min(200, zoomLevel + 10))}
-                  >
-                    <ZoomIn className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm text-slate-600">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                  75% Complete
-                </Badge>
-              </div>
-            </div>
-
-            {/* PDF Content Placeholder */}
-            <div className="p-6 flex-1">
-              <Card className="h-full bg-white border-slate-200 shadow-sm">
-                <CardContent className="p-8 h-full flex flex-col justify-center">
-                  <div className="text-center mb-8">
-                    <BookOpen className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-2xl font-semibold text-slate-900 mb-2">
-                      Chapter 3: Supervised Learning
-                    </h3>
-                    <p className="text-slate-600 mb-6">
-                      This chapter introduces the fundamental concepts of supervised learning, 
-                      including classification and regression techniques.
-                    </p>
-                  </div>
-
-                  <div className="bg-slate-50 p-6 rounded-lg mb-6">
-                    <p className="text-slate-700 leading-relaxed">
-                      <span 
-                        className="bg-yellow-200 px-1 rounded cursor-pointer hover:bg-yellow-300 transition-colors"
-                        onClick={() => setSelectedText("Supervised learning is a machine learning paradigm where algorithms learn from labeled training data to make predictions on new, unseen data.")}
-                      >
-                        Supervised learning is a machine learning paradigm where algorithms learn from labeled training data to make predictions on new, unseen data.
-                      </span>
-                      {" "}The key characteristic of supervised learning is that the training dataset contains both input features and their corresponding target outputs, allowing the algorithm to learn the mapping between inputs and outputs.
-                    </p>
-                  </div>
-
-                  <div className="text-center">
-                    <p className="text-sm text-slate-500 mb-2">
-                      💡 Try highlighting text above to ask questions!
-                    </p>
-                    <p className="text-xs text-slate-400">
-                      Click on the highlighted text to see AI explanations in action
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+        {/* Main Content Area - PDF Viewer */}
+        <div className="flex-1 flex flex-col bg-white/60 backdrop-blur-sm border-r border-slate-200">
+          <PDFViewer
+            document={currentDocument}
+            onDocumentLoad={handleDocumentLoad}
+            onPageChange={handlePageChange}
+            onZoomChange={handleZoomChange}
+            onTextSelect={handleTextSelect}
+          />
 
           {/* Question Interface */}
           {selectedText && (

@@ -53,6 +53,12 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
   }
 
   .dark {
@@ -91,6 +97,11 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
   }
 }
 
@@ -102,4 +113,39 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* PDF.js specific styles */
+.react-pdf__Page {
+  @apply shadow-lg;
+}
+
+.react-pdf__Page__canvas {
+  @apply max-w-full h-auto;
+}
+
+.react-pdf__Page__textContent {
+  @apply pointer-events-auto;
+}
+
+.react-pdf__Page__textContent .textLayer {
+  @apply pointer-events-auto;
+}
+
+/* PDF text selection styles for future Phase 3 implementation */
+.pdf-page .textLayer > span {
+  @apply transition-colors duration-150;
+}
+
+.pdf-page .textLayer > span:hover {
+  @apply cursor-text;
+}
+
+.pdf-page .textLayer > span.selected {
+  @apply bg-yellow-200;
+}
+
+/* Loading and error states */
+.react-pdf__message {
+  @apply flex items-center justify-center p-8 text-slate-600;
 }
