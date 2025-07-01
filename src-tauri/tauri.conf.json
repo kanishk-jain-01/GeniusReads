@@ -13,13 +13,20 @@
     "windows": [
       {
         "title": "GeniusReads",
-        "width": 800,
-        "height": 600
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "maximized": false,
+        "center": true
       }
     ],
     "security": {
-      "csp": null
-    }
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.openai.com; object-src 'none';"
+    },
+    "macOSPrivateApi": true
   },
   "bundle": {
     "active": true,
@@ -30,6 +37,11 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.15",
+      "exceptionDomain": "localhost"
+    }
   }
 }
