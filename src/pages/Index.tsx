@@ -1,46 +1,40 @@
-
-// Import useState removed as it's not used in this component
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Brain, MessageSquare, Search, Upload, Users, Zap, Star } from "lucide-react";
+import { Brain, BookOpen, Lightbulb, Zap, Search, MessageSquare, TestTube2, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { greet, getAppInfo, getSystemInfo, testTauriCommunication } from "@/lib/api";
 
 const Index = () => {
+  const [testResults, setTestResults] = useState<any>(null);
+  const [isTestingTauri, setIsTestingTauri] = useState(false);
+  const [greetResult, setGreetResult] = useState<string>("");
 
-  const features = [
-    {
-      icon: BookOpen,
-      title: "PDF Reader",
-      description: "Advanced PDF viewing with highlighting and navigation",
-      color: "bg-blue-500"
-    },
-    {
-      icon: Brain,
-      title: "AI Explanations",
-      description: "Get instant explanations for complex concepts",
-      color: "bg-purple-500"
-    },
-    {
-      icon: MessageSquare,
-      title: "Smart Q&A",
-      description: "Ask questions and get contextual answers",
-      color: "bg-green-500"
-    },
-    {
-      icon: Search,
-      title: "Knowledge Search",
-      description: "Search through your accumulated learning",
-      color: "bg-orange-500"
+  const handleTestTauri = async () => {
+    setIsTestingTauri(true);
+    try {
+      const results = await testTauriCommunication();
+      setTestResults(results);
+    } catch (error) {
+      setTestResults({
+        success: false,
+        results: {},
+        errors: [`Test failed: ${error}`]
+      });
+    } finally {
+      setIsTestingTauri(false);
     }
-  ];
+  };
 
-  const stats = [
-    { label: "Documents Processed", value: "10K+", icon: BookOpen },
-    { label: "Questions Answered", value: "50K+", icon: MessageSquare },
-    { label: "Concepts Learned", value: "25K+", icon: Brain },
-    { label: "Active Learners", value: "2K+", icon: Users }
-  ];
+  const handleGreet = async () => {
+    try {
+      const result = await greet("GeniusReads User");
+      setGreetResult(result);
+    } catch (error) {
+      setGreetResult(`Error: ${error}`);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -56,14 +50,12 @@ const Index = () => {
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   GeniusReads
                 </h1>
-                <p className="text-xs text-slate-600">AI-Powered Learning Assistant</p>
+                <p className="text-xs text-slate-600">AI-Powered PDF Learning</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
               <Link to="/dashboard">
-                <Button variant="outline" className="hidden sm:flex">
-                  Dashboard
-                </Button>
+                <Button variant="outline">Dashboard</Button>
               </Link>
               <Link to="/reader">
                 <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
@@ -76,129 +68,192 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-6 py-20">
-        <div className="text-center mb-16">
-          <Badge className="mb-4 bg-blue-100 text-blue-700 hover:bg-blue-200">
-            <Zap className="h-3 w-3 mr-1" />
-            AI-Powered Learning
-          </Badge>
-          <h2 className="text-5xl font-bold text-slate-900 mb-6 leading-tight">
-            Transform How You
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              {" "}Learn{" "}
-            </span>
-            from Documents
-          </h2>
-          <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Upload PDFs, highlight confusing text, and get instant AI explanations. 
-            Build your personal knowledge base with every question you ask.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <section className="py-20 px-6">
+        <div className="container mx-auto text-center">
+          <div className="mb-8">
+            <Badge variant="secondary" className="mb-4 bg-blue-100 text-blue-700">
+              Foundation Phase - Task 1.8 Testing
+            </Badge>
+            <h2 className="text-5xl font-bold text-slate-900 mb-6">
+              Transform Your Technical Reading
+            </h2>
+            <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto">
+              Break through comprehension barriers with AI-powered explanations. 
+              Highlight confusing text, ask questions, and build a persistent knowledge base.
+            </p>
+          </div>
+
+          {/* Tauri Communication Test Section */}
+          <div className="mb-12">
+            <Card className="max-w-2xl mx-auto bg-white/60 backdrop-blur-sm border-slate-200">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-center space-x-2">
+                  <TestTube2 className="h-5 w-5 text-purple-600" />
+                  <span>Tauri-React Communication Test</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col space-y-3">
+                  <Button 
+                    onClick={handleGreet}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    Test Simple Greeting
+                  </Button>
+                  
+                  <Button 
+                    onClick={handleTestTauri}
+                    disabled={isTestingTauri}
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                  >
+                    {isTestingTauri ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Testing Communication...
+                      </>
+                    ) : (
+                      <>
+                        <TestTube2 className="mr-2 h-4 w-4" />
+                        Run Full Communication Test
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {greetResult && (
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-700">{greetResult}</p>
+                  </div>
+                )}
+
+                {testResults && (
+                  <div className="text-left space-y-3">
+                    <div className="flex items-center space-x-2">
+                      {testResults.success ? (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <XCircle className="h-5 w-5 text-red-600" />
+                      )}
+                      <span className={`font-medium ${testResults.success ? 'text-green-700' : 'text-red-700'}`}>
+                        {testResults.success ? 'All Tests Passed!' : 'Some Tests Failed'}
+                      </span>
+                    </div>
+
+                    {testResults.results && Object.keys(testResults.results).length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-slate-700">Results:</h4>
+                        {Object.entries(testResults.results).map(([key, value]) => (
+                          <div key={key} className="p-2 bg-green-50 border border-green-200 rounded text-xs">
+                            <strong>{key}:</strong> {JSON.stringify(value, null, 2)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {testResults.errors && testResults.errors.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-red-700">Errors:</h4>
+                        {testResults.errors.map((error: string, index: number) => (
+                          <div key={index} className="p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+                            {error}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex justify-center space-x-4">
             <Link to="/reader">
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 text-lg"
-              >
-                <Upload className="mr-2 h-5 w-5" />
-                Try GeniusReads Free
+              <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                <BookOpen className="mr-2 h-5 w-5" />
+                Try the Reader
               </Button>
             </Link>
             <Link to="/dashboard">
-              <Button size="lg" variant="outline" className="px-8 py-4 text-lg">
+              <Button size="lg" variant="outline">
+                <Brain className="mr-2 h-5 w-5" />
                 View Dashboard
               </Button>
             </Link>
           </div>
         </div>
+      </section>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20">
-          {stats.map((stat, index) => (
-            <Card key={index} className="text-center bg-white/60 backdrop-blur-sm border-slate-200 hover:shadow-lg transition-all duration-300">
-              <CardContent className="pt-6">
-                <div className="flex justify-center mb-4">
-                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-full">
-                    <stat.icon className="h-6 w-6 text-white" />
-                  </div>
+      {/* Features Section */}
+      <section className="py-16 px-6 bg-white/40 backdrop-blur-sm">
+        <div className="container mx-auto">
+          <h3 className="text-3xl font-bold text-center text-slate-900 mb-12">
+            How GeniusReads Works
+          </h3>
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="bg-white/60 backdrop-blur-sm border-slate-200 hover:shadow-lg transition-all duration-300">
+              <CardHeader>
+                <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                  <BookOpen className="h-6 w-6 text-blue-600" />
                 </div>
-                <div className="text-3xl font-bold text-slate-900 mb-2">{stat.value}</div>
-                <div className="text-sm text-slate-600">{stat.label}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
-          {features.map((feature, index) => (
-            <Card key={index} className="group hover:shadow-xl transition-all duration-300 bg-white/60 backdrop-blur-sm border-slate-200 hover:border-slate-300">
-              <CardHeader className="text-center pb-4">
-                <div className="flex justify-center mb-4">
-                  <div className={`${feature.color} p-4 rounded-2xl group-hover:scale-110 transition-transform duration-300`}>
-                    <feature.icon className="h-8 w-8 text-white" />
-                  </div>
-                </div>
-                <CardTitle className="text-xl text-slate-900">{feature.title}</CardTitle>
+                <CardTitle className="text-xl text-slate-900">Load & Read</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-slate-600 text-center">
-                  {feature.description}
-                </CardDescription>
+                <p className="text-slate-600">
+                  Open any PDF document and read naturally. Our viewer provides smooth navigation and zoom controls.
+                </p>
               </CardContent>
             </Card>
-          ))}
-        </div>
 
-        {/* How It Works */}
-        <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-12 border border-slate-200">
-          <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-slate-900 mb-4">How GeniusReads Works</h3>
-            <p className="text-lg text-slate-600">Three simple steps to accelerate your learning</p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-white">1</span>
-              </div>
-              <h4 className="text-xl font-semibold text-slate-900 mb-3">Upload & Read</h4>
-              <p className="text-slate-600">Upload your PDF and start reading. Use our advanced viewer with zoom and navigation controls.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-gradient-to-r from-purple-600 to-pink-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-white">2</span>
-              </div>
-              <h4 className="text-xl font-semibold text-slate-900 mb-3">Highlight & Ask</h4>
-              <p className="text-slate-600">Highlight confusing text and ask questions. Our AI provides instant, contextual explanations.</p>
-            </div>
-            
-            <div className="text-center">
-              <div className="bg-gradient-to-r from-pink-600 to-orange-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl font-bold text-white">3</span>
-              </div>
-              <h4 className="text-xl font-semibold text-slate-900 mb-3">Learn & Retain</h4>
-              <p className="text-slate-600">Build your knowledge base automatically. Search and review concepts whenever you need them.</p>
-            </div>
+            <Card className="bg-white/60 backdrop-blur-sm border-slate-200 hover:shadow-lg transition-all duration-300">
+              <CardHeader>
+                <div className="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                  <MessageSquare className="h-6 w-6 text-purple-600" />
+                </div>
+                <CardTitle className="text-xl text-slate-900">Highlight & Ask</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600">
+                  Highlight confusing passages and ask questions. Get instant AI explanations in simple terms.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/60 backdrop-blur-sm border-slate-200 hover:shadow-lg transition-all duration-300">
+              <CardHeader>
+                <div className="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
+                  <Lightbulb className="h-6 w-6 text-green-600" />
+                </div>
+                <CardTitle className="text-xl text-slate-900">Learn & Remember</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-slate-600">
+                  Build a searchable knowledge base of concepts, definitions, and insights for future reference.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
+      </section>
 
-        {/* CTA Section */}
-        <div className="text-center mt-20">
-          <Card className="bg-gradient-to-r from-blue-600 to-purple-600 border-0 text-white">
-            <CardContent className="p-12">
-              <Star className="h-12 w-12 mx-auto mb-6 text-yellow-300" />
-              <h3 className="text-3xl font-bold mb-4">Ready to Transform Your Learning?</h3>
-              <p className="text-xl mb-8 text-blue-100">
-                Join thousands of learners who are already using GeniusReads to accelerate their understanding.
-              </p>
-              <Link to="/reader">
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-4 text-lg font-semibold">
-                  Start Your Journey Today
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+      {/* Technology Stack */}
+      <section className="py-16 px-6">
+        <div className="container mx-auto text-center">
+          <h3 className="text-3xl font-bold text-slate-900 mb-8">
+            Built with Modern Technology
+          </h3>
+          <div className="flex flex-wrap justify-center gap-4 mb-8">
+            <Badge variant="outline" className="px-4 py-2 text-sm">Tauri + Rust</Badge>
+            <Badge variant="outline" className="px-4 py-2 text-sm">React + TypeScript</Badge>
+            <Badge variant="outline" className="px-4 py-2 text-sm">TailwindCSS</Badge>
+            <Badge variant="outline" className="px-4 py-2 text-sm">OpenAI GPT-4</Badge>
+            <Badge variant="outline" className="px-4 py-2 text-sm">PostgreSQL</Badge>
+            <Badge variant="outline" className="px-4 py-2 text-sm">PDF.js</Badge>
+          </div>
+          <p className="text-slate-600 max-w-2xl mx-auto">
+            Native macOS performance with web technology flexibility. 
+            Local-first architecture ensures your data stays private and accessible offline.
+          </p>
         </div>
       </section>
     </div>
