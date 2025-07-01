@@ -2,17 +2,23 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Brain, BookOpen, Lightbulb, Zap, Search, MessageSquare, TestTube2, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Brain, BookOpen, Lightbulb, MessageSquare, TestTube2, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { greet, getAppInfo, getSystemInfo, testTauriCommunication } from "@/lib/api";
+import { greet, testTauriCommunication } from "@/lib/api";
+
+interface TestResults {
+  success: boolean;
+  results: Record<string, unknown>;
+  errors: string[];
+}
 
 const Index = () => {
-  const [testResults, setTestResults] = useState<any>(null);
-  const [isTestingTauri, setIsTestingTauri] = useState(false);
+  const [testResults, setTestResults] = useState<TestResults | null>(null);
+  const [isRunningTests, setIsRunningTests] = useState(false);
   const [greetResult, setGreetResult] = useState<string>("");
 
   const handleTestTauri = async () => {
-    setIsTestingTauri(true);
+    setIsRunningTests(true);
     try {
       const results = await testTauriCommunication();
       setTestResults(results);
@@ -23,7 +29,7 @@ const Index = () => {
         errors: [`Test failed: ${error}`]
       });
     } finally {
-      setIsTestingTauri(false);
+      setIsRunningTests(false);
     }
   };
 
@@ -104,10 +110,10 @@ const Index = () => {
                   
                   <Button 
                     onClick={handleTestTauri}
-                    disabled={isTestingTauri}
+                    disabled={isRunningTests}
                     className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
                   >
-                    {isTestingTauri ? (
+                    {isRunningTests ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Testing Communication...

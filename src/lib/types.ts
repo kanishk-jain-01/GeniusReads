@@ -223,12 +223,12 @@ export interface UserPreferences {
 // API and Communication Types
 // ============================================================================
 
-export interface TauriCommand<T = any> {
+export interface TauriCommand<T = Record<string, unknown>> {
   command: string;
   payload?: T;
 }
 
-export interface TauriResponse<T = any> {
+export interface TauriResponse<T = Record<string, unknown>> {
   success: boolean;
   data?: T;
   error?: string;
@@ -264,9 +264,9 @@ export interface ProcessQuestionCommand {
 }
 
 // Database operation types
-export interface DatabaseQuery<T = any> {
+export interface DatabaseQuery<T = Record<string, unknown>> {
   query: string;
-  params?: any[];
+  params?: unknown[];
   returning?: T;
 }
 
@@ -277,7 +277,7 @@ export interface DatabaseQuery<T = any> {
 export interface AppError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
   timestamp: Date;
   context?: {
     component: string;
@@ -306,7 +306,7 @@ export type ErrorCode =
 
 export interface AppEvent {
   type: string;
-  payload: any;
+  payload: unknown;
   timestamp: Date;
 }
 
@@ -345,7 +345,7 @@ export interface PaginatedResponse<T> {
 }
 
 // Generic API response wrapper
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = Record<string, unknown>> {
   success: boolean;
   data?: T;
   error?: AppError;
@@ -362,7 +362,7 @@ export interface ValidationResult {
   errors: Record<string, string[]>;
 }
 
-export interface FormField<T = any> {
+export interface FormField<T = unknown> {
   value: T;
   error?: string;
   touched: boolean;

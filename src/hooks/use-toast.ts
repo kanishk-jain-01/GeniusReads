@@ -15,6 +15,7 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const actionTypes = {
   ADD_TOAST: "ADD_TOAST",
   UPDATE_TOAST: "UPDATE_TOAST",
@@ -24,8 +25,6 @@ const actionTypes = {
 
 // Export actionTypes for use as a type
 export type ActionTypes = typeof actionTypes
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _actionTypesForType = actionTypes
 
 let count = 0
 

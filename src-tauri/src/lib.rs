@@ -1,6 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri::Manager;
 use std::sync::Arc;
+use tauri::Manager;
 use tokio::sync::Mutex;
 
 mod database;
@@ -40,9 +40,11 @@ fn get_system_info() -> serde_json::Value {
 
 // Database test commands
 #[tauri::command]
-async fn test_database_connection(db: tauri::State<'_, DbState>) -> Result<serde_json::Value, String> {
+async fn test_database_connection(
+    db: tauri::State<'_, DbState>,
+) -> Result<serde_json::Value, String> {
     let db_guard = db.lock().await;
-    
+
     if let Some(database) = db_guard.as_ref() {
         match database.test_connection().await {
             Ok(connected) => Ok(serde_json::json!({
@@ -50,7 +52,7 @@ async fn test_database_connection(db: tauri::State<'_, DbState>) -> Result<serde
                 "message": "Database connection successful",
                 "timestamp": chrono::Utc::now().to_rfc3339()
             })),
-            Err(e) => Err(format!("Database connection failed: {}", e))
+            Err(e) => Err(format!("Database connection failed: {}", e)),
         }
     } else {
         Err("Database not initialized".to_string())
@@ -60,11 +62,11 @@ async fn test_database_connection(db: tauri::State<'_, DbState>) -> Result<serde
 #[tauri::command]
 async fn get_database_stats(db: tauri::State<'_, DbState>) -> Result<serde_json::Value, String> {
     let db_guard = db.lock().await;
-    
+
     if let Some(database) = db_guard.as_ref() {
         match database.get_stats().await {
             Ok(stats) => Ok(serde_json::to_value(stats).unwrap()),
-            Err(e) => Err(format!("Failed to get database stats: {}", e))
+            Err(e) => Err(format!("Failed to get database stats: {}", e)),
         }
     } else {
         Err("Database not initialized".to_string())
@@ -74,11 +76,11 @@ async fn get_database_stats(db: tauri::State<'_, DbState>) -> Result<serde_json:
 #[tauri::command]
 async fn get_documents(db: tauri::State<'_, DbState>) -> Result<serde_json::Value, String> {
     let db_guard = db.lock().await;
-    
+
     if let Some(database) = db_guard.as_ref() {
         match database.get_documents().await {
             Ok(documents) => Ok(serde_json::to_value(documents).unwrap()),
-            Err(e) => Err(format!("Failed to get documents: {}", e))
+            Err(e) => Err(format!("Failed to get documents: {}", e)),
         }
     } else {
         Err("Database not initialized".to_string())

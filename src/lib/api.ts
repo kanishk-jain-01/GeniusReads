@@ -4,7 +4,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { 
   TauriResponse,
-  OpenPDFCommand,
   ExtractTextCommand,
   ProcessQuestionCommand,
   AppError
@@ -21,7 +20,6 @@ export async function greet(name: string): Promise<string> {
   try {
     return await invoke<string>('greet', { name });
   } catch (error) {
-    console.error('Failed to call greet command:', error);
     throw new Error(`Tauri communication failed: ${error}`);
   }
 }
@@ -29,11 +27,10 @@ export async function greet(name: string): Promise<string> {
 /**
  * Get application information from Rust backend
  */
-export async function getAppInfo(): Promise<any> {
+export async function getAppInfo(): Promise<Record<string, unknown>> {
   try {
     return await invoke('get_app_info');
   } catch (error) {
-    console.error('Failed to get app info:', error);
     throw new Error(`Failed to get app info: ${error}`);
   }
 }
@@ -41,11 +38,10 @@ export async function getAppInfo(): Promise<any> {
 /**
  * Get system information from Rust backend
  */
-export async function getSystemInfo(): Promise<any> {
+export async function getSystemInfo(): Promise<Record<string, unknown>> {
   try {
     return await invoke('get_system_info');
   } catch (error) {
-    console.error('Failed to get system info:', error);
     throw new Error(`Failed to get system info: ${error}`);
   }
 }
@@ -53,11 +49,10 @@ export async function getSystemInfo(): Promise<any> {
 /**
  * Test database connection
  */
-export async function testDatabaseConnection(): Promise<any> {
+export async function testDatabaseConnection(): Promise<Record<string, unknown>> {
   try {
     return await invoke('test_database_connection');
   } catch (error) {
-    console.error('Failed to test database connection:', error);
     throw new Error(`Failed to test database connection: ${error}`);
   }
 }
@@ -65,11 +60,10 @@ export async function testDatabaseConnection(): Promise<any> {
 /**
  * Get database statistics
  */
-export async function getDatabaseStats(): Promise<any> {
+export async function getDatabaseStats(): Promise<Record<string, unknown>> {
   try {
     return await invoke('get_database_stats');
   } catch (error) {
-    console.error('Failed to get database stats:', error);
     throw new Error(`Failed to get database stats: ${error}`);
   }
 }
@@ -77,11 +71,10 @@ export async function getDatabaseStats(): Promise<any> {
 /**
  * Get all documents from database
  */
-export async function getDocuments(): Promise<any> {
+export async function getDocuments(): Promise<Record<string, unknown>> {
   try {
     return await invoke('get_documents');
   } catch (error) {
-    console.error('Failed to get documents:', error);
     throw new Error(`Failed to get documents: ${error}`);
   }
 }
@@ -96,10 +89,9 @@ export async function getDocuments(): Promise<any> {
  */
 export async function openPDF(filePath: string): Promise<TauriResponse> {
   try {
-    const command: OpenPDFCommand = { filePath };
+    const command = { filePath } as Record<string, unknown>;
     return await invoke<TauriResponse>('open_pdf', command);
   } catch (error) {
-    console.error('Failed to open PDF:', error);
     throw new Error(`Failed to open PDF: ${error}`);
   }
 }
@@ -109,9 +101,9 @@ export async function openPDF(filePath: string): Promise<TauriResponse> {
  */
 export async function extractText(command: ExtractTextCommand): Promise<TauriResponse<string>> {
   try {
-    return await invoke<TauriResponse<string>>('extract_text', command);
+    const args = command as unknown as Record<string, unknown>;
+    return await invoke<TauriResponse<string>>('extract_text', args);
   } catch (error) {
-    console.error('Failed to extract text:', error);
     throw new Error(`Failed to extract text: ${error}`);
   }
 }
@@ -125,9 +117,9 @@ export async function extractText(command: ExtractTextCommand): Promise<TauriRes
  */
 export async function processQuestion(command: ProcessQuestionCommand): Promise<TauriResponse> {
   try {
-    return await invoke<TauriResponse>('process_question', command);
+    const args = command as unknown as Record<string, unknown>;
+    return await invoke<TauriResponse>('process_question', args);
   } catch (error) {
-    console.error('Failed to process question:', error);
     throw new Error(`Failed to process question: ${error}`);
   }
 }
@@ -139,11 +131,10 @@ export async function processQuestion(command: ProcessQuestionCommand): Promise<
 /**
  * Save knowledge entry to local database
  */
-export async function saveKnowledgeEntry(entry: any): Promise<TauriResponse> {
+export async function saveKnowledgeEntry(entry: Record<string, unknown>): Promise<TauriResponse> {
   try {
     return await invoke<TauriResponse>('save_knowledge_entry', { entry });
   } catch (error) {
-    console.error('Failed to save knowledge entry:', error);
     throw new Error(`Failed to save knowledge entry: ${error}`);
   }
 }
@@ -155,7 +146,6 @@ export async function searchKnowledge(query: string): Promise<TauriResponse> {
   try {
     return await invoke<TauriResponse>('search_knowledge', { query });
   } catch (error) {
-    console.error('Failed to search knowledge:', error);
     throw new Error(`Failed to search knowledge: ${error}`);
   }
 }
@@ -167,7 +157,7 @@ export async function searchKnowledge(query: string): Promise<TauriResponse> {
 /**
  * Create a standardized app error from Tauri invoke errors
  */
-export function createAppError(error: any, context: string): AppError {
+export function createAppError(error: unknown, context: string): AppError {
   return {
     code: 'TAURI_INVOKE_FAILED',
     message: `Tauri command failed in ${context}`,
@@ -185,73 +175,84 @@ export function createAppError(error: any, context: string): AppError {
  */
 export async function safeInvoke<T>(
   command: string, 
-  args?: any, 
+  args?: Record<string, unknown>, 
   context?: string
 ): Promise<T> {
   try {
     return await invoke<T>(command, args);
   } catch (error) {
     const appError = createAppError(error, context || command);
-    console.error('Tauri invoke failed:', appError);
     throw appError;
   }
 }
 
 // ============================================================================
-// Development and Testing Utilities
+// Communication Test Suite
 // ============================================================================
 
 /**
- * Test all basic Tauri commands to verify communication
+ * Comprehensive test of Tauri-React communication
  */
 export async function testTauriCommunication(): Promise<{
   success: boolean;
-  results: Record<string, any>;
+  results: Record<string, unknown>;
   errors: string[];
 }> {
-  const results: Record<string, any> = {};
+  const results: Record<string, unknown> = {};
   const errors: string[] = [];
 
-  // Test greet command
+  // Test 1: Basic greeting
   try {
-    results.greet = await greet('Developer');
+    const greetResult = await greet("GeniusReads");
+    results.greet = { success: true, data: greetResult };
   } catch (error) {
-    errors.push(`Greet command failed: ${error}`);
+    results.greet = { success: false, error: String(error) };
+    errors.push(`Greet test failed: ${error}`);
   }
 
-  // Test app info command
+  // Test 2: App info
   try {
-    results.appInfo = await getAppInfo();
+    const appInfo = await getAppInfo();
+    results.appInfo = { success: true, data: appInfo };
   } catch (error) {
-    errors.push(`App info command failed: ${error}`);
+    results.appInfo = { success: false, error: String(error) };
+    errors.push(`App info test failed: ${error}`);
   }
 
-  // Test system info command
+  // Test 3: System info
   try {
-    results.systemInfo = await getSystemInfo();
+    const systemInfo = await getSystemInfo();
+    results.systemInfo = { success: true, data: systemInfo };
   } catch (error) {
-    errors.push(`System info command failed: ${error}`);
+    results.systemInfo = { success: false, error: String(error) };
+    errors.push(`System info test failed: ${error}`);
   }
 
-  // Test database connection
+  // Test 4: Database connection
   try {
-    results.databaseConnection = await testDatabaseConnection();
+    const dbTest = await testDatabaseConnection();
+    results.database = { success: true, data: dbTest };
   } catch (error) {
-    errors.push(`Database connection test failed: ${error}`);
+    results.database = { success: false, error: String(error) };
+    errors.push(`Database test failed: ${error}`);
   }
 
-  // Test database stats
+  // Test 5: Database stats
   try {
-    results.databaseStats = await getDatabaseStats();
+    const dbStats = await getDatabaseStats();
+    results.databaseStats = { success: true, data: dbStats };
   } catch (error) {
+    results.databaseStats = { success: false, error: String(error) };
     errors.push(`Database stats test failed: ${error}`);
   }
 
-  // Test documents query
+  // Test 6: Get documents
   try {
-    results.documents = await getDocuments();
+    const documents = await getDocuments();
+    results.documents = { success: true, data: documents };
   } catch (error) {
-    errors.push(`Documents query failed: ${error}`);
+    results.documents = { success: false, error: String(error) };
+    errors.push(`Get documents test failed: ${error}`);
   }
 
   return {

@@ -1,13 +1,13 @@
 // Database operations for GeniusReads
 // Handles PostgreSQL connections and queries using sqlx
 
-use sqlx::{PgPool, Row};
-use serde_json::Value;
-use uuid::Uuid;
-use chrono::{DateTime, Utc};
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use bigdecimal::BigDecimal;
+use chrono::{DateTime, Utc};
+use serde_json::Value;
+use sqlx::{PgPool, Row};
 use std::str::FromStr;
+use uuid::Uuid;
 
 // ============================================================================
 // Database Connection Management
@@ -46,14 +46,16 @@ impl Database {
 
     /// Get database statistics
     pub async fn get_stats(&self) -> Result<DatabaseStats> {
-        let row = sqlx::query(r#"
+        let row = sqlx::query(
+            r#"
             SELECT 
                 (SELECT COUNT(*) FROM documents) as document_count,
                 (SELECT COUNT(*) FROM questions) as question_count,
                 (SELECT COUNT(*) FROM ai_responses) as response_count,
                 (SELECT COUNT(*) FROM knowledge_entries) as knowledge_count,
                 (SELECT COUNT(*) FROM user_notes) as note_count
-        "#)
+        "#,
+        )
         .fetch_one(&self.pool)
         .await
         .context("Failed to get database statistics")?;
@@ -161,14 +163,10 @@ impl Database {
 
     /// Get document by ID
     pub async fn get_document(&self, id: Uuid) -> Result<Option<Document>> {
-        let document = sqlx::query_as!(
-            Document,
-            "SELECT * FROM documents WHERE id = $1",
-            id
-        )
-        .fetch_optional(&self.pool)
-        .await
-        .context("Failed to fetch document")?;
+        let document = sqlx::query_as!(Document, "SELECT * FROM documents WHERE id = $1", id)
+            .fetch_optional(&self.pool)
+            .await
+            .context("Failed to fetch document")?;
 
         Ok(document)
     }
@@ -185,7 +183,7 @@ impl Database {
         metadata: Value,
     ) -> Result<Uuid> {
         let id = Uuid::new_v4();
-        
+
         sqlx::query!(
             r#"
             INSERT INTO documents (id, title, author, file_path, file_name, file_size, total_pages, metadata)
@@ -288,7 +286,7 @@ impl Database {
     ) -> Result<Uuid> {
         let id = Uuid::new_v4();
         let confidence_decimal = BigDecimal::from_str(&confidence.to_string()).unwrap();
-        
+
         sqlx::query!(
             r#"
             INSERT INTO knowledge_entries (
@@ -320,7 +318,8 @@ impl Database {
             document_id,
             Some(page_number),
             BigDecimal::from_str("1.0").unwrap(),
-        ).await?;
+        )
+        .await?;
 
         Ok(id)
     }
@@ -342,7 +341,7 @@ impl Database {
         weight: BigDecimal,
     ) -> Result<Uuid> {
         let id = Uuid::new_v4();
-        
+
         sqlx::query!(
             r#"
             INSERT INTO search_index (id, entity_type, entity_id, searchable_text, document_id, page_number, weight)
@@ -373,7 +372,7 @@ impl Database {
     pub async fn insert_test_data(&self) -> Result<()> {
         // This function can be used to populate test data
         // Already have sample document from migration
-        
+
         tracing::info!("Test data insertion completed");
         Ok(())
     }
@@ -387,4 +386,4 @@ impl Database {
 
         Ok(())
     }
-} 
+}
