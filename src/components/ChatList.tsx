@@ -22,7 +22,8 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Trash2
+  Trash2,
+  Loader2
 } from "lucide-react";
 import type { ChatSession, HighlightedContext, Document } from "@/lib/types";
 import { getChatSessions, getActiveChatSession, deleteChatSession } from "@/lib/api";
@@ -87,15 +88,40 @@ const ChatList = ({
   const getStatusInfo = (status: ChatSession['analysisStatus']) => {
     switch (status) {
       case 'complete':
-        return { variant: 'default' as const, text: 'Analyzed', color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' };
+        return { 
+          variant: 'default' as const, 
+          text: 'Analyzed', 
+          color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+          showLoader: false
+        };
       case 'processing':
-        return { variant: 'secondary' as const, text: 'Processing', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' };
+        return { 
+          variant: 'secondary' as const, 
+          text: 'Processing', 
+          color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400',
+          showLoader: true
+        };
       case 'pending':
-        return { variant: 'outline' as const, text: 'Saved', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400' };
+        return { 
+          variant: 'outline' as const, 
+          text: 'Saved', 
+          color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400',
+          showLoader: false
+        };
       case 'failed':
-        return { variant: 'destructive' as const, text: 'Failed', color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400' };
+        return { 
+          variant: 'destructive' as const, 
+          text: 'Failed', 
+          color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+          showLoader: false
+        };
       default:
-        return { variant: 'secondary' as const, text: 'Unknown', color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400' };
+        return { 
+          variant: 'secondary' as const, 
+          text: 'Unknown', 
+          color: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-400',
+          showLoader: false
+        };
     }
   };
 
@@ -379,9 +405,12 @@ const ChatList = ({
                             </h4>
                             <Badge 
                               variant={statusInfo.variant}
-                              className={`text-xs ${statusInfo.color}`}
+                              className={`text-xs ${statusInfo.color} flex items-center space-x-1`}
                             >
-                              {statusInfo.text}
+                              {statusInfo.showLoader && (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              )}
+                              <span>{statusInfo.text}</span>
                             </Badge>
                           </div>
                           <p className="text-sm text-slate-600 dark:text-slate-400 mb-2 line-clamp-2">

@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { 
   ArrowLeft,
   Brain,
-  Square
+  Square,
+  Loader2,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 import ActiveChat from "@/components/ActiveChat";
 import type { TextSelection, Document, ChatMessage, HighlightedContext } from "@/lib/types";
@@ -50,6 +54,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [chatTitle, setChatTitle] = useState("");
   const [currentChatSessionId, setCurrentChatSessionId] = useState<string | null>(null);
   const [initialMessage, setInitialMessage] = useState<string>(""); // Track initial message for input
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStage, setAnalysisStage] = useState<string>("");
+  const [analysisStartTime, setAnalysisStartTime] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Initialize chat session
@@ -60,6 +68,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       initializeChatSession();
     }
   }, [textSelection, readOnly, chatSessionId]);
+
+  // Real-time timer update for analysis progress
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (isAnalyzing && analysisStartTime) {
+      interval = setInterval(() => {
+        // Force re-render to update the timer display
+        setAnalysisStartTime(prev => prev);
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isAnalyzing, analysisStartTime]);
 
   const loadChatSession = async (sessionId: string) => {
     try {
@@ -359,37 +385,92 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (!currentChatSessionId) return;
     
     try {
-      // Show loading state
+      setIsAnalyzing(true);
+      setAnalysisProgress(0);
+      setAnalysisStartTime(Date.now());
+      
+      // Stage 1: Initializing
+      setAnalysisStage("Initializing analysis...");
+      setAnalysisProgress(10);
+      
       toast({
         title: "Analysis Starting",
-        description: "Analyzing your conversation for key concepts...",
+        description: "Preparing your conversation for AI analysis...",
+      });
+
+      // Simulate brief delay for initialization
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Stage 2: Processing
+      setAnalysisStage("Processing conversation data...");
+      setAnalysisProgress(30);
+      
+      // Update toast with progress
+      toast({
+        title: "Processing Data",
+        description: "Analyzing conversation content and highlighted text...",
       });
 
       // Trigger LangGraph concept extraction
       const result = await analyzeChatSession(currentChatSessionId);
       
+      // Stage 3: Extracting concepts
+      setAnalysisStage("Extracting key concepts...");
+      setAnalysisProgress(60);
+      
+      toast({
+        title: "Extracting Concepts",
+        description: "AI is identifying important concepts from your conversation...",
+      });
+
+      // Simulate processing time for concept extraction
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Stage 4: Finalizing
+      setAnalysisStage("Finalizing results...");
+      setAnalysisProgress(90);
+      
       if (result.success) {
-        // Navigate to knowledge tab
-        await updateUserSessionState({
-          activeTab: 'knowledge'
-        });
+        // Stage 5: Complete
+        setAnalysisStage("Analysis complete!");
+        setAnalysisProgress(100);
+        
+        const processingTime = analysisStartTime ? Date.now() - analysisStartTime : 0;
         
         toast({
           title: "Analysis Complete",
-          description: `Successfully extracted ${result.conceptsExtracted} concepts in ${result.processingTimeMs}ms`,
+          description: `Successfully extracted ${result.conceptsExtracted || 0} concepts in ${Math.round(processingTime / 1000)}s`,
         });
         
-        onAnalyze();
+        // Navigate to knowledge tab after a brief delay
+        setTimeout(async () => {
+          await updateUserSessionState({
+            activeTab: 'knowledge'
+          });
+          onAnalyze();
+        }, 1000);
+        
       } else {
-        throw new Error("Analysis failed");
+        throw new Error(result.error || "Analysis failed");
       }
     } catch (error) {
       console.error('Failed to analyze chat:', error);
+      setAnalysisStage("Analysis failed");
+      setAnalysisProgress(0);
+      
       toast({
         title: "Analysis Failed",
         description: "Failed to analyze your conversation. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      // Reset analysis state after completion or error
+      setTimeout(() => {
+        setIsAnalyzing(false);
+        setAnalysisProgress(0);
+        setAnalysisStage("");
+        setAnalysisStartTime(null);
+      }, 2000);
     }
   };
 
@@ -428,6 +509,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   size="sm"
                   onClick={handleEndChat}
                   className="text-red-600 hover:text-red-700"
+                  disabled={isAnalyzing}
                 >
                   <Square className="h-4 w-4 mr-2" />
                   End
@@ -435,24 +517,57 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <Button
                   size="sm"
                   onClick={handleAnalyze}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  disabled={isAnalyzing}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50"
                 >
-                  <Brain className="h-4 w-4 mr-2" />
-                  Analyze
+                  {isAnalyzing ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Brain className="h-4 w-4 mr-2" />
+                  )}
+                  {isAnalyzing ? "Analyzing..." : "Analyze"}
                 </Button>
               </>
             ) : (
               <Button
                 size="sm"
                 onClick={handleAnalyze}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                disabled={isAnalyzing}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50"
               >
-                <Brain className="h-4 w-4 mr-2" />
-                Analyze
+                {isAnalyzing ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Brain className="h-4 w-4 mr-2" />
+                )}
+                {isAnalyzing ? "Analyzing..." : "Analyze"}
               </Button>
             )}
           </div>
         </div>
+        
+        {/* Analysis Progress Display */}
+        {isAnalyzing && (
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {analysisStage}
+                </span>
+              </div>
+              <span className="text-sm text-slate-500 dark:text-slate-400">
+                {analysisProgress}%
+              </span>
+            </div>
+            <Progress value={analysisProgress} className="w-full" />
+            {analysisStartTime && (
+              <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
+                Processing for {Math.round((Date.now() - analysisStartTime) / 1000)}s
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Chat Content */}

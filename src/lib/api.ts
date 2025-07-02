@@ -5,7 +5,11 @@ import { invoke } from '@tauri-apps/api/core';
 import type { 
   Document, 
   TauriResponse, 
-  AppError 
+  AppError,
+  TauriCommand,
+  ChatMessage,
+  HighlightedContext,
+  Concept
 } from './types';
 
 // ============================================================================
@@ -816,22 +820,93 @@ export const analyzeChatSession = async (chatSessionId: string): Promise<any> =>
   }
 };
 
-export const getExtractionConcepts = async (): Promise<any[]> => {
+export const getExtractionConcepts = async (): Promise<Concept[]> => {
   try {
     const result = await invoke<any[]>('get_extraction_concepts');
-    return result;
+    
+    // Convert database response to typed Concept objects
+    return result.map((concept: any) => ({
+      id: concept.id,
+      name: concept.name,
+      description: concept.description,
+      tags: concept.tags || [],
+      confidenceScore: concept.confidence_score || 0,
+      sourceChatCount: concept.source_chat_count || 0,
+      createdAt: new Date(concept.created_at),
+      updatedAt: new Date(concept.updated_at),
+      // Optional fields from database views
+      sourceChatTitles: concept.source_chat_titles || [],
+      linkedChatCount: concept.linked_chat_count || 0,
+      avgRelevanceScore: concept.avg_relevance_score || 0
+    }));
   } catch (error) {
     console.error('Failed to get extraction concepts:', error);
     throw new Error(`Failed to get extraction concepts: ${error}`);
   }
 };
 
-export const getConceptById = async (conceptId: string): Promise<any | null> => {
+export const getConceptById = async (conceptId: string): Promise<Concept | null> => {
   try {
     const result = await invoke<any | null>('get_concept_by_id', { conceptId });
-    return result;
+    if (!result) return null;
+    
+    // Convert database response to typed Concept object
+    return {
+      id: result.id,
+      name: result.name,
+      description: result.description,
+      tags: result.tags || [],
+      confidenceScore: result.confidence_score || 0,
+      sourceChatCount: result.source_chat_count || 0,
+      createdAt: new Date(result.created_at),
+      updatedAt: new Date(result.updated_at),
+      // Optional fields from database views
+      sourceChatTitles: result.source_chat_titles || [],
+      linkedChatCount: result.linked_chat_count || 0,
+      avgRelevanceScore: result.avg_relevance_score || 0
+    };
   } catch (error) {
     console.error('Failed to get concept by ID:', error);
     throw new Error(`Failed to get concept by ID: ${error}`);
+  }
+};
+
+// ============================================================================
+// Vector Similarity Search API
+// ============================================================================
+
+export const findSimilarConcepts = async (
+  conceptId: string, 
+  similarityThreshold?: number, 
+  maxResults?: number
+): Promise<any[]> => {
+  try {
+    const result = await invoke<any[]>('find_similar_concepts', { 
+      conceptId, 
+      similarityThreshold, 
+      maxResults 
+    });
+    return result;
+  } catch (error) {
+    console.error('Failed to find similar concepts:', error);
+    throw new Error(`Failed to find similar concepts: ${error}`);
+  }
+};
+
+export const searchConceptsByText = async (
+  queryText: string, 
+  similarityThreshold?: number, 
+  maxResults?: number
+): Promise<any[]> => {
+  try {
+    const result = await invoke<any[]>('search_concepts_by_text', { 
+      queryText, 
+      similarityThreshold, 
+      maxResults 
+    });
+    return result;
+  } catch (error) {
+    console.error('Failed to search concepts by text:', error);
+    throw new Error(`Failed to search concepts by text: ${error}`);
   }
 }; 

@@ -769,6 +769,55 @@ async fn get_concept_by_id(
     }
 }
 
+// ============================================================================
+// Vector Similarity Search Commands
+// ============================================================================
+
+#[tauri::command]
+async fn find_similar_concepts(
+    concept_id: String,
+    similarity_threshold: Option<f64>,
+    max_results: Option<i32>,
+    db: tauri::State<'_, DbState>,
+) -> Result<serde_json::Value, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let id = uuid::Uuid::parse_str(&concept_id)
+            .map_err(|e| format!("Invalid UUID: {}", e))?;
+        
+        let threshold = similarity_threshold.unwrap_or(0.7);
+        let limit = max_results.unwrap_or(10);
+        
+        match database.find_similar_concepts(id, threshold, limit).await {
+            Ok(similar_concepts) => Ok(serde_json::to_value(similar_concepts).unwrap()),
+            Err(e) => Err(format!("Failed to find similar concepts: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn search_concepts_by_text(
+    query_text: String,
+    similarity_threshold: Option<f64>,
+    max_results: Option<i32>,
+    db: tauri::State<'_, DbState>,
+) -> Result<serde_json::Value, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let threshold = similarity_threshold.unwrap_or(0.6);
+        let limit = max_results.unwrap_or(10);
+        
+        match database.search_concepts_by_text(&query_text, threshold, limit).await {
+            Ok(matching_concepts) => Ok(serde_json::to_value(matching_concepts).unwrap()),
+            Err(e) => Err(format!("Failed to search concepts by text: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -807,7 +856,9 @@ pub fn run() {
             get_user_preferences,
             analyze_chat_session,
             get_extraction_concepts,
-            get_concept_by_id
+            get_concept_by_id,
+            find_similar_concepts,
+            search_concepts_by_text
         ])
         .setup(|app| {
             // Initialize database connection

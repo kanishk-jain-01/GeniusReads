@@ -15,7 +15,9 @@ import {
   ArrowRight,
   Library,
   Settings,
-  Upload
+  Upload,
+  Tag,
+  TrendingUp
 } from "lucide-react";
 import PDFViewer from "@/components/PDFViewer";
 import ChatInterface from "@/pages/ChatInterface";
@@ -31,9 +33,10 @@ import {
   updateDocumentTotalPages,
   saveReadingPosition,
   getLastReadingPosition,
-  getActiveChatSession
+  getActiveChatSession,
+  getExtractionConcepts
 } from "@/lib/api";
-import type { Document, TextSelection, HighlightedContext } from "@/lib/types";
+import type { Document, TextSelection, HighlightedContext, Concept } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 type ViewMode = 'library' | 'reader' | 'chat' | 'chat-interface' | 'knowledge' | 'preferences';
@@ -56,6 +59,9 @@ const Dashboard = () => {
   const [clearSelectionTrigger, setClearSelectionTrigger] = useState(0); // Trigger for clearing PDF selection
   const [viewingChatId, setViewingChatId] = useState<string | undefined>(); // For viewing specific ended chats
   const [chatListRefreshTrigger, setChatListRefreshTrigger] = useState(0); // Trigger for refreshing chat list
+  const [concepts, setConcepts] = useState<Concept[]>([]);
+  const [conceptsLoading, setConceptsLoading] = useState(false);
+  const [conceptSearchQuery, setConceptSearchQuery] = useState("");
   const { toast } = useToast();
 
   // Handle CMD+K: Navigate directly to active chat interface
@@ -222,6 +228,7 @@ const Dashboard = () => {
     // Trigger analysis and navigate to Knowledge tab
     setCurrentTextSelection(undefined);
     refreshChatList(); // Refresh chat list to reflect analysis status
+    loadConcepts(); // Refresh concepts to show newly extracted ones
     setViewMode('knowledge');
     toast({
       title: "Analysis Started",
@@ -258,6 +265,24 @@ const Dashboard = () => {
     } else {
       const days = Math.floor(diffInHours / 24);
       return `${days} days ago`;
+    }
+  };
+
+  // Load concepts from database
+  const loadConcepts = async () => {
+    try {
+      setConceptsLoading(true);
+      const extractedConcepts = await getExtractionConcepts();
+      setConcepts(extractedConcepts);
+    } catch (error) {
+      console.error('Failed to load concepts:', error);
+      toast({
+        title: "Failed to Load Concepts",
+        description: "Could not load extracted concepts from the database.",
+        variant: "destructive",
+      });
+    } finally {
+      setConceptsLoading(false);
     }
   };
 
@@ -332,6 +357,13 @@ const Dashboard = () => {
       }
     };
   }, [currentDocument, viewMode]);
+
+  // Load concepts when knowledge tab is accessed
+  useEffect(() => {
+    if (viewMode === 'knowledge') {
+      loadConcepts();
+    }
+  }, [viewMode]);
 
   // Handle PDF file upload
   const handleUploadPDF = async () => {
@@ -738,6 +770,8 @@ const Dashboard = () => {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
                     <Input
                       placeholder="Search concepts..."
+                      value={conceptSearchQuery}
+                      onChange={(e) => setConceptSearchQuery(e.target.value)}
                       className="pl-10 w-80"
                     />
                   </div>
@@ -747,16 +781,84 @@ const Dashboard = () => {
 
             {/* Knowledge Grid */}
             <ScrollArea className="flex-1 p-6">
-              {/* Empty State for Knowledge */}
-              <div className="text-center py-12">
-                <Brain className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-                  No Concepts Yet
-                </h3>
-                <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
-                  Start conversations about your PDFs to build your knowledge base. Concepts will appear here after AI analysis.
-                </p>
-              </div>
+              {conceptsLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="animate-pulse">
+                      <CardContent className="p-6">
+                        <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-slate-200 rounded w-1/2 mb-4"></div>
+                        <div className="h-2 bg-slate-200 rounded w-full"></div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : concepts.length === 0 ? (
+                <div className="text-center py-12">
+                  <Brain className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                    No Concepts Yet
+                  </h3>
+                  <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
+                    Start conversations about your PDFs to build your knowledge base. Concepts will appear here after AI analysis.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {concepts
+                    .filter(concept => 
+                      conceptSearchQuery === "" || 
+                      concept.name.toLowerCase().includes(conceptSearchQuery.toLowerCase()) ||
+                      concept.description.toLowerCase().includes(conceptSearchQuery.toLowerCase()) ||
+                      concept.tags.some(tag => tag.toLowerCase().includes(conceptSearchQuery.toLowerCase()))
+                    )
+                    .map((concept) => (
+                      <Card key={concept.id} className="hover:shadow-md transition-all duration-200 cursor-pointer bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-2 line-clamp-2">
+                                {concept.name}
+                              </h3>
+                              <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-3">
+                                {concept.description}
+                              </p>
+                              <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400 mb-3">
+                                <span className="flex items-center">
+                                  <MessageSquare className="h-3 w-3 mr-1" />
+                                  {concept.sourceChatCount} chat{concept.sourceChatCount !== 1 ? 's' : ''}
+                                </span>
+                                <span className="flex items-center">
+                                  <TrendingUp className="h-3 w-3 mr-1" />
+                                  {Math.round(concept.confidenceScore * 100)}% confidence
+                                </span>
+                              </div>
+                              {concept.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {concept.tags.slice(0, 3).map((tag, index) => (
+                                    <Badge key={index} variant="secondary" className="text-xs">
+                                      <Tag className="h-2 w-2 mr-1" />
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                  {concept.tags.length > 3 && (
+                                    <Badge variant="outline" className="text-xs">
+                                      +{concept.tags.length - 3} more
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500 ml-2" />
+                          </div>
+                          <div className="text-xs text-slate-400 dark:text-slate-500">
+                            Added {formatLastAccessed(concept.createdAt)}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                </div>
+              )}
             </ScrollArea>
           </div>
         )}

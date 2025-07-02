@@ -4,11 +4,11 @@
 
 ### Backend Files (Rust/Tauri)
 - `src-tauri/src/main.rs` - Main Tauri application entry point and window configuration (✅ Created)
-- `src-tauri/src/lib.rs` - Tauri command handlers including chat session management and user preferences (✅ Created, ✅ Updated with preferences commands)
-- `src-tauri/src/database.rs` - PostgreSQL database connection and query handling with user preferences support (✅ Created, ✅ Updated with preferences methods)
-- `src-tauri/src/pdf_handler.rs` - PDF file operations and metadata extraction (✅ Created)
+- `src-tauri/src/lib.rs` - Main Tauri application entry point with all command handlers (✅ Created, ✅ Updated with chat commands, ✅ Updated with LangGraph commands, ✅ Updated with vector similarity commands)
+- `src-tauri/src/database.rs` - PostgreSQL database operations with sqlx (✅ Created, ✅ Updated with chat tables, ✅ Updated with concept extraction, ✅ Enhanced with vector embeddings)
+- `src-tauri/src/pdf_handler.rs` - PDF processing and text extraction (✅ Created)
 - `src-tauri/src/chat_manager.rs` - Chat session management, active chat state, and message handling
-- `src-tauri/src/langraph_bridge.rs` - Python-Rust interoperability layer using pyo3 for LangGraph concept extraction (✅ Created)
+- `src-tauri/src/langraph_bridge.rs` - Python-Rust bridge for LangGraph concept extraction (✅ Created, ✅ Updated with vector embedding functions)
 - `src-tauri/src/concept_extractor.rs` - Concept extraction workflow and vector embedding management
 - `src-tauri/Cargo.toml` - Rust dependencies including pyo3, tauri, sqlx, tokio, and pgvector support (✅ Configured, needs pgvector)
 - `src-tauri/tauri.conf.json` - Tauri configuration for macOS app settings and file system permissions (✅ Configured)
@@ -22,8 +22,8 @@
 - `src/vite-env.d.ts` - Vite TypeScript environment definitions (✅ Created)
 
 ### Pages (✅ Four-View Structure)
-- `src/pages/Dashboard.tsx` - Main application with Library tab (PDF reading) and Chat tab (chat list) (✅ Created, ✅ Updated with ChatList component, ✅ Updated with Preferences navigation)
-- `src/pages/ChatInterface.tsx` - Individual chat conversation interface (separate from chat list) (✅ Created, ✅ Updated with ActiveChat)
+- `src/pages/Dashboard.tsx` - Main application with Library tab (PDF reading) and Chat tab (chat list) (✅ Created, ✅ Updated with ChatList component, ✅ Updated with Preferences navigation, ✅ Updated with Knowledge tab concept display)
+- `src/pages/ChatInterface.tsx` - Individual chat conversation interface (separate from chat list) (✅ Created, ✅ Updated with ActiveChat, ✅ Updated with analysis progress tracking)
 - `src/pages/KnowledgeBase.tsx` - Knowledge tab with concept cards and detailed concept pages (✅ Created, needs updates)
 - `src/pages/Preferences.tsx` - User preferences page with OpenAI API key management and theme selection (✅ Created)
 
@@ -37,30 +37,30 @@
 - `src/hooks/use-navigation-state.ts` - Tab navigation and reading position state management
 - `src/hooks/use-keyboard-shortcuts.ts` - CMD+K and CMD+L keyboard shortcut handling
 
-### Utilities and Libraries (✅ Created, needs chat API functions)
+### Utilities and Libraries (✅ Complete with Vector Search)
 - `src/lib/utils.ts` - Utility functions for className merging and common operations (✅ Created)
-- `src/lib/api.ts` - Tauri command invocations with chat session and user preferences commands (✅ Created, ✅ Updated with preferences API)
-- `src/lib/types.ts` - TypeScript type definitions for chat sessions, concepts, and navigation state (✅ Created, needs updates)
+- `src/lib/api.ts` - Tauri command invocations with chat session and user preferences commands (✅ Created, ✅ Updated with preferences API, ✅ Updated with concept extraction API, ✅ Enhanced with vector similarity search)
+- `src/lib/types.ts` - TypeScript type definitions for chat sessions, concepts, and navigation state (✅ Created, ✅ Updated with Concept interface)
 
 ### Feature Components (✅ PDF Ready, needs chat components)
 - `src/components/PDFViewer.tsx` - PDF display component with text selection and CMD+K integration (✅ Created, needs CMD+K)
-- `src/components/ChatList.tsx` - Paginated list of chat sessions with preview cards (✅ Created)
+- `src/components/ChatList.tsx` - Paginated list of chat sessions with preview cards (✅ Created, ✅ Updated with processing indicators)
 - `src/components/ActiveChat.tsx` - ChatGPT-style conversation interface with streaming responses (✅ Created)
 - `src/components/HighlightedContext.tsx` - Display component for highlighted text contexts in chat (✅ Integrated into ActiveChat)
 - `src/components/ConceptCard.tsx` - Concept display cards for Knowledge tab
 - `src/components/ConceptDetail.tsx` - Detailed concept page showing source chats and book sections
-- `src/components/ProcessingIndicator.tsx` - LangGraph processing status and progress display
+- `src/components/ProcessingIndicator.tsx` - LangGraph processing status and progress display (✅ Created)
 
 ### Python/AI Files (To Be Created)
-- `src-tauri/python/concept_extractor.py` - LangGraph workflow for automated concept extraction from chat sessions (✅ Created)
+- `src-tauri/python/concept_extractor.py` - LangGraph workflow for concept extraction (✅ Created)
 - `src-tauri/python/vector_embeddings.py` - Vector embedding generation and similarity calculation (✅ Created)
-- `src-tauri/python/concept_similarity.py` - Concept similarity matching and merging logic (✅ Created)
-- `src-tauri/python/requirements.txt` - Python dependencies for embedded environment (LangGraph, OpenAI, sentence-transformers) (✅ Created)
+- `src-tauri/python/concept_similarity.py` - Concept matching and deduplication (✅ Created)
+- `src-tauri/python/requirements.txt` - Python dependencies (✅ Created)
 
 ### Database Files (✅ Created, needs schema updates)
-- `migrations/001_initial_schema.sql` - PostgreSQL database schema setup (✅ Created, ✅ Updated with user_preferences table)
+- `migrations/001_initial_schema.sql` - Core database schema with documents, chat sessions, and user state (✅ Created)
 - `migrations/002_chat_system.sql` - Chat sessions, messages, and active chat schema
-- `migrations/003_concepts_vector.sql` - Concepts table with pgvector extension and vector embeddings
+- `migrations/003_concepts_vector.sql` - LangGraph concept extraction tables with pgvector support (✅ Created, includes vector similarity functions)
 
 ### Configuration Files (✅ Fully Configured)
 - `package.json` - Frontend dependencies with React 18, shadcn/ui components (✅ Updated)
@@ -141,19 +141,20 @@
   - [x] 5.7 Create chat session completion and action handling
   - [x] 5.8 Test complete chat workflow from text selection to conversation
 
-- [x] 6.0 Implement LangGraph Concept Extraction System
-  - [x] 6.1 Set up Python environment with pyo3 bridge for LangGraph
-  - [x] 6.2 Install pgvector extension for PostgreSQL vector storage
-  - [x] 6.3 Create concept_extractor.py with LangGraph workflow implementation
-  - [x] 6.4 Implement vector embedding generation for concepts
-  - [x] 6.5 Build concept similarity matching and merging logic
-  - [x] 6.6 Create background processing system for concept extraction
-  - [ ] 6.7 Add processing status tracking and progress indicators
-  - [ ] 6.8 Implement concept storage with vector embeddings
+- [ ] 6.0 Implement LangGraph-based Concept Extraction
+  - [x] 6.1 Set up Python environment with LangGraph dependencies
+  - [x] 6.2 Create concept_extractor.py with LangGraph workflow  
+  - [x] 6.3 Design concept storage schema with vector embeddings
+  - [x] 6.4 Build Rust-Python bridge for concept extraction
+  - [x] 6.5 Create database methods for concept storage and retrieval
+  - [x] 6.6 Integrate concept extraction into chat analysis workflow
+  - [x] 6.7 Add processing status tracking and progress indicators
+  - [x] 6.8 Implement concept storage with vector embeddings
   - [ ] 6.9 Create concept-chat linking system with relevance scores
+  - [ ] 6.10 Test complete concept extraction pipeline
 
 - [ ] 7.0 Build Knowledge Base Interface and Concept Management
-  - [ ] 7.1 Update KnowledgeBase page with concept card display
+  - [x] 7.1 Update KnowledgeBase page with concept card display
   - [ ] 7.2 Create ConceptCard component with concept preview information
   - [ ] 7.3 Implement ConceptDetail page showing source chats and book sections
   - [ ] 7.4 Add concept search and filtering functionality

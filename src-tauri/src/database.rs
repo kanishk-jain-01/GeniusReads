@@ -882,7 +882,7 @@ impl Database {
         }
     }
 
-    /// Store an extracted concept in the database
+    /// Store an extracted concept in the database with vector embeddings
     pub async fn store_extracted_concept(
         &self,
         chat_session_id: Uuid,
@@ -894,21 +894,25 @@ impl Database {
     ) -> Result<Uuid> {
         let concept_id = Uuid::new_v4();
 
-        // Insert into concepts table
+        // Generate vector embedding for the concept
+        let embedding_vector = self.generate_concept_embedding(name, description).await?;
+
+        // Insert into concepts table with embedding
         sqlx::query!(
             r#"
-            INSERT INTO concepts (id, name, description, tags, confidence_score, source_chat_count, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, 1, NOW(), NOW())
+            INSERT INTO concepts (id, name, description, tags, embedding, confidence_score, source_chat_count, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, 1, NOW(), NOW())
             "#,
             concept_id,
             name,
             description,
             serde_json::to_value(tags).unwrap(),
+            embedding_vector,
             confidence_score
         )
         .execute(&self.pool)
         .await
-        .context("Failed to insert concept")?;
+        .context("Failed to insert concept with embedding")?;
 
         // Link concept to chat session
         sqlx::query!(
@@ -925,27 +929,206 @@ impl Database {
         .await
         .context("Failed to link concept to chat session")?;
 
-        // Store related concepts if any
+        // Store related concepts with similarity calculation
         for related_concept_name in related_concepts {
             if !related_concept_name.trim().is_empty() {
-                // For now, just store as a simple relationship
-                // In a more advanced implementation, we'd check if the related concept exists
-                // and create proper relationships
-                sqlx::query!(
-                    r#"
-                    INSERT INTO concept_relationships (id, source_concept_id, target_concept_id, relationship_type, similarity_score, created_at)
-                    VALUES ($1, $2, $2, 'related', 0.5, NOW())
-                    "#,
-                    Uuid::new_v4(),
-                    concept_id
-                )
-                .execute(&self.pool)
-                .await
-                .ok(); // Ignore errors for now
+                // Check if related concept already exists
+                if let Some(existing_concept_id) = self.find_concept_by_name(related_concept_name).await? {
+                    // Calculate similarity between concepts
+                    let similarity_score = self.calculate_concept_similarity(concept_id, existing_concept_id).await.unwrap_or(0.5);
+                    
+                    // Create bidirectional relationship
+                    sqlx::query!(
+                        r#"
+                        INSERT INTO concept_relationships (id, source_concept_id, target_concept_id, relationship_type, similarity_score, created_at)
+                        VALUES ($1, $2, $3, 'related', $4, NOW())
+                        ON CONFLICT (source_concept_id, target_concept_id) DO NOTHING
+                        "#,
+                        Uuid::new_v4(),
+                        concept_id,
+                        existing_concept_id,
+                        similarity_score
+                    )
+                    .execute(&self.pool)
+                    .await
+                    .ok(); // Ignore errors for now
+
+                    // Reverse relationship
+                    sqlx::query!(
+                        r#"
+                        INSERT INTO concept_relationships (id, source_concept_id, target_concept_id, relationship_type, similarity_score, created_at)
+                        VALUES ($1, $2, $3, 'related', $4, NOW())
+                        ON CONFLICT (source_concept_id, target_concept_id) DO NOTHING
+                        "#,
+                        Uuid::new_v4(),
+                        existing_concept_id,
+                        concept_id,
+                        similarity_score
+                    )
+                    .execute(&self.pool)
+                    .await
+                    .ok(); // Ignore errors for now
+                }
             }
         }
 
         Ok(concept_id)
+    }
+
+    /// Generate vector embedding for a concept using LangGraph bridge
+    async fn generate_concept_embedding(&self, name: &str, description: &str) -> Result<Vec<f64>> {
+        use crate::langraph_bridge::LangGraphBridge;
+        
+        // Combine name and description for embedding generation
+        let concept_text = format!("{}: {}", name, description);
+        
+        // Initialize LangGraph bridge
+        let bridge = LangGraphBridge::new();
+        
+        // Generate embedding
+        let embeddings = bridge.generate_embeddings(vec![concept_text])
+            .context("Failed to generate concept embedding")?;
+        
+        if embeddings.is_empty() {
+            return Err(anyhow::anyhow!("No embedding generated for concept"));
+        }
+        
+        Ok(embeddings[0].clone())
+    }
+
+    /// Find a concept by name (case-insensitive)
+    async fn find_concept_by_name(&self, name: &str) -> Result<Option<Uuid>> {
+        let result = sqlx::query!(
+            r#"
+            SELECT id FROM concepts 
+            WHERE LOWER(name) = LOWER($1)
+            LIMIT 1
+            "#,
+            name
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to find concept by name")?;
+        
+        Ok(result.map(|row| row.id))
+    }
+
+    /// Calculate similarity between two concepts using their vector embeddings
+    async fn calculate_concept_similarity(&self, concept1_id: Uuid, concept2_id: Uuid) -> Result<f64> {
+        // Get embeddings for both concepts
+        let embeddings = sqlx::query!(
+            r#"
+            SELECT id, embedding FROM concepts 
+            WHERE id = $1 OR id = $2
+            "#,
+            concept1_id,
+            concept2_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to fetch concept embeddings")?;
+        
+        if embeddings.len() != 2 {
+            return Err(anyhow::anyhow!("Could not find embeddings for both concepts"));
+        }
+        
+        let mut embedding1: Option<Vec<f64>> = None;
+        let mut embedding2: Option<Vec<f64>> = None;
+        
+        for row in embeddings {
+            if let Some(emb_vec) = row.embedding {
+                let embedding: Vec<f64> = emb_vec.into();
+                if row.id == concept1_id {
+                    embedding1 = Some(embedding);
+                } else if row.id == concept2_id {
+                    embedding2 = Some(embedding);
+                }
+            }
+        }
+        
+        match (embedding1, embedding2) {
+            (Some(emb1), Some(emb2)) => {
+                use crate::langraph_bridge::LangGraphBridge;
+                let bridge = LangGraphBridge::new();
+                bridge.calculate_similarity(emb1, emb2)
+                    .context("Failed to calculate similarity")
+            }
+            _ => Err(anyhow::anyhow!("Missing embeddings for similarity calculation"))
+        }
+    }
+
+    /// Find similar concepts using vector similarity search
+    pub async fn find_similar_concepts(&self, concept_id: Uuid, similarity_threshold: f64, max_results: i32) -> Result<Vec<serde_json::Value>> {
+        let similar_concepts = sqlx::query!(
+            r#"
+            SELECT 
+                c2.id,
+                c2.name,
+                c2.description,
+                c2.confidence_score,
+                1 - (c1.embedding <=> c2.embedding) as similarity_score
+            FROM concepts c1
+            CROSS JOIN concepts c2
+            WHERE c1.id = $1 
+              AND c2.id != $1
+              AND c1.embedding IS NOT NULL 
+              AND c2.embedding IS NOT NULL
+              AND 1 - (c1.embedding <=> c2.embedding) >= $2
+            ORDER BY c1.embedding <=> c2.embedding
+            LIMIT $3
+            "#,
+            concept_id,
+            similarity_threshold,
+            max_results
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to find similar concepts")?;
+        
+        let results: Vec<serde_json::Value> = similar_concepts
+            .into_iter()
+            .map(|row| serde_json::json!({
+                "id": row.id,
+                "name": row.name,
+                "description": row.description,
+                "confidenceScore": row.confidence_score,
+                "similarityScore": row.similarity_score.unwrap_or(0.0)
+            }))
+            .collect();
+        
+        Ok(results)
+    }
+
+    /// Search concepts by text similarity using vector embeddings
+    pub async fn search_concepts_by_text(&self, query_text: &str, similarity_threshold: f64, max_results: i32) -> Result<Vec<serde_json::Value>> {
+        // Generate embedding for the query text
+        let query_embedding = self.generate_concept_embedding("search", query_text).await?;
+        
+        // Use the database function for vector similarity search
+        let similar_concepts = sqlx::query!(
+            r#"
+            SELECT concept_id, concept_name, concept_description, similarity_score
+            FROM find_similar_concepts($1::vector, $2, $3)
+            "#,
+            query_embedding,
+            similarity_threshold,
+            max_results
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to search concepts by text similarity")?;
+        
+        let results: Vec<serde_json::Value> = similar_concepts
+            .into_iter()
+            .map(|row| serde_json::json!({
+                "id": row.concept_id,
+                "name": row.concept_name,
+                "description": row.concept_description,
+                "similarityScore": row.similarity_score.unwrap_or(0.0)
+            }))
+            .collect();
+        
+        Ok(results)
     }
 
     /// Get all extracted concepts

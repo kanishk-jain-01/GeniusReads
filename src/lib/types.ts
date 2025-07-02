@@ -130,6 +130,22 @@ export interface KnowledgeEntry {
   updatedAt: Date;
 }
 
+// Concept extracted by LangGraph from chat conversations
+export interface Concept {
+  id: string;
+  name: string;
+  description: string;
+  tags: string[];
+  confidenceScore: number; // 0.0-1.0
+  sourceChatCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  // Optional fields for detailed view
+  sourceChatTitles?: string[];
+  linkedChatCount?: number;
+  avgRelevanceScore?: number;
+}
+
 export interface UserNote {
   id: string;
   documentId: string;

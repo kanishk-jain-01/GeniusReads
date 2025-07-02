@@ -287,3 +287,302 @@ Concept Results → Database Storage → Knowledge Tab Updates → UI Refresh
 4. **Export & Integration**: Knowledge base export capabilities
 
 **Current Status**: Enterprise-grade architectural foundation with complete chat interface system and LangGraph infrastructure ready. Python-Rust bridge provides type-safe AI integration, and the database-first design supports sophisticated concept extraction workflows. All major systems validated and operational. Ready for LangGraph implementation with confidence in the robust foundation. 
+
+# System Patterns: GeniusReads
+
+## Architecture Overview ✅ **ENHANCED WITH VECTOR EMBEDDINGS**
+
+**Pattern**: **Database-First Architecture with Vector Intelligence**
+- **Single Source of Truth**: PostgreSQL database with vector embeddings as the central state store
+- **No Frontend Caching**: All state managed in database, eliminating synchronization issues
+- **Vector Integration**: pgvector extension for semantic search and concept relationships
+- **Type Safety**: End-to-end type safety from TypeScript → Rust → PostgreSQL → Python
+- **AI Integration**: LangGraph bridge for advanced concept extraction and processing
+
+## Core System Patterns
+
+### 1. Four-View Navigation Architecture ✅ **ENHANCED WITH KNOWLEDGE INTERFACE**
+
+**Pattern**: **Seamless Multi-View State Management**
+```
+Library (PDF Reading) ←→ Chat List (History) ←→ Chat Interface (Active) ←→ Knowledge (Concepts)
+                     ↕                      ↕                        ↕
+              Reading Position      Active Chat State        Concept Browsing
+```
+
+**Implementation**:
+- **State Persistence**: All view states stored in `user_session_state` table
+- **Navigation Memory**: Return to exact reading position and chat state
+- **Keyboard Shortcuts**: CMD+K (text → chat), CMD+L (toggle views)
+- **Knowledge Integration**: Automatic navigation to concepts after analysis
+- **Vector Search**: Semantic concept discovery across knowledge base
+
+### 2. Single Active Chat Pattern ✅ **ENHANCED WITH CONCEPT EXTRACTION**
+
+**Pattern**: **Accumulative Context Management with AI Processing**
+- **One Active Session**: Single chat accumulates highlighted contexts from multiple documents
+- **Context Aggregation**: Selected text from different PDFs and pages collected in one conversation
+- **AI Understanding**: OpenAI receives full context history for intelligent responses
+- **Concept Extraction**: LangGraph analyzes complete conversation for knowledge extraction
+- **Vector Embeddings**: Concepts stored with semantic relationships for discovery
+
+**Database Design**:
+```sql
+chat_sessions (is_active = true) → One active session
+highlighted_contexts → Multiple contexts per session
+chat_messages → Full conversation history
+concepts → Extracted knowledge with vector embeddings
+concept_chat_links → Traceability to source conversations
+```
+
+### 3. Background Processing Architecture ✅ **PRODUCTION READY**
+
+**Pattern**: **Async AI Processing with Progress Tracking**
+- **Non-Blocking UI**: Concept extraction runs in background without blocking interface
+- **Multi-Stage Progress**: 5-stage progress tracking with real-time feedback
+- **Status Management**: Database-tracked processing states (pending → processing → complete)
+- **Error Resilience**: Comprehensive error handling throughout AI pipeline
+- **User Experience**: Professional progress indicators and automatic navigation
+
+**Implementation Flow**:
+```
+User clicks "Analyze" → Status: processing → LangGraph extraction → 
+Concept storage → Vector embeddings → Status: complete → Navigate to Knowledge
+```
+
+### 4. Vector Embedding System ✅ **SEMANTIC INTELLIGENCE**
+
+**Pattern**: **Intelligent Concept Relationships**
+- **Automatic Embeddings**: 384-dimensional vectors generated during concept storage
+- **Semantic Search**: Natural language queries converted to embeddings for concept discovery
+- **Similarity Operations**: Find related concepts using vector cosine similarity
+- **Relationship Scoring**: Calculated similarity scores for concept connections
+- **Performance Optimization**: HNSW indexes for fast approximate nearest neighbor search
+
+**Database Schema**:
+```sql
+concepts.embedding VECTOR(384) -- sentence-transformers embeddings
+concept_relationships.similarity_score -- Calculated vector similarity
+-- Optimized with HNSW index for fast similarity search
+```
+
+### 5. Text Selection → AI Conversation Pattern ✅ **ENHANCED WITH PROGRESS TRACKING**
+
+**Pattern**: **Seamless Reading-to-Knowledge Workflow**
+```
+1. PDF Text Selection (coordinates tracked)
+2. CMD+K → Navigate to active chat
+3. AI conversation with full context
+4. "Analyze" → Background concept extraction
+5. Progress tracking with real-time feedback
+6. Navigate to Knowledge tab → Browse concepts
+7. Semantic search and concept relationships
+```
+
+**Key Features**:
+- **Context Preservation**: Selected text, document title, page number transferred
+- **State Management**: Reading position preserved during navigation
+- **AI Integration**: OpenAI receives complete context for intelligent responses
+- **Knowledge Building**: Conversations analyzed for concept extraction
+- **Vector Search**: Semantic discovery of related concepts
+
+### 6. Database-First State Management ✅ **ENHANCED WITH VECTOR OPERATIONS**
+
+**Pattern**: **Centralized State with Vector Intelligence**
+- **All State in Database**: No frontend state management complexity
+- **Immediate Persistence**: Every action saved to PostgreSQL
+- **Vector Operations**: Semantic search and similarity operations in database
+- **Session Recovery**: Complete application state restored on restart
+- **Cross-Session Continuity**: Reading positions and chat states preserved
+
+**Tables**:
+```sql
+-- Core state management
+user_session_state     -- Current view, document, chat, reading position
+documents              -- PDF state, current page, zoom level
+chat_sessions          -- Active chat and conversation history
+
+-- Vector-enhanced knowledge
+concepts               -- Extracted concepts with vector embeddings
+concept_relationships  -- Semantic relationships with similarity scores
+concept_chat_links     -- Traceability to source conversations
+```
+
+### 7. Type-Safe API Layer ✅ **ENHANCED WITH VECTOR OPERATIONS**
+
+**Pattern**: **End-to-End Type Safety with AI Integration**
+- **TypeScript Frontend**: Complete type definitions for all data structures
+- **Rust Backend**: Strong typing with serde serialization
+- **Database Types**: SQLx compile-time query verification
+- **Python Bridge**: Type-safe pyo3 integration for LangGraph
+- **Vector Operations**: Typed vector similarity and search functions
+
+**API Structure**:
+```typescript
+// Core operations
+export const loadPDFDocument: (filePath: string) => Promise<Document>
+export const addChatMessage: (sessionId: string, content: string) => Promise<string>
+
+// Vector-enhanced concept operations
+export const analyzeChatSession: (sessionId: string) => Promise<AnalysisResult>
+export const getExtractionConcepts: () => Promise<Concept[]>
+export const findSimilarConcepts: (conceptId: string) => Promise<Concept[]>
+export const searchConceptsByText: (query: string) => Promise<Concept[]>
+```
+
+### 8. Error Handling and Resilience ✅ **COMPREHENSIVE COVERAGE**
+
+**Pattern**: **Graceful Degradation with User Feedback**
+- **Rust Error Handling**: anyhow for comprehensive error context
+- **Frontend Error Boundaries**: React error boundaries with user-friendly messages
+- **Database Resilience**: Connection pooling and transaction management
+- **AI Integration**: Graceful handling of OpenAI and Python environment issues
+- **User Experience**: Toast notifications and progress feedback for all operations
+
+### 9. Knowledge Base Architecture ✅ **OPERATIONAL WITH VECTOR SEARCH**
+
+**Pattern**: **Intelligent Knowledge Discovery**
+- **Concept Cards**: Beautiful display of extracted knowledge with metadata
+- **Search Integration**: Real-time search with filtering capabilities
+- **Vector Search**: Semantic concept discovery using natural language queries
+- **Source Traceability**: Links from concepts back to source conversations
+- **Relationship Mapping**: Visual and functional concept relationships
+
+**Implementation**:
+```typescript
+// Knowledge interface components
+<ConceptCard concept={concept} onViewDetails={handleViewDetails} />
+<ConceptSearch onSearch={handleSearch} onFilter={handleFilter} />
+<VectorSearch onSemanticSearch={handleSemanticSearch} />
+```
+
+## Development Patterns
+
+### 1. Database-First Development ✅ **ENHANCED WITH VECTOR SCHEMA**
+
+**Pattern**: **Schema-Driven Development with Vector Support**
+1. **Design Database Schema**: Complete schema with vector embedding support
+2. **Create Migrations**: SQL migrations with pgvector integration
+3. **Generate Types**: Rust structs and TypeScript interfaces from schema
+4. **Implement API**: Type-safe database operations with vector functions
+5. **Build Frontend**: React components using generated types
+
+### 2. Tauri Command Pattern ✅ **ENHANCED WITH AI OPERATIONS**
+
+**Pattern**: **Consistent Command Structure with AI Integration**
+```rust
+#[tauri::command]
+async fn command_name(
+    param: Type,
+    db: tauri::State<'_, DbState>,
+) -> Result<ReturnType, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        match database.operation(param).await {
+            Ok(result) => Ok(result),
+            Err(e) => Err(format!("Operation failed: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+```
+
+### 3. Python-Rust Bridge Pattern ✅ **PRODUCTION READY**
+
+**Pattern**: **Type-Safe AI Integration**
+- **Structured Data**: pyo3 structs for all data exchange
+- **Error Propagation**: Rust Result types from Python operations
+- **Resource Management**: Proper Python GIL handling and cleanup
+- **Performance**: Efficient data conversion and minimal copying
+
+```rust
+// Bridge structures
+#[derive(Serialize, Deserialize)]
+pub struct ConceptExtractionInput {
+    pub chat_session_id: Uuid,
+    pub messages: Vec<ChatMessageForExtraction>,
+    pub highlighted_contexts: Vec<HighlightedContextForExtraction>,
+}
+```
+
+### 4. Vector Operations Pattern ✅ **SEMANTIC INTELLIGENCE**
+
+**Pattern**: **Efficient Vector Database Operations**
+- **Embedding Generation**: Automatic vector creation during concept storage
+- **Similarity Search**: Optimized queries using pgvector operators
+- **Batch Operations**: Efficient processing of multiple concepts
+- **Index Optimization**: HNSW indexes for fast approximate search
+
+```sql
+-- Vector similarity search pattern
+SELECT c.*, 1 - (c.embedding <=> $1) as similarity_score
+FROM concepts c
+WHERE 1 - (c.embedding <=> $1) >= $2
+ORDER BY c.embedding <=> $1
+LIMIT $3;
+```
+
+## Performance Patterns
+
+### 1. Efficient Database Queries ✅ **OPTIMIZED WITH VECTOR INDEXES**
+
+**Pattern**: **Query Optimization with Vector Support**
+- **Proper Indexing**: B-tree indexes for standard queries, HNSW for vector operations
+- **Connection Pooling**: SQLx connection pool for efficient database access
+- **Query Optimization**: Minimize N+1 queries with proper JOINs
+- **Vector Performance**: Optimized similarity search with configurable thresholds
+
+### 2. Memory Management ✅ **EFFICIENT RESOURCE USAGE**
+
+**Pattern**: **Optimal Resource Utilization**
+- **Rust Ownership**: Zero-copy data structures where possible
+- **Python GIL**: Minimal Python execution time with efficient data transfer
+- **Vector Storage**: Efficient embedding storage and retrieval
+- **Frontend Optimization**: Lazy loading and component memoization
+
+### 3. Background Processing ✅ **NON-BLOCKING AI OPERATIONS**
+
+**Pattern**: **Async AI Processing**
+- **Tokio Integration**: Async Rust for non-blocking operations
+- **Progress Tracking**: Real-time status updates without blocking UI
+- **Error Recovery**: Graceful handling of AI processing failures
+- **Resource Management**: Efficient Python environment and OpenAI API usage
+
+## Security Patterns
+
+### 1. API Key Management ✅ **SECURE STORAGE**
+
+**Pattern**: **Secure Credential Storage**
+- **Database Encryption**: Sensitive data stored securely in PostgreSQL
+- **No Hardcoding**: API keys never in source code
+- **Runtime Validation**: API key validation before operations
+- **User Control**: Users manage their own API keys
+
+### 2. Input Validation ✅ **COMPREHENSIVE SANITIZATION**
+
+**Pattern**: **Multi-Layer Validation**
+- **Frontend Validation**: TypeScript type checking and form validation
+- **Backend Validation**: Rust type system and explicit validation
+- **Database Constraints**: PostgreSQL constraints and checks
+- **AI Input Sanitization**: Safe data preparation for LangGraph processing
+
+## Scalability Patterns
+
+### 1. Modular Architecture ✅ **EXTENSIBLE DESIGN**
+
+**Pattern**: **Component-Based Extensibility**
+- **Separated Concerns**: Clear separation between PDF, Chat, Knowledge, and AI systems
+- **Plugin Architecture**: LangGraph bridge as pluggable AI system
+- **Vector Extensibility**: Support for different embedding models and dimensions
+- **UI Modularity**: Reusable components for knowledge management
+
+### 2. Database Scalability ✅ **VECTOR-READY SCHEMA**
+
+**Pattern**: **Scalable Data Architecture**
+- **Normalized Schema**: Proper relationships with minimal redundancy
+- **Vector Optimization**: Efficient vector storage and indexing
+- **Partitioning Ready**: Schema designed for future partitioning
+- **Index Strategy**: Comprehensive indexing for all query patterns
+
+**Result**: **Production-ready architecture with vector intelligence that scales from personal use to enterprise knowledge management while maintaining excellent performance and user experience.** 
