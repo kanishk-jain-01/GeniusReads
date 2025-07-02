@@ -8,7 +8,7 @@
 - `src-tauri/src/database.rs` - PostgreSQL database connection and query handling with user preferences support (✅ Created, ✅ Updated with preferences methods)
 - `src-tauri/src/pdf_handler.rs` - PDF file operations and metadata extraction (✅ Created)
 - `src-tauri/src/chat_manager.rs` - Chat session management, active chat state, and message handling
-- `src-tauri/src/langraph_bridge.rs` - Python-Rust interoperability layer using pyo3 for LangGraph concept extraction
+- `src-tauri/src/langraph_bridge.rs` - Python-Rust interoperability layer using pyo3 for LangGraph concept extraction (✅ Created)
 - `src-tauri/src/concept_extractor.rs` - Concept extraction workflow and vector embedding management
 - `src-tauri/Cargo.toml` - Rust dependencies including pyo3, tauri, sqlx, tokio, and pgvector support (✅ Configured, needs pgvector)
 - `src-tauri/tauri.conf.json` - Tauri configuration for macOS app settings and file system permissions (✅ Configured)
@@ -54,7 +54,7 @@
 ### Python/AI Files (To Be Created)
 - `src-tauri/python/concept_extractor.py` - LangGraph workflow for automated concept extraction from chat sessions
 - `src-tauri/python/vector_embeddings.py` - Vector embedding generation and similarity calculation
-- `src-tauri/python/requirements.txt` - Python dependencies for embedded environment (LangGraph, OpenAI, sentence-transformers)
+- `src-tauri/python/requirements.txt` - Python dependencies for embedded environment (LangGraph, OpenAI, sentence-transformers) (✅ Created)
 
 ### Database Files (✅ Created, needs schema updates)
 - `migrations/001_initial_schema.sql` - PostgreSQL database schema setup (✅ Created, ✅ Updated with user_preferences table)
@@ -141,7 +141,7 @@
   - [x] 5.8 Test complete chat workflow from text selection to conversation
 
 - [ ] 6.0 Implement LangGraph Concept Extraction System
-  - [ ] 6.1 Set up Python environment with pyo3 bridge for LangGraph
+  - [x] 6.1 Set up Python environment with pyo3 bridge for LangGraph
   - [ ] 6.2 Install pgvector extension for PostgreSQL vector storage
   - [ ] 6.3 Create concept_extractor.py with LangGraph workflow implementation
   - [ ] 6.4 Implement vector embedding generation for concepts

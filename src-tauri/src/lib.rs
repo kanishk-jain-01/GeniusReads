@@ -5,6 +5,7 @@ use tokio::sync::Mutex;
 
 mod database;
 mod pdf_handler;
+mod langraph_bridge;
 
 use database::Database;
 use pdf_handler::PDFHandler;

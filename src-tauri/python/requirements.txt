@@ -1,0 +1,27 @@
+# Python dependencies for GeniusReads concept extraction
+# Core LangGraph and LangChain dependencies
+langgraph==0.2.16
+langchain==0.3.0
+langchain-community==0.3.0
+langchain-core==0.3.0
+langchain-openai==0.2.0
+
+# OpenAI API client
+openai==1.51.0
+
+# Vector embeddings and similarity
+sentence-transformers==3.1.1
+numpy==1.26.4
+scikit-learn==1.5.2
+
+# Database connectivity for PostgreSQL
+psycopg2-binary==2.9.9
+asyncpg==0.29.0
+
+# Additional utilities
+python-dotenv==1.0.1
+pydantic==2.9.2
+typing-extensions==4.12.2
+
+# JSON handling and data processing
+jsonschema==4.23.0 
