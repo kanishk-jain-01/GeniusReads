@@ -533,6 +533,47 @@ async fn get_last_reading_position(
     }
 }
 
+// ============================================================================
+// User Preferences Management Commands
+// ============================================================================
+
+#[tauri::command]
+async fn save_user_preferences(
+    preferences: serde_json::Value,
+    db: tauri::State<'_, DbState>,
+) -> Result<(), String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let openai_api_key = preferences.get("openaiApiKey")
+            .and_then(|v| v.as_str());
+        
+        let theme = preferences.get("theme")
+            .and_then(|v| v.as_str());
+        
+        match database.save_user_preferences(openai_api_key, theme).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to save user preferences: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn get_user_preferences(
+    db: tauri::State<'_, DbState>,
+) -> Result<Option<serde_json::Value>, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        match database.get_user_preferences().await {
+            Ok(preferences) => Ok(preferences),
+            Err(e) => Err(format!("Failed to get user preferences: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -563,7 +604,9 @@ pub fn run() {
             get_user_session_state,
             update_user_session_state,
             save_reading_position,
-            get_last_reading_position
+            get_last_reading_position,
+            save_user_preferences,
+            get_user_preferences
         ])
         .setup(|app| {
             // Initialize database connection

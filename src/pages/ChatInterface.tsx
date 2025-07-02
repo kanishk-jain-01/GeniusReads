@@ -17,7 +17,8 @@ import {
   setActiveChatSession,
   deleteChatSession,
   updateChatSessionTitle,
-  updateUserSessionState
+  updateUserSessionState,
+  sendChatMessage
 } from "@/lib/api";
 
 interface ChatInterfaceProps {
@@ -180,18 +181,37 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       setMessages(prev => [...prev, aiResponse]);
 
-      // Simulate streaming response (will be replaced with actual OpenAI streaming in Phase 5)
-      const fullResponse = `I understand you're asking about "${message}". This is a placeholder response that demonstrates streaming functionality. The system will integrate with OpenAI GPT-4 to provide real explanations about the selected text. Each word appears gradually to simulate the streaming effect.`;
+      // Prepare conversation history for OpenAI
+      const conversationHistory = messages.map(msg => ({
+        role: msg.senderType === 'user' ? 'user' as const : 'assistant' as const,
+        content: msg.content
+      }));
       
-      const words = fullResponse.split(' ');
+      // Add the current user message
+      conversationHistory.push({
+        role: 'user' as const,
+        content: message
+      });
+
+      // Add system context if we have highlighted text
+      const highlightedContext = getHighlightedContext();
+      if (highlightedContext) {
+        conversationHistory.unshift({
+          role: 'system' as const,
+          content: `You are helping the user understand a text selection from "${highlightedContext.documentTitle}" (page ${highlightedContext.pageNumber}). The selected text is: "${highlightedContext.selectedText}". Please provide helpful explanations and answer questions about this content.`
+        });
+      }
+
       setIsStreaming(true);
       setStreamingContent("");
 
-      for (let i = 0; i < words.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 100)); // Simulate typing delay
-        const partialContent = words.slice(0, i + 1).join(' ');
-        setStreamingContent(partialContent);
-      }
+      // Get streaming response from OpenAI
+      const fullResponse = await sendChatMessage(
+        conversationHistory,
+        (chunk: string) => {
+          setStreamingContent(prev => prev + chunk);
+        }
+      );
 
       // Save AI response to database
       const savedAiMessageId = await addChatMessage(currentChatSessionId, fullResponse, 'assistant');

@@ -258,6 +258,20 @@ CREATE TABLE user_session_state (
 );
 
 -- ============================================================================
+-- User Preferences Table
+-- Stores user configuration and API keys
+-- ============================================================================
+CREATE TABLE user_preferences (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    openai_api_key TEXT, -- Encrypted API key for OpenAI
+    theme VARCHAR(10) NOT NULL DEFAULT 'system',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    
+    CONSTRAINT preferences_theme_valid CHECK (theme IN ('light', 'dark', 'system'))
+);
+
+-- ============================================================================
 -- Indexes for Performance
 -- ============================================================================
 
@@ -331,6 +345,9 @@ CREATE INDEX idx_user_session_state_current_document ON user_session_state(curre
 CREATE INDEX idx_user_session_state_active_chat ON user_session_state(active_chat_id);
 CREATE INDEX idx_user_session_state_updated_at ON user_session_state(updated_at DESC);
 
+-- User Preferences
+CREATE INDEX idx_user_preferences_updated_at ON user_preferences(updated_at DESC);
+
 -- ============================================================================
 -- Triggers for Automatic Timestamps
 -- ============================================================================
@@ -361,6 +378,9 @@ CREATE TRIGGER update_chat_sessions_updated_at BEFORE UPDATE ON chat_sessions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_user_session_state_updated_at BEFORE UPDATE ON user_session_state
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_preferences_updated_at BEFORE UPDATE ON user_preferences
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================================

@@ -4,8 +4,8 @@
 
 ### Backend Files (Rust/Tauri)
 - `src-tauri/src/main.rs` - Main Tauri application entry point and window configuration (✅ Created)
-- `src-tauri/src/lib.rs` - Tauri command handlers including chat session management and LangGraph integration (✅ Created, needs updates)
-- `src-tauri/src/database.rs` - PostgreSQL database connection and query handling with pgvector support (✅ Created, needs schema updates)
+- `src-tauri/src/lib.rs` - Tauri command handlers including chat session management and user preferences (✅ Created, ✅ Updated with preferences commands)
+- `src-tauri/src/database.rs` - PostgreSQL database connection and query handling with user preferences support (✅ Created, ✅ Updated with preferences methods)
 - `src-tauri/src/pdf_handler.rs` - PDF file operations and metadata extraction (✅ Created)
 - `src-tauri/src/chat_manager.rs` - Chat session management, active chat state, and message handling
 - `src-tauri/src/langraph_bridge.rs` - Python-Rust interoperability layer using pyo3 for LangGraph concept extraction
@@ -22,9 +22,10 @@
 - `src/vite-env.d.ts` - Vite TypeScript environment definitions (✅ Created)
 
 ### Pages (✅ Four-View Structure)
-- `src/pages/Dashboard.tsx` - Main application with Library tab (PDF reading) and Chat tab (chat list) (✅ Created, ✅ Updated with ChatList component)
+- `src/pages/Dashboard.tsx` - Main application with Library tab (PDF reading) and Chat tab (chat list) (✅ Created, ✅ Updated with ChatList component, ✅ Updated with Preferences navigation)
 - `src/pages/ChatInterface.tsx` - Individual chat conversation interface (separate from chat list) (✅ Created, ✅ Updated with ActiveChat)
 - `src/pages/KnowledgeBase.tsx` - Knowledge tab with concept cards and detailed concept pages (✅ Created, needs updates)
+- `src/pages/Preferences.tsx` - User preferences page with OpenAI API key management and theme selection (✅ Created)
 
 ### shadcn/ui Components (✅ Complete Library Integrated)
 - `src/components/ui/` - Complete shadcn/ui component library (40+ components)
@@ -38,7 +39,7 @@
 
 ### Utilities and Libraries (✅ Created, needs chat API functions)
 - `src/lib/utils.ts` - Utility functions for className merging and common operations (✅ Created)
-- `src/lib/api.ts` - Tauri command invocations with chat session and concept extraction commands (✅ Created, needs updates)
+- `src/lib/api.ts` - Tauri command invocations with chat session and user preferences commands (✅ Created, ✅ Updated with preferences API)
 - `src/lib/types.ts` - TypeScript type definitions for chat sessions, concepts, and navigation state (✅ Created, needs updates)
 
 ### Feature Components (✅ PDF Ready, needs chat components)
@@ -56,7 +57,7 @@
 - `src-tauri/python/requirements.txt` - Python dependencies for embedded environment (LangGraph, OpenAI, sentence-transformers)
 
 ### Database Files (✅ Created, needs schema updates)
-- `migrations/001_initial_schema.sql` - PostgreSQL database schema setup (✅ Created, needs chat-focused updates)
+- `migrations/001_initial_schema.sql` - PostgreSQL database schema setup (✅ Created, ✅ Updated with user_preferences table)
 - `migrations/002_chat_system.sql` - Chat sessions, messages, and active chat schema
 - `migrations/003_concepts_vector.sql` - Concepts table with pgvector extension and vector embeddings
 
@@ -129,15 +130,15 @@
   - [x] 4.11 Update CMD+L to toggle between active chat and reading position
   - [x] 4.12 Implement database tracking for active chat and navigation state
 
-- [ ] 5.0 Integrate AI Processing and OpenAI Chat
-  - [ ] 5.1 Set up OpenAI API integration for chat conversations
-  - [ ] 5.2 Implement streaming chat responses with proper error handling
-  - [ ] 5.3 Create chat message storage and retrieval system
-  - [ ] 5.4 Add highlighted text context integration with AI conversations
-  - [ ] 5.5 Implement conversation history and message threading
-  - [ ] 5.6 Add support for multiple highlighted contexts in single chat
-  - [ ] 5.7 Create chat session completion and action handling
-  - [ ] 5.8 Test complete chat workflow from text selection to conversation
+- [x] 5.0 Integrate AI Processing and OpenAI Chat ✅ **COMPLETE**
+  - [x] 5.1 Set up OpenAI API integration for chat conversations
+  - [x] 5.2 Implement streaming chat responses with proper error handling
+  - [x] 5.3 Create chat message storage and retrieval system
+  - [x] 5.4 Add highlighted text context integration with AI conversations
+  - [x] 5.5 Implement conversation history and message threading
+  - [x] 5.6 Add support for multiple highlighted contexts in single chat
+  - [x] 5.7 Create chat session completion and action handling
+  - [x] 5.8 Test complete chat workflow from text selection to conversation
 
 - [ ] 6.0 Implement LangGraph Concept Extraction System
   - [ ] 6.1 Set up Python environment with pyo3 bridge for LangGraph

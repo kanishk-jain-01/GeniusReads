@@ -532,6 +532,41 @@ export const getLastReadingPosition = async (): Promise<{
 };
 
 // ============================================================================
+// User Preferences Management
+// ============================================================================
+
+export const saveUserPreferences = async (preferences: {
+  openaiApiKey?: string;
+  theme?: 'light' | 'dark' | 'system';
+}): Promise<void> => {
+  try {
+    await invoke('save_user_preferences', { preferences });
+  } catch (error) {
+    console.error('Failed to save user preferences:', error);
+    throw new Error(`Failed to save user preferences: ${error}`);
+  }
+};
+
+export const getUserPreferences = async (): Promise<{
+  openaiApiKey?: string;
+  theme: 'light' | 'dark' | 'system';
+}> => {
+  try {
+    const result = await invoke<any>('get_user_preferences');
+    return {
+      openaiApiKey: result?.openai_api_key,
+      theme: result?.theme || 'system'
+    };
+  } catch (error) {
+    console.error('Failed to get user preferences:', error);
+    // Return default preferences if none exist
+    return {
+      theme: 'system'
+    };
+  }
+};
+
+// ============================================================================
 // Database Commands (Future Implementation)
 // ============================================================================
 
@@ -556,6 +591,90 @@ export async function searchKnowledge(query: string): Promise<TauriResponse> {
     throw new Error(`Failed to search knowledge: ${error}`);
   }
 }
+
+// ============================================================================
+// OpenAI Chat Integration
+// ============================================================================
+
+export const sendChatMessage = async (
+  messages: Array<{role: 'user' | 'assistant' | 'system', content: string}>,
+  onStreamChunk?: (chunk: string) => void
+): Promise<string> => {
+  try {
+    // Get the API key from preferences
+    const preferences = await getUserPreferences();
+    if (!preferences.openaiApiKey) {
+      throw new Error('OpenAI API key not configured. Please set your API key in Preferences.');
+    }
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${preferences.openaiApiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini', // Using the cost-effective model
+        messages: messages,
+        stream: !!onStreamChunk,
+        temperature: 0.7,
+        max_tokens: 2000,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    if (onStreamChunk && response.body) {
+      // Handle streaming response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = '';
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') break;
+
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) {
+                  fullResponse += content;
+                  onStreamChunk(content);
+                }
+              } catch (e) {
+                // Skip invalid JSON chunks
+                continue;
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      return fullResponse;
+    } else {
+      // Handle non-streaming response
+      const data = await response.json();
+      return data.choices?.[0]?.message?.content || '';
+    }
+  } catch (error) {
+    console.error('Failed to send chat message:', error);
+    throw error;
+  }
+};
 
 // ============================================================================
 // Communication Test Suite
