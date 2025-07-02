@@ -315,6 +315,25 @@ async fn get_active_chat_session(
 }
 
 #[tauri::command]
+async fn get_chat_session_by_id(
+    chat_session_id: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<Option<serde_json::Value>, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let session_id = uuid::Uuid::parse_str(&chat_session_id)
+            .map_err(|e| format!("Invalid UUID: {}", e))?;
+        
+        match database.get_chat_session_by_id(session_id).await {
+            Ok(session) => Ok(session),
+            Err(e) => Err(format!("Failed to get chat session by ID: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
 async fn set_active_chat_session(
     chat_session_id: String,
     db: tauri::State<'_, DbState>,
@@ -401,6 +420,44 @@ async fn delete_chat_session(
         match database.delete_chat_session(session_id).await {
             Ok(_) => Ok(()),
             Err(e) => Err(format!("Failed to delete chat session: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn clear_chat_session(
+    chat_session_id: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<(), String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let session_id = uuid::Uuid::parse_str(&chat_session_id)
+            .map_err(|e| format!("Invalid UUID: {}", e))?;
+        
+        match database.clear_chat_session(session_id).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to clear chat session: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn end_chat_session(
+    chat_session_id: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<(), String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let session_id = uuid::Uuid::parse_str(&chat_session_id)
+            .map_err(|e| format!("Invalid UUID: {}", e))?;
+        
+        match database.end_chat_session(session_id).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to end chat session: {}", e)),
         }
     } else {
         Err("Database not initialized".to_string())
@@ -596,10 +653,13 @@ pub fn run() {
             create_chat_session,
             get_chat_sessions,
             get_active_chat_session,
+            get_chat_session_by_id,
             set_active_chat_session,
             add_chat_message,
             add_highlighted_context,
             delete_chat_session,
+            clear_chat_session,
+            end_chat_session,
             update_chat_session_title,
             get_user_session_state,
             update_user_session_state,

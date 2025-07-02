@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM highlighted_contexts WHERE chat_session_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ff248016ddaf05e0686f16beca777a77d4c6b9f7de3889313b21dd4f3f674f3f"
+}

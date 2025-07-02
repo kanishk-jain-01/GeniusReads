@@ -4,6 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   MessageSquare, 
   Search, 
@@ -11,16 +21,20 @@ import {
   FileText,
   ArrowRight,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from "lucide-react";
 import type { ChatSession, HighlightedContext, Document } from "@/lib/types";
-import { getChatSessions } from "@/lib/api";
+import { getChatSessions, getActiveChatSession, deleteChatSession } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatListProps {
   activeTextSelection?: HighlightedContext;
   currentDocument?: Document;
   onChatSelect: (chatId: string) => void;
   onStartNewChat?: () => void;
+  onChatDelete?: (chatId: string) => void;
+  refreshTrigger?: number;
 }
 
 interface PaginationInfo {
@@ -34,19 +48,23 @@ const ChatList = ({
   activeTextSelection, 
   currentDocument: _, // Not used yet, will be used in future tasks
   onChatSelect,
-  onStartNewChat 
+  onStartNewChat,
+  onChatDelete,
+  refreshTrigger
 }: ChatListProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [activeChatSession, setActiveChatSession] = useState<any | null>(null);
   const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
     totalPages: 1,
     totalItems: 0,
     itemsPerPage: 10
   });
-
-  // TODO: Replace with real API calls to fetch chat sessions from database
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState<ChatSession | null>(null);
+  const { toast } = useToast();
 
   // Helper function to format time ago
   const formatTimeAgo = (date: Date): string => {
@@ -105,19 +123,24 @@ const ChatList = ({
     }));
   }, [filteredChats.length, pagination.itemsPerPage]);
 
-  // Load chats on component mount
+  // Load chats on component mount and when refresh is triggered
   useEffect(() => {
     loadChats();
-  }, []);
+  }, [refreshTrigger]);
 
   const loadChats = async () => {
     setLoading(true);
     try {
-      const sessions = await getChatSessions();
+      const [sessions, activeSession] = await Promise.all([
+        getChatSessions(),
+        getActiveChatSession()
+      ]);
       setChatSessions(sessions);
+      setActiveChatSession(activeSession);
     } catch (error) {
       console.error('Failed to load chat sessions:', error);
       setChatSessions([]);
+      setActiveChatSession(null);
     } finally {
       setLoading(false);
     }
@@ -136,6 +159,43 @@ const ChatList = ({
       ...prev,
       currentPage: Math.min(prev.totalPages, prev.currentPage + 1)
     }));
+  };
+
+  // Handle showing delete confirmation
+  const handleDeleteClick = (chat: ChatSession) => {
+    setChatToDelete(chat);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle confirmed chat deletion
+  const handleConfirmDelete = async () => {
+    if (!chatToDelete) return;
+    
+    try {
+      await deleteChatSession(chatToDelete.id);
+      
+      // Remove the deleted chat from local state
+      setChatSessions(prev => prev.filter(chat => chat.id !== chatToDelete.id));
+      
+      // Call parent callback if provided
+      onChatDelete?.(chatToDelete.id);
+      
+      toast({
+        title: "Chat Deleted",
+        description: "The conversation has been permanently deleted.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the conversation. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setChatToDelete(null);
+    }
   };
 
   return (
@@ -165,7 +225,7 @@ const ChatList = ({
           <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4 uppercase tracking-wide">
             Active Chat
           </h3>
-          {activeTextSelection ? (
+{activeChatSession ? (
             <Card 
               className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800 cursor-pointer hover:shadow-md transition-all duration-200"
               onClick={() => onStartNewChat?.()}
@@ -178,6 +238,40 @@ const ChatList = ({
                       <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Active Conversation</span>
                     </div>
                     <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                      {activeChatSession.title}
+                    </h4>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
+                      {activeChatSession.messages?.length || 0} message{(activeChatSession.messages?.length || 0) !== 1 ? 's' : ''} • 
+                      {activeChatSession.highlightedContexts?.length || 0} context{(activeChatSession.highlightedContexts?.length || 0) !== 1 ? 's' : ''}
+                    </p>
+                    <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
+                      <span className="flex items-center">
+                        <MessageSquare className="h-3 w-3 mr-1" />
+                        Continue conversation
+                      </span>
+                      <span className="flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {formatTimeAgo(new Date(activeChatSession.updatedAt))}
+                      </span>
+                    </div>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                </div>
+              </CardContent>
+            </Card>
+          ) : activeTextSelection ? (
+            <Card 
+              className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-green-200 dark:border-green-800 cursor-pointer hover:shadow-md transition-all duration-200"
+              onClick={() => onStartNewChat?.()}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-sm font-medium text-green-700 dark:text-green-300">Ready to Start</span>
+                    </div>
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
                       Discussion about: "{activeTextSelection.selectedText.substring(0, 60)}..."
                     </h4>
                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
@@ -186,7 +280,7 @@ const ChatList = ({
                     <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
                       <span className="flex items-center">
                         <MessageSquare className="h-3 w-3 mr-1" />
-                        Ready for conversation
+                        Click to start conversation
                       </span>
                       <span className="flex items-center">
                         <Clock className="h-3 w-3 mr-1" />
@@ -194,9 +288,9 @@ const ChatList = ({
                       </span>
                     </div>
                   </div>
-                  <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  <ArrowRight className="h-4 w-4 text-green-500 dark:text-green-400" />
                 </div>
-                <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
+                <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-green-200 dark:border-green-700">
                   <p className="text-sm text-slate-700 dark:text-slate-300 italic">
                     "{activeTextSelection.selectedText}"
                   </p>
@@ -273,7 +367,7 @@ const ChatList = ({
                 return (
                   <Card 
                     key={chat.id} 
-                    className="hover:shadow-md transition-all duration-200 cursor-pointer bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                    className="group hover:shadow-md transition-all duration-200 cursor-pointer bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
                     onClick={() => onChatSelect(chat.id)}
                   >
                     <CardContent className="p-6">
@@ -310,7 +404,20 @@ const ChatList = ({
                             )}
                           </div>
                         </div>
-                        <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                                                  <div className="flex items-center space-x-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(chat);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
+                          </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -349,6 +456,27 @@ const ChatList = ({
           )}
         </div>
       </ScrollArea>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{chatToDelete?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

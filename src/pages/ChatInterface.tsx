@@ -2,9 +2,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft,
-  Save,
+  RotateCcw,
   Brain,
-  Trash2
+  Square
 } from "lucide-react";
 import ActiveChat from "@/components/ActiveChat";
 import type { TextSelection, Document, ChatMessage, HighlightedContext } from "@/lib/types";
@@ -14,8 +14,10 @@ import {
   addChatMessage, 
   addHighlightedContext, 
   getActiveChatSession,
+  getChatSessionById,
   setActiveChatSession,
-  deleteChatSession,
+  clearChatSession,
+  endChatSession,
   updateUserSessionState,
   sendChatMessage
 } from "@/lib/api";
@@ -24,20 +26,24 @@ interface ChatInterfaceProps {
   textSelection?: TextSelection;
   document?: Document;
   onBack: () => void;
-  onSave: () => void;
-  onSaveAndAnalyze: () => void;
-  onDelete: () => void;
+  onClear: () => void;
+  onEndChat: () => void;
+  onAnalyze: () => void;
   onTextSelectionProcessed?: () => void;
+  readOnly?: boolean;
+  chatSessionId?: string; // For viewing specific ended chats
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
   textSelection,
   document,
   onBack,
-  onSave,
-  onSaveAndAnalyze,
-  onDelete,
-  onTextSelectionProcessed
+  onClear,
+  onEndChat,
+  onAnalyze,
+  onTextSelectionProcessed,
+  readOnly,
+  chatSessionId
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [highlightedContexts, setHighlightedContexts] = useState<HighlightedContext[]>([]);
@@ -50,8 +56,43 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Initialize chat session
   useEffect(() => {
-    initializeChatSession();
-  }, [textSelection]);
+    if (readOnly && chatSessionId) {
+      loadChatSession(chatSessionId);
+    } else {
+      initializeChatSession();
+    }
+  }, [textSelection, readOnly, chatSessionId]);
+
+  const loadChatSession = async (sessionId: string) => {
+    try {
+      const chatSession = await getChatSessionById(sessionId);
+      if (!chatSession) {
+        toast({
+          title: "Error",
+          description: "Chat session not found.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setCurrentChatSessionId(chatSession.id);
+      setChatTitle(chatSession.title);
+      setMessages(chatSession.messages || []);
+      setHighlightedContexts(chatSession.highlightedContexts || []);
+      
+      toast({
+        title: "Chat Loaded",
+        description: "Viewing chat session.",
+      });
+    } catch (error) {
+      console.error('Failed to load chat session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load chat session.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const initializeChatSession = async () => {
     try {
@@ -315,31 +356,59 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleSaveChat = async () => {
+  const handleClearChat = async () => {
     if (!currentChatSessionId) return;
     
     try {
-      // Chat is already saved to database, just update UI state
+      await clearChatSession(currentChatSessionId);
       await updateUserSessionState({
-        activeTab: 'library' // Navigate back to library
+        activeTab: 'library',
+        activeChatId: null
       });
       
       toast({
-        title: "Chat Saved",
-        description: "Your conversation has been saved to chat history.",
+        title: "Chat Cleared",
+        description: "Your conversation has been cleared.",
+        variant: "destructive",
       });
-      onSave();
+      onClear();
     } catch (error) {
-      console.error('Failed to save chat:', error);
+      console.error('Failed to clear chat:', error);
       toast({
         title: "Error",
-        description: "Failed to save chat.",
+        description: "Failed to clear chat.",
         variant: "destructive",
       });
     }
   };
 
-  const handleSaveAndAnalyze = async () => {
+  const handleEndChat = async () => {
+    if (!currentChatSessionId) return;
+    
+    try {
+      await endChatSession(currentChatSessionId);
+      await updateUserSessionState({
+        activeTab: 'library',
+        activeChatId: null
+      });
+      
+      toast({
+        title: "Chat Ended",
+        description: "Your conversation has been ended.",
+        variant: "destructive",
+      });
+      onEndChat();
+    } catch (error) {
+      console.error('Failed to end chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to end chat.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAnalyze = async () => {
     if (!currentChatSessionId) return;
     
     try {
@@ -349,41 +418,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       });
       
       toast({
-        title: "Chat Saved & Analysis Started",
-        description: "Your conversation has been saved and will be analyzed for concepts.",
+        title: "Chat Analysis Started",
+        description: "Your conversation will be analyzed for concepts.",
       });
-      onSaveAndAnalyze();
+      onAnalyze();
     } catch (error) {
-      console.error('Failed to save and analyze chat:', error);
+      console.error('Failed to analyze chat:', error);
       toast({
         title: "Error",
-        description: "Failed to save and analyze chat.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteChat = async () => {
-    if (!currentChatSessionId) return;
-    
-    try {
-      await deleteChatSession(currentChatSessionId);
-      await updateUserSessionState({
-        activeTab: 'library',
-        activeChatId: null
-      });
-      
-      toast({
-        title: "Chat Deleted",
-        description: "Your conversation has been deleted.",
-        variant: "destructive",
-      });
-      onDelete();
-    } catch (error) {
-      console.error('Failed to delete chat:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete chat.",
+        description: "Failed to analyze chat.",
         variant: "destructive",
       });
     }
@@ -417,31 +460,45 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDeleteChat}
-              className="text-red-600 hover:text-red-700"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveChat}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSaveAndAnalyze}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            >
-              <Brain className="h-4 w-4 mr-2" />
-              Save + Analyze
-            </Button>
+            {!readOnly ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearChat}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Clear
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEndChat}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Square className="h-4 w-4 mr-2" />
+                  End
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleAnalyze}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                >
+                  <Brain className="h-4 w-4 mr-2" />
+                  Analyze
+                </Button>
+              </>
+            ) : (
+              <Button
+                size="sm"
+                onClick={handleAnalyze}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                Analyze
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -455,9 +512,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           isLoading={isLoading}
           isStreaming={isStreaming}
           streamingContent={streamingContent}
-          placeholder="Ask a question about the selected text..."
+          placeholder={readOnly ? "This chat has ended and is read-only" : "Ask a question about the selected text..."}
           showTypingIndicator={isLoading && !isStreaming}
           maxHeight="100%"
+          disabled={readOnly}
         />
       </div>
     </div>

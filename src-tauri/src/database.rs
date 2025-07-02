@@ -503,6 +503,79 @@ impl Database {
         }
     }
 
+    /// Get specific chat session by ID with full details
+    pub async fn get_chat_session_by_id(&self, chat_session_id: Uuid) -> Result<Option<Value>> {
+        let result = sqlx::query!(
+            r#"
+            SELECT 
+                cs.id,
+                cs.title,
+                cs.preview_text,
+                cs.source_document_count,
+                cs.analysis_status,
+                cs.is_active,
+                cs.created_at,
+                cs.updated_at,
+                COALESCE(hc_data.highlighted_contexts, '[]'::json) as highlighted_contexts,
+                COALESCE(cm_data.messages, '[]'::json) as messages
+            FROM chat_sessions cs
+            LEFT JOIN (
+                SELECT 
+                    chat_session_id,
+                    json_agg(
+                        json_build_object(
+                            'id', id,
+                            'documentId', document_id,
+                            'documentTitle', document_title,
+                            'pageNumber', page_number,
+                            'selectedText', selected_text,
+                            'textCoordinates', text_coordinates,
+                            'createdAt', created_at
+                        ) ORDER BY created_at
+                    ) as highlighted_contexts
+                FROM highlighted_contexts
+                WHERE chat_session_id = $1
+                GROUP BY chat_session_id
+            ) hc_data ON cs.id = hc_data.chat_session_id
+            LEFT JOIN (
+                SELECT 
+                    chat_session_id,
+                    json_agg(
+                        json_build_object(
+                            'id', id,
+                            'content', content,
+                            'senderType', sender_type,
+                            'createdAt', created_at,
+                            'metadata', metadata
+                        ) ORDER BY created_at
+                    ) as messages
+                FROM chat_messages
+                WHERE chat_session_id = $1
+                GROUP BY chat_session_id
+            ) cm_data ON cs.id = cm_data.chat_session_id
+            WHERE cs.id = $1
+            "#,
+            chat_session_id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to fetch chat session by ID")?;
+
+        if let Some(row) = result {
+            Ok(Some(serde_json::json!({
+                "id": row.id,
+                "title": row.title,
+                "highlighted_contexts": row.highlighted_contexts,
+                "messages": row.messages,
+                "is_active": row.is_active,
+                "created_at": row.created_at,
+                "updated_at": row.updated_at
+            })))
+        } else {
+            Ok(None)
+        }
+    }
+
     /// Set active chat session
     pub async fn set_active_chat_session(&self, chat_session_id: Uuid) -> Result<()> {
         // First, deactivate all chat sessions
@@ -618,6 +691,53 @@ impl Database {
             .execute(&self.pool)
             .await
             .context("Failed to delete chat session")?;
+
+        Ok(())
+    }
+
+    /// Clear chat session (delete all messages and contexts, keep session active)
+    pub async fn clear_chat_session(&self, chat_session_id: Uuid) -> Result<()> {
+        // Delete all messages for this chat session
+        sqlx::query!("DELETE FROM chat_messages WHERE chat_session_id = $1", chat_session_id)
+            .execute(&self.pool)
+            .await
+            .context("Failed to delete chat messages")?;
+
+        // Delete all highlighted contexts for this chat session
+        sqlx::query!("DELETE FROM highlighted_contexts WHERE chat_session_id = $1", chat_session_id)
+            .execute(&self.pool)
+            .await
+            .context("Failed to delete highlighted contexts")?;
+
+        // Reset source document count and update timestamp
+        sqlx::query!(
+            r#"
+            UPDATE chat_sessions 
+            SET source_document_count = 0, updated_at = NOW()
+            WHERE id = $1
+            "#,
+            chat_session_id
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to reset chat session")?;
+
+        Ok(())
+    }
+
+    /// End chat session (mark as inactive and set completed_at)
+    pub async fn end_chat_session(&self, chat_session_id: Uuid) -> Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE chat_sessions 
+            SET is_active = false, completed_at = NOW(), updated_at = NOW()
+            WHERE id = $1
+            "#,
+            chat_session_id
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to end chat session")?;
 
         Ok(())
     }

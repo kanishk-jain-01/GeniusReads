@@ -56,6 +56,8 @@ const Dashboard = () => {
     currentTab: 'library'
   });
   const [clearSelectionTrigger, setClearSelectionTrigger] = useState(0); // Trigger for clearing PDF selection
+  const [viewingChatId, setViewingChatId] = useState<string | undefined>(); // For viewing specific ended chats
+  const [chatListRefreshTrigger, setChatListRefreshTrigger] = useState(0); // Trigger for refreshing chat list
   const { toast } = useToast();
 
   // Handle CMD+K: Navigate directly to active chat interface
@@ -160,21 +162,25 @@ const Dashboard = () => {
     };
   };
 
-  // Handle chat selection from ChatList
-  const handleChatSelect = (_chatId: string) => {
-    // Navigate to individual chat interface
+  // Handle chat selection from ChatList (for ended chats)
+  const handleChatSelect = (chatId: string) => {
+    // Set viewing chat ID and navigate to read-only chat interface
+    setViewingChatId(chatId);
     setViewMode('chat-interface');
-    // TODO: Load specific chat data based on chatId in future tasks
   };
 
   // Handle starting new chat from ChatList
   const handleStartNewChat = () => {
-    // Navigate to active chat interface
+    // Clear viewing chat ID and navigate to active chat interface
+    setViewingChatId(undefined);
     setViewMode('chat-interface');
   };
 
   // Handle chat interface actions
   const handleChatBack = () => {
+    // Clear viewing chat ID and return to previous location
+    setViewingChatId(undefined);
+    
     // Return to previous location based on how chat was accessed
     if (navigationState.previousTab === 'reader') {
       setViewMode('reader');
@@ -183,34 +189,38 @@ const Dashboard = () => {
     }
   };
 
-  const handleChatSave = () => {
-    // Save chat and return to reading position
+  const handleChatClear = () => {
+    // Clear chat completely and stay in chat interface for fresh start
     setCurrentTextSelection(undefined);
-    if (navigationState.readingPosition && navigationState.previousTab === 'reader') {
-      setViewMode('reader');
-    } else {
-      setViewMode('library');
-    }
+    setClearSelectionTrigger(prev => prev + 1);
+    refreshChatList(); // Refresh chat list to reflect changes
+    toast({
+      title: "Chat Cleared",
+      description: "Chat has been cleared. You can start a new conversation.",
+    });
+    // Stay in chat interface for fresh start
   };
 
-  const handleChatSaveAndAnalyze = () => {
-    // Save chat, trigger analysis, and navigate to Knowledge tab
+  const handleChatEnd = () => {
+    // End chat and navigate to chat list
     setCurrentTextSelection(undefined);
+    refreshChatList(); // Refresh chat list to show ended chat
+    setViewMode('chat'); // Go to chat list
+    toast({
+      title: "Chat Ended",
+      description: "Your conversation has been moved to chat history.",
+    });
+  };
+
+  const handleChatAnalyze = () => {
+    // Trigger analysis and navigate to Knowledge tab
+    setCurrentTextSelection(undefined);
+    refreshChatList(); // Refresh chat list to reflect analysis status
     setViewMode('knowledge');
     toast({
       title: "Analysis Started",
       description: "Your conversation is being analyzed for concepts. Check the Knowledge tab for results.",
     });
-  };
-
-  const handleChatDelete = () => {
-    // Delete chat and return to reading position
-    setCurrentTextSelection(undefined);
-    if (navigationState.readingPosition && navigationState.previousTab === 'reader') {
-      setViewMode('reader');
-    } else {
-      setViewMode('library');
-    }
   };
 
   // Set up keyboard shortcuts
@@ -421,6 +431,11 @@ const Dashboard = () => {
         console.error('Failed to update total pages in database:', error);
       }
     }
+  };
+
+  // Helper function to refresh chat list
+  const refreshChatList = () => {
+    setChatListRefreshTrigger(prev => prev + 1);
   };
 
   const sidebarItems = [
@@ -683,6 +698,13 @@ const Dashboard = () => {
             currentDocument={currentDocument}
             onChatSelect={handleChatSelect}
             onStartNewChat={handleStartNewChat}
+            onChatDelete={(chatId) => {
+              toast({
+                title: "Chat Deleted",
+                description: "The conversation has been removed from your history.",
+              });
+            }}
+            refreshTrigger={chatListRefreshTrigger}
           />
         )}
 
@@ -691,10 +713,12 @@ const Dashboard = () => {
             textSelection={currentTextSelection}
             document={currentDocument}
             onBack={handleChatBack}
-            onSave={handleChatSave}
-            onSaveAndAnalyze={handleChatSaveAndAnalyze}
-            onDelete={handleChatDelete}
+            onClear={handleChatClear}
+            onEndChat={handleChatEnd}
+            onAnalyze={handleChatAnalyze}
             onTextSelectionProcessed={handleTextSelectionProcessed}
+            readOnly={!!viewingChatId}
+            chatSessionId={viewingChatId}
           />
         )}
 

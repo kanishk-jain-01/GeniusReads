@@ -372,6 +372,32 @@ export const getActiveChatSession = async (): Promise<any | null> => {
   }
 };
 
+export const getChatSessionById = async (chatSessionId: string): Promise<any | null> => {
+  try {
+    const result = await invoke<any>('get_chat_session_by_id', { chatSessionId });
+    if (!result) return null;
+    
+    return {
+      id: result.id,
+      title: result.title,
+      highlightedContexts: (result.highlighted_contexts || []).map((context: any) => ({
+        ...context,
+        createdAt: new Date(context.created_at)
+      })),
+      messages: (result.messages || []).map((message: any) => ({
+        ...message,
+        createdAt: new Date(message.created_at)
+      })),
+      createdAt: new Date(result.created_at),
+      updatedAt: new Date(result.updated_at),
+      isActive: result.is_active || false
+    };
+  } catch (error) {
+    console.error('Failed to get chat session by ID:', error);
+    throw new Error(`Failed to get chat session by ID: ${error}`);
+  }
+};
+
 export const setActiveChatSession = async (chatSessionId: string): Promise<void> => {
   try {
     await invoke('set_active_chat_session', { chatSessionId });
@@ -431,6 +457,24 @@ export const deleteChatSession = async (chatSessionId: string): Promise<void> =>
   } catch (error) {
     console.error('Failed to delete chat session:', error);
     throw new Error(`Failed to delete chat session: ${error}`);
+  }
+};
+
+export const clearChatSession = async (chatSessionId: string): Promise<void> => {
+  try {
+    await invoke('clear_chat_session', { chatSessionId });
+  } catch (error) {
+    console.error('Failed to clear chat session:', error);
+    throw new Error(`Failed to clear chat session: ${error}`);
+  }
+};
+
+export const endChatSession = async (chatSessionId: string): Promise<void> => {
+  try {
+    await invoke('end_chat_session', { chatSessionId });
+  } catch (error) {
+    console.error('Failed to end chat session:', error);
+    throw new Error(`Failed to end chat session: ${error}`);
   }
 };
 
