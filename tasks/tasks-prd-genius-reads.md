@@ -150,7 +150,7 @@
   - [x] 6.6 Integrate concept extraction into chat analysis workflow
   - [x] 6.7 Add processing status tracking and progress indicators
   - [x] 6.8 Implement concept storage with vector embeddings
-  - [ ] 6.9 Create concept-chat linking system with relevance scores
+  - [x] 6.9 Create concept-chat linking system with relevance scores
   - [ ] 6.10 Test complete concept extraction pipeline
 
 - [ ] 7.0 Build Knowledge Base Interface and Concept Management

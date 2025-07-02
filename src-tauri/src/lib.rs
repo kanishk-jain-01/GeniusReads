@@ -818,6 +818,51 @@ async fn search_concepts_by_text(
     }
 }
 
+// ============================================================================
+// Enhanced Concept-Chat Linking Commands
+// ============================================================================
+
+#[tauri::command]
+async fn get_concept_chat_relationship(
+    concept_id: String,
+    chat_session_id: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<Option<serde_json::Value>, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let concept_uuid = uuid::Uuid::parse_str(&concept_id)
+            .map_err(|e| format!("Invalid concept UUID: {}", e))?;
+        let chat_uuid = uuid::Uuid::parse_str(&chat_session_id)
+            .map_err(|e| format!("Invalid chat session UUID: {}", e))?;
+        
+        match database.get_concept_chat_relationship(concept_uuid, chat_uuid).await {
+            Ok(relationship) => Ok(relationship),
+            Err(e) => Err(format!("Failed to get concept-chat relationship: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn get_concepts_for_chat_session(
+    chat_session_id: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<Vec<serde_json::Value>, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let chat_uuid = uuid::Uuid::parse_str(&chat_session_id)
+            .map_err(|e| format!("Invalid chat session UUID: {}", e))?;
+        
+        match database.get_concepts_for_chat_session(chat_uuid).await {
+            Ok(concepts) => Ok(concepts),
+            Err(e) => Err(format!("Failed to get concepts for chat session: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -858,7 +903,9 @@ pub fn run() {
             get_extraction_concepts,
             get_concept_by_id,
             find_similar_concepts,
-            search_concepts_by_text
+            search_concepts_by_text,
+            get_concept_chat_relationship,
+            get_concepts_for_chat_session
         ])
         .setup(|app| {
             // Initialize database connection

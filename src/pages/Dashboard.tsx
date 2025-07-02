@@ -17,7 +17,8 @@ import {
   Settings,
   Upload,
   Tag,
-  TrendingUp
+  TrendingUp,
+  ExternalLink
 } from "lucide-react";
 import PDFViewer from "@/components/PDFViewer";
 import ChatInterface from "@/pages/ChatInterface";
@@ -34,7 +35,8 @@ import {
   saveReadingPosition,
   getLastReadingPosition,
   getActiveChatSession,
-  getExtractionConcepts
+  getExtractionConcepts,
+  getConceptByIdDetailed
 } from "@/lib/api";
 import type { Document, TextSelection, HighlightedContext, Concept } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -283,6 +285,64 @@ const Dashboard = () => {
       });
     } finally {
       setConceptsLoading(false);
+    }
+  };
+
+  // Handle concept card click for detailed view
+  const handleConceptClick = async (conceptId: string) => {
+    try {
+      const conceptDetail = await getConceptByIdDetailed(conceptId);
+      if (conceptDetail) {
+        // Store concept detail for potential future use
+        console.log('Concept detail:', conceptDetail);
+        
+        // For now, show a toast with source information
+        const sourceCount = conceptDetail.sourceChats?.length || 0;
+        toast({
+          title: "Concept Details",
+          description: `"${conceptDetail.name}" found in ${sourceCount} conversation${sourceCount !== 1 ? 's' : ''}. Click "View Source" to navigate to original chat.`,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load concept details:', error);
+      toast({
+        title: "Failed to Load Details",
+        description: "Could not load concept details.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle view source navigation
+  const handleViewSource = async (conceptId: string) => {
+    try {
+      const conceptDetail = await getConceptByIdDetailed(conceptId);
+      if (conceptDetail && conceptDetail.sourceChats && conceptDetail.sourceChats.length > 0) {
+        // Navigate to the first (most relevant) source chat
+        const primarySourceChat = conceptDetail.sourceChats[0];
+        
+        // Set viewing chat ID and navigate to chat interface
+        setViewingChatId(primarySourceChat.id);
+        setViewMode('chat-interface');
+        
+        toast({
+          title: "Navigating to Source",
+          description: `Opening chat: "${primarySourceChat.title}"`,
+        });
+      } else {
+        toast({
+          title: "No Source Found",
+          description: "Could not find source conversation for this concept.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to navigate to source:', error);
+      toast({
+        title: "Navigation Failed",
+        description: "Could not navigate to source conversation.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -813,7 +873,7 @@ const Dashboard = () => {
                       concept.tags.some(tag => tag.toLowerCase().includes(conceptSearchQuery.toLowerCase()))
                     )
                     .map((concept) => (
-                      <Card key={concept.id} className="hover:shadow-md transition-all duration-200 cursor-pointer bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                      <Card key={concept.id} className="hover:shadow-md transition-all duration-200 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                         <CardContent className="p-6">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex-1">
@@ -834,7 +894,7 @@ const Dashboard = () => {
                                 </span>
                               </div>
                               {concept.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
+                                <div className="flex flex-wrap gap-1 mb-3">
                                   {concept.tags.slice(0, 3).map((tag, index) => (
                                     <Badge key={index} variant="secondary" className="text-xs">
                                       <Tag className="h-2 w-2 mr-1" />
@@ -849,9 +909,34 @@ const Dashboard = () => {
                                 </div>
                               )}
                             </div>
-                            <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500 ml-2" />
                           </div>
-                          <div className="text-xs text-slate-400 dark:text-slate-500">
+                          
+                          {/* Action Buttons */}
+                          <div className="flex items-center justify-between">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleConceptClick(concept.id)}
+                              className="text-xs"
+                            >
+                              <Brain className="h-3 w-3 mr-1" />
+                              Details
+                            </Button>
+                            
+                            {concept.sourceChatCount > 0 && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => handleViewSource(concept.id)}
+                                className="text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                              >
+                                <ExternalLink className="h-3 w-3 mr-1" />
+                                View Source
+                              </Button>
+                            )}
+                          </div>
+                          
+                          <div className="text-xs text-slate-400 dark:text-slate-500 mt-3 pt-3 border-t border-slate-200 dark:border-slate-600">
                             Added {formatLastAccessed(concept.createdAt)}
                           </div>
                         </CardContent>

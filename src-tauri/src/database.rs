@@ -1169,7 +1169,7 @@ impl Database {
         Ok(concepts)
     }
 
-    /// Get a specific concept by ID with its relationships
+    /// Get a specific concept by ID with its relationships and detailed source information
     pub async fn get_concept_by_id(&self, concept_id: Uuid) -> Result<Option<serde_json::Value>> {
         let concept_row = sqlx::query!(
             r#"
@@ -1184,13 +1184,24 @@ impl Database {
         .context("Failed to get concept by ID")?;
 
         if let Some(concept) = concept_row {
-            // Get related chat sessions
+            // Get related chat sessions with detailed information
             let chat_links = sqlx::query!(
                 r#"
-                SELECT cs.id, cs.title, ccl.relevance_score
+                SELECT 
+                    cs.id, 
+                    cs.title, 
+                    cs.preview_text,
+                    cs.created_at,
+                    cs.updated_at,
+                    ccl.relevance_score,
+                    COUNT(DISTINCT cm.id) as message_count,
+                    COUNT(DISTINCT hc.id) as context_count
                 FROM concept_chat_links ccl
                 JOIN chat_sessions cs ON ccl.chat_session_id = cs.id
+                LEFT JOIN chat_messages cm ON cs.id = cm.chat_session_id
+                LEFT JOIN highlighted_contexts hc ON cs.id = hc.chat_session_id
                 WHERE ccl.concept_id = $1
+                GROUP BY cs.id, cs.title, cs.preview_text, cs.created_at, cs.updated_at, ccl.relevance_score
                 ORDER BY ccl.relevance_score DESC
                 "#,
                 concept_id
@@ -1199,14 +1210,72 @@ impl Database {
             .await
             .context("Failed to get concept chat links")?;
 
-            let source_chats: Vec<serde_json::Value> = chat_links
-                .into_iter()
-                .map(|row| serde_json::json!({
-                    "id": row.id,
-                    "title": row.title,
-                    "relevanceScore": row.relevance_score
-                }))
-                .collect();
+            let mut source_chats: Vec<serde_json::Value> = Vec::new();
+
+            for chat_link in chat_links {
+                // Get specific messages from this chat that might be relevant
+                let sample_messages = sqlx::query!(
+                    r#"
+                    SELECT id, content, sender_type, created_at
+                    FROM chat_messages
+                    WHERE chat_session_id = $1
+                    ORDER BY created_at ASC
+                    LIMIT 3
+                    "#,
+                    chat_link.id
+                )
+                .fetch_all(&self.pool)
+                .await
+                .context("Failed to get sample messages")?;
+
+                let messages: Vec<serde_json::Value> = sample_messages
+                    .into_iter()
+                    .map(|msg| serde_json::json!({
+                        "id": msg.id,
+                        "content": msg.content,
+                        "senderType": msg.sender_type,
+                        "createdAt": msg.created_at.to_rfc3339()
+                    }))
+                    .collect();
+
+                // Get highlighted contexts from this chat
+                let highlighted_contexts = sqlx::query!(
+                    r#"
+                    SELECT id, document_title, page_number, selected_text, created_at
+                    FROM highlighted_contexts
+                    WHERE chat_session_id = $1
+                    ORDER BY created_at ASC
+                    "#,
+                    chat_link.id
+                )
+                .fetch_all(&self.pool)
+                .await
+                .context("Failed to get highlighted contexts")?;
+
+                let contexts: Vec<serde_json::Value> = highlighted_contexts
+                    .into_iter()
+                    .map(|ctx| serde_json::json!({
+                        "id": ctx.id,
+                        "documentTitle": ctx.document_title,
+                        "pageNumber": ctx.page_number,
+                        "selectedText": ctx.selected_text,
+                        "createdAt": ctx.created_at.to_rfc3339()
+                    }))
+                    .collect();
+
+                source_chats.push(serde_json::json!({
+                    "id": chat_link.id,
+                    "title": chat_link.title,
+                    "previewText": chat_link.preview_text,
+                    "relevanceScore": chat_link.relevance_score,
+                    "messageCount": chat_link.message_count.unwrap_or(0),
+                    "contextCount": chat_link.context_count.unwrap_or(0),
+                    "createdAt": chat_link.created_at.to_rfc3339(),
+                    "updatedAt": chat_link.updated_at.to_rfc3339(),
+                    "sampleMessages": messages,
+                    "highlightedContexts": contexts
+                }));
+            }
 
             // Get related concepts
             let related_concepts = sqlx::query!(
@@ -1250,6 +1319,127 @@ impl Database {
         } else {
             Ok(None)
         }
+    }
+
+    /// Get detailed concept-chat relationship information for navigation
+    pub async fn get_concept_chat_relationship(&self, concept_id: Uuid, chat_session_id: Uuid) -> Result<Option<serde_json::Value>> {
+        // Get the concept-chat link information
+        let link_info = sqlx::query!(
+            r#"
+            SELECT ccl.relevance_score, ccl.created_at as link_created_at,
+                   c.name as concept_name, c.description as concept_description,
+                   cs.title as chat_title, cs.preview_text
+            FROM concept_chat_links ccl
+            JOIN concepts c ON ccl.concept_id = c.id
+            JOIN chat_sessions cs ON ccl.chat_session_id = cs.id
+            WHERE ccl.concept_id = $1 AND ccl.chat_session_id = $2
+            "#,
+            concept_id,
+            chat_session_id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to get concept-chat relationship")?;
+
+        if let Some(link) = link_info {
+            // Get all messages from the chat session
+            let messages = sqlx::query!(
+                r#"
+                SELECT id, content, sender_type, created_at, metadata
+                FROM chat_messages
+                WHERE chat_session_id = $1
+                ORDER BY created_at ASC
+                "#,
+                chat_session_id
+            )
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to get chat messages")?;
+
+            let chat_messages: Vec<serde_json::Value> = messages
+                .into_iter()
+                .map(|msg| serde_json::json!({
+                    "id": msg.id,
+                    "content": msg.content,
+                    "senderType": msg.sender_type,
+                    "createdAt": msg.created_at.to_rfc3339(),
+                    "metadata": msg.metadata
+                }))
+                .collect();
+
+            // Get all highlighted contexts from the chat session
+            let contexts = sqlx::query!(
+                r#"
+                SELECT id, document_id, document_title, page_number, selected_text, text_coordinates, created_at
+                FROM highlighted_contexts
+                WHERE chat_session_id = $1
+                ORDER BY created_at ASC
+                "#,
+                chat_session_id
+            )
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to get highlighted contexts")?;
+
+            let highlighted_contexts: Vec<serde_json::Value> = contexts
+                .into_iter()
+                .map(|ctx| serde_json::json!({
+                    "id": ctx.id,
+                    "documentId": ctx.document_id,
+                    "documentTitle": ctx.document_title,
+                    "pageNumber": ctx.page_number,
+                    "selectedText": ctx.selected_text,
+                    "textCoordinates": ctx.text_coordinates,
+                    "createdAt": ctx.created_at.to_rfc3339()
+                }))
+                .collect();
+
+            Ok(Some(serde_json::json!({
+                "conceptId": concept_id,
+                "chatSessionId": chat_session_id,
+                "conceptName": link.concept_name,
+                "conceptDescription": link.concept_description,
+                "chatTitle": link.chat_title,
+                "chatPreviewText": link.preview_text,
+                "relevanceScore": link.relevance_score,
+                "linkCreatedAt": link.link_created_at.to_rfc3339(),
+                "messages": chat_messages,
+                "highlightedContexts": highlighted_contexts
+            })))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Get all concepts linked to a specific chat session
+    pub async fn get_concepts_for_chat_session(&self, chat_session_id: Uuid) -> Result<Vec<serde_json::Value>> {
+        let concept_links = sqlx::query!(
+            r#"
+            SELECT c.id, c.name, c.description, c.confidence_score, ccl.relevance_score, ccl.created_at as link_created_at
+            FROM concept_chat_links ccl
+            JOIN concepts c ON ccl.concept_id = c.id
+            WHERE ccl.chat_session_id = $1
+            ORDER BY ccl.relevance_score DESC
+            "#,
+            chat_session_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to get concepts for chat session")?;
+
+        let concepts: Vec<serde_json::Value> = concept_links
+            .into_iter()
+            .map(|row| serde_json::json!({
+                "id": row.id,
+                "name": row.name,
+                "description": row.description,
+                "confidenceScore": row.confidence_score,
+                "relevanceScore": row.relevance_score,
+                "linkCreatedAt": row.link_created_at.to_rfc3339()
+            }))
+            .collect();
+
+        Ok(concepts)
     }
 }
 

@@ -906,4 +906,54 @@ export const searchConceptsByText = async (
     console.error('Failed to search concepts by text:', error);
     throw new Error(`Failed to search concepts by text: ${error}`);
   }
+};
+
+// ============================================================================
+// Enhanced Concept-Chat Linking Functions
+// ============================================================================
+
+/**
+ * Get detailed relationship information between a concept and chat session
+ */
+export const getConceptChatRelationship = async (conceptId: string, chatSessionId: string): Promise<any> => {
+  try {
+    const relationship = await invoke<any>('get_concept_chat_relationship', { 
+      conceptId, 
+      chatSessionId 
+    });
+    return relationship;
+  } catch (error) {
+    console.error('Failed to get concept-chat relationship:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all concepts linked to a specific chat session
+ */
+export const getConceptsForChatSession = async (chatSessionId: string): Promise<any[]> => {
+  try {
+    const concepts = await invoke<any[]>('get_concepts_for_chat_session', { 
+      chatSessionId 
+    });
+    return concepts;
+  } catch (error) {
+    console.error('Failed to get concepts for chat session:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get detailed concept information by ID with enhanced source information
+ */
+export const getConceptByIdDetailed = async (conceptId: string): Promise<any> => {
+  try {
+    const concept = await invoke<any>('get_concept_by_id', { 
+      conceptId 
+    });
+    return concept;
+  } catch (error) {
+    console.error('Failed to get concept by ID:', error);
+    throw error;
+  }
 }; 

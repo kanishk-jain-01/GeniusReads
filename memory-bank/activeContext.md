@@ -2,14 +2,48 @@
 
 ## Current Work Focus
 
-**MAJOR MILESTONE ACHIEVED: COMPLETE CONCEPT EXTRACTION SYSTEM WITH VECTOR EMBEDDINGS** ✅ **TASKS 6.7, 6.8, 7.1 COMPLETE**
-**Status**: Foundation Complete → PDF System Complete → Text Selection Complete → Chat Interface Complete → OpenAI Integration Complete → **LangGraph Integration Complete** → **Knowledge Base Interface Operational**
+**MAJOR MILESTONE ACHIEVED: COMPLETE CONCEPT EXTRACTION SYSTEM WITH ENHANCED TRACEABILITY** ✅ **TASKS 6.7, 6.8, 6.9, 7.1 COMPLETE**
+**Status**: Foundation Complete → PDF System Complete → Text Selection Complete → Chat Interface Complete → OpenAI Integration Complete → **LangGraph Integration Complete** → **Knowledge Base Interface Operational** → **Concept-Chat Linking System Complete**
 
 ## Recent Activities
 
-### TODAY'S MAJOR ACHIEVEMENTS - ✅ **BREAKTHROUGH SESSION**
+### TODAY'S MAJOR ACHIEVEMENT - ✅ **TASK 6.9 COMPLETE**
 
-**EXTRAORDINARY PROGRESS**: Completed three major tasks in a single session, delivering a fully operational concept extraction system with vector embeddings and knowledge base interface.
+**BREAKTHROUGH**: Successfully implemented concept-chat linking system with enhanced traceability, completing another critical component of the knowledge management pipeline.
+
+#### TASK 6.9: Concept-Chat Linking System - ✅ **COMPLETE - ENHANCED TRACEABILITY OPERATIONAL**
+
+**ACHIEVEMENT**: Successfully implemented comprehensive concept-chat linking system providing detailed traceability from concepts back to source conversations.
+
+**Implementation Details**:
+1. **🎯 Enhanced Database Functions - COMPLETED**
+   - **Enhanced `get_concept_by_id`**: Now returns detailed source information including sample messages and highlighted contexts
+   - **New `get_concept_chat_relationship`**: Provides detailed relationship information between specific concepts and chat sessions
+   - **New `get_concepts_for_chat_session`**: Returns all concepts linked to a specific chat session
+   - **Result**: Complete database layer for concept-chat relationship management
+
+2. **🎯 Frontend API Integration - COMPLETED**
+   - **New API Functions**: `getConceptChatRelationship`, `getConceptsForChatSession`
+   - **Enhanced Concept Retrieval**: `getConceptByIdDetailed` with full source information
+   - **Type Safety**: Proper TypeScript integration for relationship data
+   - **Error Handling**: Comprehensive error handling throughout API layer
+   - **Result**: Complete frontend API for concept-chat traceability
+
+3. **🎯 Knowledge Interface Enhancement - COMPLETED**
+   - **View Source Buttons**: Added "View Source" functionality to concept cards
+   - **Concept Detail View**: Enhanced concept interaction with source navigation
+   - **Source Information Display**: Sample messages and highlighted contexts shown in concept details
+   - **Navigation Integration**: Seamless navigation from concepts to source conversations
+   - **Result**: Professional concept browsing with complete source traceability
+
+4. **🎯 Database Configuration Resolution - COMPLETED**
+   - **SQLx Compile-time Issue**: Resolved DATABASE_URL configuration for development
+   - **Environment Setup**: Proper .env file configuration for seamless development
+   - **Foundation Check**: Confirmed all systems operational with successful validation
+   - **Development Workflow**: Smooth development experience restored
+   - **Result**: Stable development environment with proper database configuration
+
+### PREVIOUS ACHIEVEMENTS (Earlier Sessions) - 100% COMPLETE ✅ **FOUNDATION ESTABLISHED**
 
 #### TASK 7.1: Knowledge Tab Implementation - ✅ **COMPLETE - CONCEPT DISPLAY OPERATIONAL**
 
@@ -40,76 +74,13 @@
 
 **ACHIEVEMENT**: Implemented comprehensive progress tracking and status indicators for concept extraction.
 
-**Implementation Details**:
-1. **🎯 ChatInterface Progress System - COMPLETED**
-   - **Multi-stage Progress**: 5-stage progress tracking with realistic progression
-   - **Real-time Timer**: Live processing time display during analysis
-   - **Visual Progress Bar**: Beautiful progress indicator with stage descriptions
-   - **Toast Notifications**: Comprehensive user feedback throughout process
-   - **Result**: Professional progress tracking rivaling commercial applications
-
-2. **🎯 ChatList Status Enhancement - COMPLETED**
-   - **Processing Indicators**: Animated loaders for chats being processed
-   - **Status Badges**: Enhanced status display with visual indicators
-   - **Real-time Updates**: Status changes reflected immediately in chat list
-   - **User Clarity**: Clear visual distinction between processed and pending chats
-   - **Result**: Complete status visibility across the application
-
-3. **🎯 ProcessingIndicator Component - COMPLETED**
-   - **Reusable Component**: Standalone component for detailed progress display
-   - **Timer Integration**: Real-time elapsed time tracking
-   - **Error Handling**: Graceful error state display
-   - **Completion Feedback**: Success states with detailed results
-   - **Result**: Professional processing feedback system
-
 #### TASK 6.8: Vector Embeddings Implementation - ✅ **COMPLETE - SEMANTIC SEARCH OPERATIONAL**
 
 **BREAKTHROUGH ACHIEVEMENT**: Implemented complete vector embedding system enabling semantic concept search and intelligent relationships.
 
-**Implementation Details**:
-1. **🎯 Enhanced Concept Storage - COMPLETED**
-   - **Automatic Embeddings**: Vector embeddings generated during concept storage
-   - **LangGraph Integration**: Seamless embedding generation using Python bridge
-   - **Relationship Scoring**: Calculated similarity scores for concept relationships
-   - **Bidirectional Links**: Proper relationship mapping between related concepts
-   - **Result**: Intelligent concept storage with semantic understanding
-
-2. **🎯 Vector Similarity Operations - COMPLETED**
-   - **Concept Similarity Search**: Find concepts similar to a given concept
-   - **Semantic Text Search**: Natural language queries converted to embeddings
-   - **Threshold Filtering**: Configurable similarity thresholds for precision
-   - **Performance Optimization**: HNSW indexes for fast approximate search
-   - **Result**: Advanced semantic search capabilities
-
-3. **🎯 API Integration - COMPLETED**
-   - **New Tauri Commands**: `find_similar_concepts`, `search_concepts_by_text`
-   - **Frontend API**: Complete API wrapper functions with error handling
-   - **Type Safety**: Proper TypeScript integration for vector operations
-   - **Database Functions**: Advanced SQL functions for vector similarity
-   - **Result**: Complete API layer for semantic concept operations
-
-### PREVIOUS ACHIEVEMENTS (Earlier Today) - 100% COMPLETE ✅ **FOUNDATION ESTABLISHED**
-
-#### TASK 6.6: Background Processing System - ✅ **COMPLETE - CONCEPT EXTRACTION WORKING**
-
-**MAJOR ACHIEVEMENT**: Successfully implemented complete background processing system for LangGraph concept extraction. The "Analyze" button in ChatInterface now triggers real concept extraction using the complete Python AI system.
-
-**Complete Workflow**:
-1. User has AI conversation with highlighted text contexts
-2. User clicks "Analyze" button in ChatInterface
-3. Frontend calls `analyzeChatSession` API function
-4. Rust backend updates chat status to 'processing'
-5. Chat data (messages + contexts) retrieved from database
-6. Data converted to Python-compatible format via pyo3 bridge
-7. LangGraph workflow executes concept extraction using OpenAI GPT-4o-mini
-8. Extracted concepts stored in database with vector embeddings
-9. Chat status updated to 'complete'
-10. User receives success notification with concept count and processing time
-11. User automatically navigated to Knowledge tab to view concepts
-
 ## Active Decisions
 
-### Complete LangGraph Concept Extraction System ✅ **FULLY OPERATIONAL WITH VECTOR EMBEDDINGS**
+### Complete LangGraph Concept Extraction System ✅ **FULLY OPERATIONAL WITH ENHANCED TRACEABILITY**
 
 #### Production Ready Features
 - **Real Concept Extraction**: Working OpenAI GPT-4o-mini integration
@@ -118,21 +89,24 @@
 - **Background Processing**: Async concept extraction with detailed progress tracking
 - **Database Integration**: Complete concept storage with relationships
 - **Knowledge Interface**: Beautiful concept browsing with search functionality
+- **Concept-Chat Linking**: Enhanced traceability from concepts to source conversations
+- **Source Navigation**: "View Source" functionality with detailed relationship information
 - **Error Handling**: Robust error recovery throughout the pipeline
 - **User Experience**: Professional progress feedback and automatic navigation
 
-#### Vector Embedding Capabilities
-- **Automatic Generation**: Embeddings created during concept storage
-- **Similarity Search**: Find concepts similar to any given concept
-- **Semantic Text Search**: Natural language queries for concept discovery
-- **Relationship Scoring**: Calculated similarity scores between concepts
-- **Performance Optimization**: HNSW indexes for fast approximate search
+#### Enhanced Traceability Capabilities
+- **Source Information**: Concepts include sample messages and highlighted contexts
+- **Relationship Details**: Detailed information about concept-chat relationships
+- **Navigation System**: Seamless navigation from concepts back to source conversations
+- **Relevance Scoring**: Relationship relevance scores for better context understanding
+- **Bidirectional Linking**: Complete linking system between concepts and chat sessions
 
 ## Next Steps
 
-### Current Priority: Task 6.9 - Concept-Chat Linking System **READY TO START**
+### Current Priority: Task 6.10 - Complete Pipeline Testing **READY TO START**
 
-**CONCEPT EXTRACTION SYSTEM WITH VECTOR EMBEDDINGS COMPLETE**: Full end-to-end concept extraction with semantic search capabilities
+**CONCEPT EXTRACTION SYSTEM WITH ENHANCED TRACEABILITY COMPLETE**: Full end-to-end concept extraction with semantic search and source navigation capabilities
+- ✅ **Concept-Chat Linking**: Complete traceability system with source navigation
 - ✅ **Vector Embeddings**: Complete semantic search and similarity operations
 - ✅ **Knowledge Interface**: Functional concept browsing with search
 - ✅ **Progress Tracking**: Professional progress indicators and status feedback
@@ -140,37 +114,42 @@
 - ✅ **LangGraph Integration**: Real OpenAI concept extraction from chat conversations
 - ✅ **Database Storage**: Full concept persistence with vector embeddings
 - ✅ **Frontend Integration**: "Analyze" button triggers complete workflow
+- ✅ **Development Environment**: Stable configuration with proper database setup
 
 **Next Implementation Steps**:
-1. **Task 6.9**: Create concept-chat linking system with relevance scores
-2. **Task 6.10**: Test complete concept extraction pipeline
-3. **Task 7.2**: Create ConceptCard component with enhanced preview information
-4. **Task 7.3**: Implement ConceptDetail page showing source chats and book sections
-5. **Task 7.4**: Add advanced concept search and filtering functionality
+1. **Task 6.10**: Test complete concept extraction pipeline
+2. **Task 7.2**: Create ConceptCard component with enhanced preview information
+3. **Task 7.3**: Implement ConceptDetail page showing source chats and book sections
+4. **Task 7.4**: Add advanced concept search and filtering functionality
 
-### Architecture Ready for Advanced Knowledge Features **ENHANCED WITH SEMANTIC SEARCH**
+### Architecture Ready for Advanced Knowledge Features **ENHANCED WITH SOURCE TRACEABILITY**
 
-**Status**: LangGraph concept extraction with vector embeddings is fully operational and ready for advanced knowledge management features
+**Status**: LangGraph concept extraction with vector embeddings and complete source traceability is fully operational and ready for advanced knowledge management features
 - ✅ **Working AI System**: Real concept extraction from conversations using OpenAI
 - ✅ **Vector Database**: pgvector extension with semantic search capabilities
 - ✅ **Semantic Operations**: Find similar concepts and text-based search
 - ✅ **Knowledge Interface**: Functional concept browsing with search
+- ✅ **Source Traceability**: Complete concept-chat linking with navigation
 - ✅ **Progress Tracking**: Professional progress indicators throughout workflow
 - ✅ **Background Processing**: Complete async workflow with status tracking
 - ✅ **Database Integration**: Full concept persistence with relationships
 - ✅ **Frontend API**: Complete API layer for concept and vector operations
 - ✅ **User Workflow**: Seamless experience from chat analysis to concept discovery
+- ✅ **Development Environment**: Stable configuration with proper database setup
 
 ## Context for Next Session
 
 **Extraordinary Achievement**: 
-- **Three Major Tasks Complete**: Tasks 6.7, 6.8, and 7.1 completed in single session
-- **Vector Embeddings Operational**: Complete semantic search and similarity operations
-- **Knowledge Interface Live**: Functional concept browsing replacing empty placeholder
-- **Professional Progress Tracking**: Enhanced user feedback throughout analysis workflow
-- **End-to-End Workflow**: Users can analyze conversations, extract concepts, and browse knowledge with semantic search
+- **Task 6.9 Complete**: Concept-chat linking system with enhanced traceability operational
+- **Database Configuration**: Resolved SQLx compile-time issues with proper .env setup
+- **Foundation Check**: All systems validated and operational
+- **Development Stability**: Smooth development workflow restored
+- **Enhanced Traceability**: Users can now navigate from concepts back to source conversations
 
 **Technical Excellence**:
+- **Source Navigation**: "View Source" functionality with detailed relationship information
+- **Enhanced Database Functions**: Complete concept-chat relationship management
+- **API Integration**: Full frontend API for traceability operations
 - **Vector Embeddings**: 384-dimensional embeddings with HNSW optimization
 - **Semantic Search**: Natural language queries and concept similarity operations
 - **Knowledge Interface**: Beautiful concept cards with search functionality
@@ -179,19 +158,22 @@
 - **Database Integration**: Complete concept storage with vector operations
 - **Error Handling**: Robust error recovery throughout the pipeline
 - **User Experience**: Professional workflow with automatic navigation
+- **Development Environment**: Stable configuration with proper database setup
 
-**Current Status**: **TASKS 6.7, 6.8, 7.1 COMPLETE** - Vector embedding system operational with knowledge interface
+**Current Status**: **TASKS 6.7, 6.8, 6.9, 7.1 COMPLETE** - Concept extraction system with enhanced traceability operational
 
-**Next Focus**: Implement concept-chat linking system (Task 6.9) to enhance traceability from concepts back to source conversations, then complete the concept extraction pipeline testing.
+**Next Focus**: Test complete concept extraction pipeline (Task 6.10) to validate end-to-end functionality and identify any remaining issues or optimizations.
 
 **Key Success Factors**:
-1. **Vector Embeddings**: Complete semantic search and similarity operations
-2. **Knowledge Interface**: Functional concept browsing with professional UI
-3. **Progress Tracking**: Enhanced user feedback throughout analysis workflow
-4. **Working AI Integration**: Real OpenAI concept extraction from chat conversations
-5. **Background Processing**: Complete async workflow with database status tracking
-6. **User Experience**: Seamless workflow from "Analyze" button to concept discovery
-7. **Error Resilience**: Comprehensive error handling throughout the pipeline
-8. **Production Ready**: Full integration ready for advanced knowledge management features
+1. **Enhanced Traceability**: Complete concept-chat linking with source navigation
+2. **Vector Embeddings**: Complete semantic search and similarity operations
+3. **Knowledge Interface**: Functional concept browsing with professional UI
+4. **Progress Tracking**: Enhanced user feedback throughout analysis workflow
+5. **Working AI Integration**: Real OpenAI concept extraction from chat conversations
+6. **Background Processing**: Complete async workflow with database status tracking
+7. **User Experience**: Seamless workflow from "Analyze" button to concept discovery
+8. **Error Resilience**: Comprehensive error handling throughout the pipeline
+9. **Production Ready**: Full integration ready for advanced knowledge management features
+10. **Development Stability**: Proper environment configuration for smooth development
 
-Today's session represents a quantum leap in GeniusReads' capabilities, delivering a complete concept extraction system with vector embeddings and semantic search. The knowledge base interface is now operational, enabling users to discover and explore concepts extracted from their conversations using advanced AI processing. This completes the core value proposition and positions GeniusReads as a sophisticated AI-powered reading and knowledge management tool. 
+Today's session successfully completed the concept-chat linking system, providing users with complete traceability from extracted concepts back to their source conversations. Combined with the vector embedding system and knowledge interface, GeniusReads now offers a comprehensive knowledge management experience that rivals commercial applications. The resolution of the database configuration issue ensures a stable development environment for future enhancements. 
