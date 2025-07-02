@@ -27,6 +27,7 @@ interface ChatInterfaceProps {
   onSave: () => void;
   onSaveAndAnalyze: () => void;
   onDelete: () => void;
+  onTextSelectionProcessed?: () => void;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -35,9 +36,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onBack,
   onSave,
   onSaveAndAnalyze,
-  onDelete
+  onDelete,
+  onTextSelectionProcessed
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [highlightedContexts, setHighlightedContexts] = useState<HighlightedContext[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
@@ -80,6 +83,63 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         setCurrentChatSessionId(activeSession.id);
         setChatTitle(activeSession.title);
         setMessages(activeSession.messages || []);
+        setHighlightedContexts(activeSession.highlightedContexts || []);
+        
+        // If we have a new text selection, add it to the existing session
+        if (textSelection && document) {
+          // Add highlighted context to existing session
+          await addHighlightedContext(
+            activeSession.id,
+            textSelection.documentId,
+            document.title,
+            textSelection.pageNumber,
+            textSelection.selectedText,
+            textSelection.boundingBoxes.map(box => ({
+              x: box.x,
+              y: box.y,
+              width: box.width,
+              height: box.height
+            }))
+          );
+          
+          // Add to local highlighted contexts state
+          const newHighlightedContext: HighlightedContext = {
+            id: crypto.randomUUID(),
+            documentId: textSelection.documentId,
+            documentTitle: document.title,
+            pageNumber: textSelection.pageNumber,
+            selectedText: textSelection.selectedText,
+            textCoordinates: textSelection.boundingBoxes.map(box => ({
+              x: box.x,
+              y: box.y,
+              width: box.width,
+              height: box.height
+            })),
+            createdAt: new Date()
+          };
+          
+          setHighlightedContexts(prev => [...prev, newHighlightedContext]);
+          
+          // Add a new context message to the conversation
+          const messageId = await addChatMessage(
+            activeSession.id,
+            `I'd also like to understand this text: "${textSelection.selectedText}"`,
+            'user'
+          );
+          
+          const contextMessage: ChatMessage = {
+            id: messageId,
+            chatSessionId: activeSession.id,
+            content: `I'd also like to understand this text: "${textSelection.selectedText}"`,
+            senderType: 'user',
+            createdAt: new Date()
+          };
+          
+          setMessages(prev => [...prev, contextMessage]);
+          
+          // Clear the text selection state in parent component
+          onTextSelectionProcessed?.();
+        }
       } else if (textSelection && document) {
         // Create new session with text selection
         const title = textSelection.selectedText.length > 50 
@@ -104,6 +164,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             height: box.height
           }))
         );
+        
+        // Set initial highlighted context in state
+        const initialHighlightedContext: HighlightedContext = {
+          id: crypto.randomUUID(),
+          documentId: textSelection.documentId,
+          documentTitle: document.title,
+          pageNumber: textSelection.pageNumber,
+          selectedText: textSelection.selectedText,
+          textCoordinates: textSelection.boundingBoxes.map(box => ({
+            x: box.x,
+            y: box.y,
+            width: box.width,
+            height: box.height
+          })),
+          createdAt: new Date()
+        };
+        
+        setHighlightedContexts([initialHighlightedContext]);
         
         // Set as active session
         await setActiveChatSession(sessionId);
@@ -130,6 +208,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         };
         
         setMessages([contextMessage]);
+        
+        // Clear the text selection state in parent component
+        onTextSelectionProcessed?.();
       }
     } catch (error) {
       console.error('Failed to initialize chat session:', error);
@@ -193,11 +274,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       });
 
       // Add system context if we have highlighted text
-      const highlightedContext = getHighlightedContext();
-      if (highlightedContext) {
+      if (highlightedContexts.length > 0) {
+        const contextDescriptions = highlightedContexts.map(context => 
+          `From "${context.documentTitle}" (page ${context.pageNumber}): "${context.selectedText}"`
+        ).join('\n\n');
+        
         conversationHistory.unshift({
           role: 'system' as const,
-          content: `You are helping the user understand a text selection from "${highlightedContext.documentTitle}" (page ${highlightedContext.pageNumber}). The selected text is: "${highlightedContext.selectedText}". Please provide helpful explanations and answer questions about this content.`
+          content: `You are helping the user understand text selections from their document(s). The selected texts are:\n\n${contextDescriptions}\n\nPlease provide helpful explanations and answer questions about this content.`
         });
       }
 
@@ -374,7 +458,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <ActiveChat
           messages={messages}
           onSendMessage={handleSendMessage}
-          highlightedContexts={getHighlightedContext() ? [getHighlightedContext()!] : []}
+          highlightedContexts={highlightedContexts}
           isLoading={isLoading}
           isStreaming={isStreaming}
           streamingContent={streamingContent}

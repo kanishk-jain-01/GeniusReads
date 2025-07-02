@@ -354,8 +354,14 @@ export const getActiveChatSession = async (): Promise<any | null> => {
     return {
       id: result.id,
       title: result.title,
-      highlightedContexts: result.highlighted_contexts || [],
-      messages: result.messages || [],
+      highlightedContexts: (result.highlighted_contexts || []).map((context: any) => ({
+        ...context,
+        createdAt: new Date(context.created_at)
+      })),
+      messages: (result.messages || []).map((message: any) => ({
+        ...message,
+        createdAt: new Date(message.created_at)
+      })),
       createdAt: new Date(result.created_at),
       updatedAt: new Date(result.updated_at),
       isActive: true

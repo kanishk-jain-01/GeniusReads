@@ -59,6 +59,17 @@ const Dashboard = () => {
 
   // Handle CMD+K: Navigate directly to active chat interface
   const handleCmdK = (textSelection?: TextSelection) => {
+    // Only proceed if we have a text selection (either new or existing)
+    const hasTextSelection = textSelection || currentTextSelection;
+    if (!hasTextSelection) {
+      toast({
+        title: "No Text Selected",
+        description: "Please select some text first, then press CMD+K to start a conversation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (textSelection) {
       setCurrentTextSelection(textSelection);
       toast({
@@ -83,6 +94,11 @@ const Dashboard = () => {
     
     // Navigate directly to chat interface (not chat list)
     setViewMode('chat-interface');
+  };
+
+  // Handle text selection being processed by ChatInterface
+  const handleTextSelectionProcessed = () => {
+    setCurrentTextSelection(undefined);
   };
 
   // Handle CMD+L: Toggle between active chat interface and reading position
@@ -662,6 +678,7 @@ const Dashboard = () => {
             onSave={handleChatSave}
             onSaveAndAnalyze={handleChatSaveAndAnalyze}
             onDelete={handleChatDelete}
+            onTextSelectionProcessed={handleTextSelectionProcessed}
           />
         )}
 

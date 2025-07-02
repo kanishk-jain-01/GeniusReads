@@ -116,10 +116,15 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             }`}
           >
             <span>
-              {message.createdAt.toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              })}
+              {(() => {
+                const date = message.createdAt instanceof Date 
+                  ? message.createdAt 
+                  : new Date(message.createdAt);
+                return date.toLocaleTimeString([], { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                });
+              })()}
             </span>
             {message.metadata?.isStreaming && (
               <span className="ml-2 text-blue-500">
