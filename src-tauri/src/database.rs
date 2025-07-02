@@ -471,7 +471,7 @@ impl Database {
     pub async fn get_chat_sessions(&self) -> Result<Vec<ChatSession>> {
         let sessions = sqlx::query_as!(
             ChatSession,
-            "SELECT * FROM chat_sessions ORDER BY updated_at DESC"
+            "SELECT * FROM chat_sessions WHERE is_active = false ORDER BY updated_at DESC"
         )
         .fetch_all(&self.pool)
         .await

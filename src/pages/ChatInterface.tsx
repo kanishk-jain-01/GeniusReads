@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft,
-  RotateCcw,
   Brain,
   Square
 } from "lucide-react";
@@ -16,7 +15,6 @@ import {
   getActiveChatSession,
   getChatSessionById,
   setActiveChatSession,
-  clearChatSession,
   endChatSession,
   updateUserSessionState,
   sendChatMessage
@@ -26,7 +24,6 @@ interface ChatInterfaceProps {
   textSelection?: TextSelection;
   document?: Document;
   onBack: () => void;
-  onClear: () => void;
   onEndChat: () => void;
   onAnalyze: () => void;
   onTextSelectionProcessed?: () => void;
@@ -38,7 +35,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   textSelection,
   document,
   onBack,
-  onClear,
   onEndChat,
   onAnalyze,
   onTextSelectionProcessed,
@@ -356,32 +352,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleClearChat = async () => {
-    if (!currentChatSessionId) return;
-    
-    try {
-      await clearChatSession(currentChatSessionId);
-      await updateUserSessionState({
-        activeTab: 'library',
-        activeChatId: null
-      });
-      
-      toast({
-        title: "Chat Cleared",
-        description: "Your conversation has been cleared.",
-        variant: "destructive",
-      });
-      onClear();
-    } catch (error) {
-      console.error('Failed to clear chat:', error);
-      toast({
-        title: "Error",
-        description: "Failed to clear chat.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleEndChat = async () => {
     if (!currentChatSessionId) return;
     
@@ -462,15 +432,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div className="flex items-center space-x-2">
             {!readOnly ? (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClearChat}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <RotateCcw className="h-4 w-4 mr-2" />
-                  Clear
-                </Button>
                 <Button
                   variant="outline"
                   size="sm"

@@ -30,7 +30,8 @@ import {
   updateDocumentState, 
   updateDocumentTotalPages,
   saveReadingPosition,
-  getLastReadingPosition
+  getLastReadingPosition,
+  getActiveChatSession
 } from "@/lib/api";
 import type { Document, TextSelection, NavigationState, HighlightedContext } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -106,20 +107,60 @@ const Dashboard = () => {
   };
 
   // Handle CMD+L: Toggle between active chat interface and reading position
-  const handleCmdL = () => {
-    if (viewMode === 'chat-interface') {
-      // Return to previous reading position or library
-      if (navigationState.readingPosition && navigationState.previousTab === 'reader') {
+  const handleCmdL = async () => {
+    try {
+      // Simple toggle logic:
+      // - If currently in chat-interface, go to reader (if document exists)
+      // - If currently in reader, go to active chat (if one exists)
+      // - If in any other view, go to reader (if document exists)
+      
+      if (viewMode === 'chat-interface') {
+        // From chat → go to reader
+        if (currentDocument) {
+          setViewMode('reader');
+        } else if (recentDocuments.length > 0) {
+          // No current document, load the most recent one
+          const mostRecentDoc = recentDocuments[0];
+          setCurrentDocument(mostRecentDoc);
+          setViewMode('reader');
+        } else {
+          // No documents available, go to library
+          setViewMode('library');
+        }
+      } else if (viewMode === 'reader') {
+        // From reader → go to active chat (if exists)
+        const activeChat = await getActiveChatSession();
+        if (activeChat) {
+          setViewMode('chat-interface');
+        } else {
+          // No active chat available - show helpful toast
+          toast({
+            title: "No Active Chat",
+            description: "To switch to chat, highlight some text and press CMD+K to start a conversation.",
+          });
+        }
+        // If no active chat, stay in reader (no toggle available)
+      } else {
+        // From any other view → go to reader
+        if (currentDocument) {
+          setViewMode('reader');
+        } else if (recentDocuments.length > 0) {
+          // No current document, load the most recent one
+          const mostRecentDoc = recentDocuments[0];
+          setCurrentDocument(mostRecentDoc);
+          setViewMode('reader');
+        } else {
+          // No documents available, go to library
+          setViewMode('library');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to handle CMD+L:', error);
+      // Fallback: just go to reader if possible
+      if (currentDocument) {
         setViewMode('reader');
       } else {
         setViewMode('library');
-      }
-    } else if (viewMode === 'reader' || viewMode === 'library') {
-      // Navigate directly to chat interface if there's an active selection
-      if (currentTextSelection) {
-        setViewMode('chat-interface');
-      } else {
-        setViewMode('chat'); // Go to chat list if no active selection
       }
     }
   };
@@ -187,18 +228,6 @@ const Dashboard = () => {
     } else {
       setViewMode('chat'); // Go to chat list
     }
-  };
-
-  const handleChatClear = () => {
-    // Clear chat completely and stay in chat interface for fresh start
-    setCurrentTextSelection(undefined);
-    setClearSelectionTrigger(prev => prev + 1);
-    refreshChatList(); // Refresh chat list to reflect changes
-    toast({
-      title: "Chat Cleared",
-      description: "Chat has been cleared. You can start a new conversation.",
-    });
-    // Stay in chat interface for fresh start
   };
 
   const handleChatEnd = () => {
@@ -698,7 +727,7 @@ const Dashboard = () => {
             currentDocument={currentDocument}
             onChatSelect={handleChatSelect}
             onStartNewChat={handleStartNewChat}
-            onChatDelete={(chatId) => {
+            onChatDelete={(_chatId) => {
               toast({
                 title: "Chat Deleted",
                 description: "The conversation has been removed from your history.",
@@ -713,7 +742,6 @@ const Dashboard = () => {
             textSelection={currentTextSelection}
             document={currentDocument}
             onBack={handleChatBack}
-            onClear={handleChatClear}
             onEndChat={handleChatEnd}
             onAnalyze={handleChatAnalyze}
             onTextSelectionProcessed={handleTextSelectionProcessed}

@@ -1,8 +1,8 @@
 # Progress: GeniusReads
 
-## ✅ **MAJOR MILESTONE: Phase 5 Complete - AI-Powered Reading Assistant Fully Operational**
+## ✅ **MAJOR MILESTONE: Phase 5 Complete + Critical UX Improvements - AI-Powered Reading Assistant Fully Operational**
 
-**Status**: **CORE FUNCTIONALITY COMPLETE** - All primary features working end-to-end
+**Status**: **CORE FUNCTIONALITY COMPLETE + ENHANCED UX** - All primary features working end-to-end with polished user experience
 
 ## What Works (Production Ready) ✅
 
@@ -14,7 +14,22 @@
 5. **Context Awareness**: AI understands document context and selected text
 6. **Conversation History**: Multi-turn conversations with full memory
 7. **State Persistence**: Reading position and chat state preserved across app restarts
-8. **Navigation Toggle**: CMD+L switches between reading and chat seamlessly
+8. **Enhanced Navigation Toggle**: CMD+L switches between reading and chat with helpful guidance
+
+### **Latest UX Improvements (Current Session)** ✅ **JUST COMPLETED**
+- **✅ Active Chat Filtering Bug Fixed**: Active chats no longer appear in chat history list
+  - Updated `get_chat_sessions()` database query to filter `WHERE is_active = false`
+  - Proper separation between active chat section and previous conversations
+  - SQLx query cache regenerated for new database query
+- **✅ Clear Button Removal**: Simplified chat interface by removing redundant clear functionality
+  - Removed clear button and `handleClearChat` function from ChatInterface
+  - Streamlined workflow: Chat → End → Delete (if needed)
+  - Cleaner UI with only essential "End" and "Analyze" buttons
+- **✅ CMD+L Toggle Enhancement**: Simplified and improved keyboard navigation
+  - Complete rewrite of CMD+L logic for reliable toggle between reader and active chat
+  - Smart fallbacks: loads most recent document if no current document
+  - Helpful toast guidance when no active chat exists to toggle to
+  - Consistent behavior from any view mode with proper error handling
 
 ### **Phase 5: OpenAI Integration** ✅ **100% COMPLETE**
 - **✅ Real AI Responses**: OpenAI GPT-4o-mini integration with streaming
