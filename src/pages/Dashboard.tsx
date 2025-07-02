@@ -19,11 +19,12 @@ import {
 } from "lucide-react";
 import PDFViewer from "@/components/PDFViewer";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { getRecentDocuments, getDashboardStats, openPDFDialog, loadPDFDocument, updateDocumentState, updateDocumentTotalPages } from "@/lib/api";
-import type { Document } from "@/lib/types";
+import type { Document, TextSelection, NavigationState } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
-type ViewMode = 'library' | 'reader' | 'knowledge';
+type ViewMode = 'library' | 'reader' | 'chat' | 'knowledge';
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,7 +40,67 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [isUploadingPDF, setIsUploadingPDF] = useState(false);
+  const [currentTextSelection, setCurrentTextSelection] = useState<TextSelection | undefined>();
+  const [navigationState, setNavigationState] = useState<NavigationState>({
+    currentTab: 'library'
+  });
   const { toast } = useToast();
+
+  // Handle CMD+K: Navigate to Chat tab with text selection
+  const handleCmdK = (textSelection?: TextSelection) => {
+    if (textSelection) {
+      setCurrentTextSelection(textSelection);
+      toast({
+        title: "Text Selected",
+        description: `Selected: "${textSelection.selectedText.substring(0, 50)}${textSelection.selectedText.length > 50 ? '...' : ''}"`,
+      });
+    }
+    
+    // Save current reading position if in reader mode
+    if (viewMode === 'reader' && currentDocument) {
+      setNavigationState(prev => ({
+        ...prev,
+        previousTab: 'reader',
+        readingPosition: {
+          documentId: currentDocument.id,
+          page: currentDocument.currentPage,
+          zoom: currentDocument.zoomLevel,
+          scroll: 0 // TODO: Implement scroll position tracking
+        }
+      }));
+    }
+    
+    setViewMode('chat');
+  };
+
+  // Handle CMD+L: Toggle between Library and Chat tabs
+  const handleCmdL = () => {
+    if (viewMode === 'chat') {
+      // Return to previous reading position or library
+      if (navigationState.readingPosition && navigationState.previousTab === 'reader') {
+        setViewMode('reader');
+      } else {
+        setViewMode('library');
+      }
+    } else if (viewMode === 'reader' || viewMode === 'library') {
+      setViewMode('chat');
+    }
+  };
+
+  // Handle text selection from PDF viewer
+  const handleTextSelection = (selection: TextSelection) => {
+    setCurrentTextSelection(selection);
+    // Don't automatically navigate to chat - wait for CMD+K
+  };
+
+  // Set up keyboard shortcuts
+  useKeyboardShortcuts({
+    onCmdK: handleCmdK,
+    onCmdL: handleCmdL,
+    currentTextSelection,
+    navigationState,
+    enabled: true
+  });
 
   // Helper function to calculate reading progress
   const calculateProgress = (currentPage: number, totalPages: number): number => {
@@ -181,6 +242,7 @@ const Dashboard = () => {
 
   const sidebarItems = [
     { id: 'library', label: 'Library', icon: Library, active: viewMode === 'library' },
+    { id: 'chat', label: 'Chat', icon: MessageSquare, active: viewMode === 'chat' },
     { id: 'knowledge', label: 'Knowledge', icon: Brain, active: viewMode === 'knowledge' },
   ];
 
@@ -439,6 +501,7 @@ const Dashboard = () => {
                     onDocumentLoad={handleDocumentLoad}
                     onPageChange={handlePageChange}
                     onZoomChange={handleZoomChange}
+                    onTextSelect={handleTextSelection}
                   />
                 </div>
               </>
@@ -454,6 +517,92 @@ const Dashboard = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {viewMode === 'chat' && (
+          <div className="flex-1 flex flex-col">
+            {/* Chat Toolbar */}
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">AI Chat</h2>
+                <div className="flex items-center space-x-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCmdL}
+                  >
+                    ← Back to Reading
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Chat Content */}
+            <div className="flex-1 flex flex-col">
+              {currentTextSelection ? (
+                <div className="flex-1 p-6">
+                  <div className="max-w-4xl mx-auto">
+                    {/* Selected Text Display */}
+                    <Card className="mb-6 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base font-medium text-blue-900 dark:text-blue-100 flex items-center">
+                          <MessageSquare className="h-4 w-4 mr-2" />
+                          Selected Text from {currentDocument?.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-blue-800 dark:text-blue-200 leading-relaxed mb-3">
+                          "{currentTextSelection.selectedText}"
+                        </p>
+                        <div className="flex items-center text-sm text-blue-600 dark:text-blue-400">
+                          <FileText className="h-3 w-3 mr-1" />
+                          Page {currentTextSelection.pageNumber}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Chat Interface Placeholder */}
+                    <Card className="bg-white dark:bg-slate-800">
+                      <CardContent className="p-6">
+                        <div className="text-center py-12">
+                          <MessageSquare className="h-16 w-16 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                            Chat Interface Coming Soon
+                          </h3>
+                          <p className="text-slate-600 dark:text-slate-400 mb-6">
+                            AI conversation functionality will be implemented in Phase 4.
+                          </p>
+                          <div className="bg-slate-100 dark:bg-slate-700 rounded-lg p-4 text-left">
+                            <p className="text-sm text-slate-700 dark:text-slate-300 mb-2">
+                              <strong>Selected Text:</strong>
+                            </p>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 italic">
+                              "{currentTextSelection.selectedText}"
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <MessageSquare className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                      No Text Selected
+                    </h3>
+                    <p className="text-slate-500 dark:text-slate-400 mb-4">
+                      Highlight text in a PDF and press CMD+K to start a conversation.
+                    </p>
+                    <Button onClick={() => setViewMode('library')} variant="outline">
+                      Go to Library
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useTextSelection } from '@/hooks/use-text-selection';
+import TextSelectionOverlay from '@/components/TextSelectionOverlay';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -15,7 +17,7 @@ import {
   FileText,
   Loader2
 } from 'lucide-react';
-import type { Document as DocumentType } from '@/lib/types';
+import type { Document as DocumentType, TextSelection } from '@/lib/types';
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -28,7 +30,7 @@ interface PDFViewerProps {
   onDocumentLoad?: (document: DocumentType) => void;
   onPageChange?: (page: number) => void;
   onZoomChange?: (zoom: number) => void;
-  onTextSelect?: (selectedText: string, coordinates: any) => void;
+  onTextSelect?: (selection: TextSelection) => void;
 }
 
 const PDFViewer: React.FC<PDFViewerProps> = ({
@@ -36,7 +38,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   onDocumentLoad,
   onPageChange,
   onZoomChange,
-  // onTextSelect - will be used in Phase 3
+  onTextSelect
 }) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -47,6 +49,25 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const [pdfData, setPdfData] = useState<string | null>(null);
   
   const { toast } = useToast();
+  
+  // Text selection functionality
+  const {
+    isSelecting,
+    currentSelection,
+    selectionRects,
+    containerRef,
+    handleMouseDown,
+    handleMouseMove,
+    handleMouseUp,
+    clearSelection,
+    hasSelection,
+    selectedText
+  } = useTextSelection({
+    document,
+    currentPage,
+    onTextSelected: onTextSelect,
+    enabled: !!document
+  });
 
   // Sync with document state from database
   useEffect(() => {
@@ -231,7 +252,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       <div className="flex-1 overflow-auto bg-slate-100 dark:bg-slate-800 p-6 pdf-viewer-content">
         <div className="flex justify-center min-h-0">
           <Card className="bg-white shadow-lg max-w-full border-slate-200 dark:shadow-xl dark:shadow-black/20">
-            <CardContent className="p-0">
+            <CardContent className="p-0 relative" ref={containerRef}>
               {loading && (
                 <div className="flex items-center justify-center h-96 bg-white">
                   <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -246,30 +267,42 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
               )}
               
               {pdfData && (
-                <Document
-                  file={pdfData}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                  onLoadError={onDocumentLoadError}
-                  loading={
-                    <div className="flex items-center justify-center h-96 bg-white">
-                      <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                      <span className="ml-2 text-slate-700">Loading PDF...</span>
-                    </div>
-                  }
-                  error={
-                    <div className="flex items-center justify-center h-96 text-red-600 bg-white">
-                      <p>Failed to load PDF</p>
-                    </div>
-                  }
-                >
-                  <Page
-                    pageNumber={currentPage}
-                    scale={zoomLevel / 100}
-                    renderTextLayer={true}
-                    renderAnnotationLayer={false}
-                    className="pdf-page"
+                <>
+                  <Document
+                    file={pdfData}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    onLoadError={onDocumentLoadError}
+                    loading={
+                      <div className="flex items-center justify-center h-96 bg-white">
+                        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                        <span className="ml-2 text-slate-700">Loading PDF...</span>
+                      </div>
+                    }
+                    error={
+                      <div className="flex items-center justify-center h-96 text-red-600 bg-white">
+                        <p>Failed to load PDF</p>
+                      </div>
+                    }
+                  >
+                    <Page
+                      pageNumber={currentPage}
+                      scale={zoomLevel / 100}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={false}
+                      className="pdf-page"
+                    />
+                  </Document>
+                  
+                  {/* Text Selection Overlay */}
+                  <TextSelectionOverlay
+                    isSelecting={isSelecting}
+                    selectionRects={selectionRects}
+                    hasSelection={hasSelection}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
                   />
-                </Document>
+                </>
               )}
             </CardContent>
           </Card>

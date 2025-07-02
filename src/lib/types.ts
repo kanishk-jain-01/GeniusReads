@@ -367,4 +367,89 @@ export interface FormField<T = unknown> {
   error?: string;
   touched: boolean;
   required: boolean;
+}
+
+// ============================================================================
+// Chat System Types (New for Phase 3)
+// ============================================================================
+
+export interface HighlightedContext {
+  id: string;
+  documentId: string;
+  documentTitle: string;
+  pageNumber: number;
+  selectedText: string;
+  textCoordinates: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }[];
+  createdAt: Date;
+}
+
+export interface ChatMessage {
+  id: string;
+  chatSessionId: string;
+  content: string;
+  senderType: 'user' | 'assistant' | 'system';
+  createdAt: Date;
+  metadata?: {
+    isStreaming?: boolean;
+    isComplete?: boolean;
+    chunkIndex?: number;
+  };
+}
+
+export interface ActiveChatSession {
+  id: string;
+  title: string;
+  highlightedContexts: HighlightedContext[];
+  messages: ChatMessage[];
+  createdAt: Date;
+  updatedAt: Date;
+  isActive: boolean;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  previewText: string;
+  sourceDocumentCount: number;
+  analysisStatus: 'none' | 'pending' | 'processing' | 'complete' | 'failed';
+  createdAt: Date;
+  completedAt?: Date;
+}
+
+// ============================================================================
+// Navigation State Types (New for Phase 3)
+// ============================================================================
+
+export interface UserSessionState {
+  id: string;
+  currentDocumentId?: string;
+  currentPage: number;
+  zoomLevel: number;
+  scrollPosition: number;
+  activeTab: 'library' | 'reader' | 'chat' | 'knowledge';
+  lastReadingPosition?: {
+    documentId: string;
+    page: number;
+    zoom: number;
+    scroll: number;
+  };
+  updatedAt: Date;
+}
+
+export interface NavigationState {
+  currentTab: 'library' | 'reader' | 'chat' | 'knowledge';
+  previousTab?: 'library' | 'reader' | 'chat' | 'knowledge';
+  readingPosition?: {
+    documentId: string;
+    page: number;
+    zoom: number;
+    scroll: number;
+  };
+  activeChatId?: string;
+  pendingTextSelection?: TextSelection;
 } 
