@@ -48,6 +48,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [streamingContent, setStreamingContent] = useState("");
   const [chatTitle, setChatTitle] = useState("");
   const [currentChatSessionId, setCurrentChatSessionId] = useState<string | null>(null);
+  const [initialMessage, setInitialMessage] = useState<string>(""); // Track initial message for input
   const { toast } = useToast();
 
   // Initialize chat session
@@ -151,22 +152,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             
             setHighlightedContexts(prev => [...prev, newHighlightedContext]);
             
-            // Add a new context message to the conversation
-            const messageId = await addChatMessage(
-              activeSession.id,
-              `I'd also like to understand this text: "${textSelection.selectedText}"`,
-              'user'
-            );
-            
-            const contextMessage: ChatMessage = {
-              id: messageId,
-              chatSessionId: activeSession.id,
-              content: `I'd also like to understand this text: "${textSelection.selectedText}"`,
-              senderType: 'user',
-              createdAt: new Date()
-            };
-            
-            setMessages(prev => [...prev, contextMessage]);
+            // Set initial message for input field
+            setInitialMessage(`I'd also like to understand this text: "${textSelection.selectedText}"`);
           }
           
           // Clear the text selection state in parent component
@@ -224,22 +211,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           activeChatId: sessionId
         });
         
-        // Add initial context message
-        const messageId = await addChatMessage(
-          sessionId,
-          `I'd like to understand this text better: "${textSelection.selectedText}"`,
-          'user'
-        );
-        
-        const contextMessage: ChatMessage = {
-          id: messageId,
-          chatSessionId: sessionId,
-          content: `I'd like to understand this text better: "${textSelection.selectedText}"`,
-          senderType: 'user',
-          createdAt: new Date()
-        };
-        
-        setMessages([contextMessage]);
+        // Set initial message for input field
+        setInitialMessage(`I'd also like to understand this text: "${textSelection.selectedText}"`);
         
         // Clear the text selection state in parent component
         onTextSelectionProcessed?.();
@@ -263,6 +236,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       });
       return;
     }
+
+    // Clear initial message since user is now sending their own message
+    setInitialMessage("");
 
     try {
       // Save user message to database
@@ -477,6 +453,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           showTypingIndicator={isLoading && !isStreaming}
           maxHeight="100%"
           disabled={readOnly}
+          initialMessage={initialMessage}
         />
       </div>
     </div>

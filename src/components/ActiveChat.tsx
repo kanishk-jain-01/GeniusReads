@@ -25,6 +25,7 @@ interface ActiveChatProps {
   placeholder?: string;
   showTypingIndicator?: boolean;
   maxHeight?: string;
+  initialMessage?: string;
 }
 
 interface MessageBubbleProps {
@@ -168,11 +169,17 @@ const ActiveChat: React.FC<ActiveChatProps> = ({
   disabled = false,
   placeholder = "Ask a question...",
   showTypingIndicator = false,
-  maxHeight = "400px"
+  maxHeight = "400px",
+  initialMessage = ""
 }) => {
-  const [currentMessage, setCurrentMessage] = useState("");
+  const [currentMessage, setCurrentMessage] = useState(initialMessage);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // Update input field when initialMessage prop changes
+  useEffect(() => {
+    setCurrentMessage(initialMessage);
+  }, [initialMessage]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
