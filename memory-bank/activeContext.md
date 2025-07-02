@@ -2,34 +2,32 @@
 
 ## Current Work Focus
 
-**Primary Achievement**: PDF Viewing System Phase 100% Complete ✅ + Critical Bug Fixes Applied
-**Phase**: PDF System → Text Selection System (Phase 3)
-**Status**: Production-ready PDF viewing functionality with resolved user experience issues
+**Primary Achievement**: Desktop Application UI Restructure Complete ✅ + PDF System Production Ready
+**Phase**: UI Modernization → Text Selection System (Phase 3)
+**Status**: Native macOS desktop app interface with single-window architecture
 
 ## Recent Activities
 
-### CRITICAL BUG FIXES APPLIED (Latest Session) - PRODUCTION READY ✅
-1. **Progress Calculation Issue RESOLVED**: Fixed incorrect progress percentages
-   - **Problem**: Dashboard showing 100% progress for documents at 4% actual progress
-   - **Root Cause**: Database `total_pages` field showing 1 instead of actual page count
-   - **Solution**: Added `update_document_total_pages()` database function and Tauri command
-   - **Implementation**: PDF.js now updates database with correct page count on document load
-   - **Result**: Real progress calculation (e.g., 17/245 pages = 7% instead of 17/1 = 1700%)
+### MAJOR UI RESTRUCTURE COMPLETED (Latest Session) - DESKTOP APP TRANSFORMATION ✅
+1. **Single-Window Architecture Implemented**: Transformed from web-app to desktop-app design
+   - **Removed**: Multi-page routing system (Index, Reader, NotFound pages)
+   - **Implemented**: Single Dashboard as main application window
+   - **Integrated**: PDF reader as embedded panel within main interface
+   - **Result**: Native macOS app experience with sidebar navigation
 
-2. **Navigation Issue RESOLVED**: Fixed blank Reader screen when clicking document arrows
-   - **Problem**: Arrow buttons from Dashboard leading to empty Reader instead of specific document
-   - **Root Cause**: Reader component not handling document ID passed via navigation state
-   - **Solution**: Added `useLocation` and `useEffect` to load specific documents
-   - **Implementation**: Reader now receives `documentId` and loads the correct document
-   - **Result**: Seamless navigation from Dashboard to specific documents
+2. **Desktop-Native Interface Design**: Eliminated web-style patterns
+   - **Removed**: Web-style headers, navigation bars, and marketing copy
+   - **Implemented**: macOS-style sidebar with sections (Library, Knowledge)
+   - **Added**: Compact stats display and integrated upload functionality
+   - **Enhanced**: Toolbar patterns common in desktop applications
 
-3. **Database Integrity Improvements**: Enhanced data accuracy and consistency
-   - Added `updateDocumentTotalPages()` API function for real-time page count updates
-   - Updated sqlx query cache with new database operations
-   - Manually corrected existing database records with incorrect page counts
-   - Implemented automatic page count correction when documents are opened
+3. **Improved User Experience**: Streamlined workflow and navigation
+   - **Eliminated**: "Welcome back!" marketing copy and web-style hero sections
+   - **Simplified**: Direct access to documents and knowledge base
+   - **Enhanced**: Single-click document opening with integrated reader
+   - **Optimized**: Sidebar-based navigation with clear visual hierarchy
 
-### Major Accomplishments (Previous Session) - PDF SYSTEM COMPLETION ✅
+### Previous Session Accomplishments - PDF SYSTEM COMPLETION ✅
 1. **PDF System Implementation Completed**: Full PDF viewing functionality with enterprise-grade features
    - Native File Picker: ✅ macOS dialog with PDF filtering
    - PDF Loading System: ✅ Base64 transfer through Tauri for security
@@ -38,78 +36,53 @@
    - State Persistence: ✅ Page position and zoom level saved across sessions
    - Error Handling: ✅ Comprehensive file access and PDF parsing error management
 
-2. **Critical Technical Challenges Solved**: Advanced implementation solutions
-   - PDF Security Issue: ✅ Solved PDF.js file access restrictions with base64 data transfer
-   - Database Conflicts: ✅ Implemented duplicate document handling with path-based lookup
-   - Layout Stability: ✅ Fixed UI shifting issues with flex constraints and overflow control
-   - PDF.js Integration: ✅ Resolved TextLayer CSS warnings and text selection preparation
-   - Query Cache: ✅ Updated sqlx prepared statements for new database operations
-
-3. **Production-Ready Features Implemented**: Complete user workflow
-   - Document Loading: ✅ Native file picker → PDF processing → database storage
-   - Navigation System: ✅ Page controls, zoom controls, progress tracking
-   - State Management: ✅ Real-time page/zoom sync with database persistence
-   - Error Recovery: ✅ Graceful handling of file access, parsing, and database errors
-   - UI Polish: ✅ Stable layout preventing sidebar displacement during PDF load
-
-4. **Development Environment Verified**: All tooling operational
-   - Frontend build system: Vite + SWC + TailwindCSS working
-   - Backend build system: Cargo + Rust toolchain working
-   - Type system: Complete TypeScript coverage validated
-   - Component library: shadcn/ui integration confirmed
-   - IPC bridge: Tauri-React communication tested and verified
-
-### Previous Session Accomplishments
-- ✅ **Tasks 1.1-1.9**: Complete foundation phase implementation
-- ✅ **shadcn/ui Integration**: Modern component library with full design system
-- ✅ **Build System**: Vite + SWC + TailwindCSS v3 optimized for performance
-- ✅ **Code Quality**: ESLint, Prettier, rustfmt, clippy all configured
-- ✅ **Type System**: Comprehensive TypeScript definitions (20+ interfaces)
-- ✅ **Database Schema**: PostgreSQL with 8 tables and full-text search
-- ✅ **IPC Communication**: Tauri-React bridge implemented
+2. **Critical Bug Fixes Applied**: Production-ready user experience
+   - **Progress Calculation Fixed**: Real progress percentages instead of incorrect 100%
+   - **Navigation Flow Working**: Dashboard arrows navigate to specific documents
+   - **Data Integrity**: Automatic page count updates maintain accuracy
 
 ## Active Decisions
 
-### Production Readiness Achieved ✅
-**All critical user experience issues resolved:**
+### Desktop Application Design Principles ✅
+**Successfully implemented native macOS app patterns:**
 
-#### Progress Calculation System ✅
-- **Real-time Updates**: PDF.js automatically updates database with correct page counts
-- **Accurate Metrics**: Dashboard now shows true reading progress percentages
-- **Data Integrity**: Database maintains consistent total_pages across all documents
-- **Backward Compatibility**: Existing documents corrected without data loss
+#### Single-Window Architecture ✅
+- **Main Interface**: Dashboard serves as primary application window
+- **Integrated Views**: Library, Reader, and Knowledge as panels within single window
+- **Navigation**: Sidebar-based switching between functional areas
+- **State Management**: Seamless transitions between document library and reader
 
-#### Navigation System ✅
-- **Document-Specific Links**: Dashboard arrows now navigate to specific documents
-- **State Preservation**: Reader loads documents with correct page position and zoom
-- **Error Handling**: Graceful fallback when documents cannot be found
-- **User Feedback**: Toast notifications confirm successful document loading
+#### Native macOS UI Patterns ✅
+- **Sidebar Navigation**: Clean, functional sidebar with sections and stats
+- **Toolbar Design**: Context-appropriate toolbars for each view mode
+- **Visual Hierarchy**: Proper spacing, typography, and component organization
+- **Interaction Design**: Single-click document opening with immediate reader access
 
-#### Quality Assurance Maintained ✅
-- **Build System**: All changes compiled successfully without warnings
-- **Type Safety**: Complete TypeScript coverage maintained
-- **Database Operations**: New functions tested and sqlx cache updated
-- **IPC Communication**: Additional Tauri commands verified working
+#### Eliminated Web-App Patterns ✅
+- **Removed Routing**: No more React Router or multi-page navigation
+- **Removed Marketing**: No hero sections, "Welcome back!" copy, or web-style headers
+- **Simplified Navigation**: Direct functional access without web-style navigation bars
+- **Enhanced Focus**: Tool-like interface focused on document reading and knowledge management
 
-### Foundation Validation Success Factors ✅
-1. **Systematic Approach**: Each component tested individually and in integration
-2. **Comprehensive Coverage**: Frontend, backend, database, and IPC all validated
-3. **Quality Metrics**: Established baseline with acceptable warning levels
-4. **Automation**: Repeatable validation process for ongoing development
-5. **Documentation**: All validation results captured for future reference
+### Technical Architecture Enhanced ✅
+1. **Simplified Component Structure**: Removed routing complexity and unused components
+2. **Integrated Functionality**: PDF viewer embedded within main dashboard interface
+3. **State Management**: Unified state handling within single application window
+4. **Dependency Cleanup**: Removed React Router and associated routing dependencies
+5. **Performance**: Reduced bundle size and eliminated unnecessary page transitions
 
 ## Next Steps
 
-### Immediate (Phase 3: Text Selection System) - **READY TO START**
-**With PDF system fully operational and user experience issues resolved:**
+### Immediate (Phase 3: Text Selection System) - **READY TO START WITH ENHANCED UI**
+**With desktop-native interface complete and PDF system operational:**
 
 1. **Task 3.1**: Text selection overlay system for PDF content
-   - Create transparent overlay component for capturing mouse events
+   - Create transparent overlay component for capturing mouse events within integrated reader
    - Implement click-and-drag text highlighting functionality
    - Extract text coordinates from PDF.js selection system
 
 2. **Task 3.2**: Question input interface triggered by text selection
-   - Create QuestionInput component that appears on text selection
+   - Create QuestionInput component that appears on text selection within reader panel
    - Implement text selection state management with custom hooks
    - Add visual feedback for selected text with highlighting styles
 
@@ -119,60 +92,59 @@
    - Add selection clearing when navigating pages or opening new documents
 
 ### Short-term (Complete Phase 3)
-- Text selection overlay system using PDF.js coordinates
-- Click-and-drag highlighting with visual feedback
-- Question input interface triggered by text selection
+- Text selection overlay system using PDF.js coordinates within integrated reader
+- Click-and-drag highlighting with visual feedback in desktop interface
+- Question input interface triggered by text selection with native app styling
 - Text extraction and coordinate storage in database
 
 ### Medium-term (Phase 4: AI Integration)
 - Python environment setup with pyo3 bridge
 - LangGraph workflow implementation for question processing
-- Streaming AI response system with real-time feedback
+- Streaming AI response system with desktop-appropriate notifications
 
 ## Active Considerations
 
-### User Experience Excellence Achieved ✅
-1. **Accurate Progress Tracking**: Users now see real reading progress percentages
-2. **Seamless Navigation**: Dashboard to Reader workflow works flawlessly
-3. **Data Consistency**: Database maintains accurate document metadata
-4. **Error Prevention**: Proactive fixes prevent user confusion and frustration
-5. **Performance**: No impact on existing functionality while adding new features
+### Desktop Application Excellence Achieved ✅
+1. **Native App Feel**: Interface now feels like proper macOS desktop application
+2. **Simplified Workflow**: Single-window design eliminates navigation complexity
+3. **Functional Focus**: Tool-like interface prioritizes document reading and knowledge management
+4. **Visual Consistency**: Cohesive design language throughout all interface elements
+5. **Performance**: Reduced complexity improves application responsiveness
 
-### Development Readiness Assessment ✅
-**All green lights for Phase 3 development:**
-- **Technical Infrastructure**: 100% operational and validated
-- **User Experience**: Critical issues resolved, production-ready
-- **Code Quality**: High standards maintained through all changes
-- **Type Safety**: Complete coverage with strict compilation
-- **Database Operations**: Enhanced with new functions for data accuracy
-- **IPC Communication**: Expanded with additional reliable commands
+### Development Readiness Enhanced ✅
+**All systems optimized for Phase 3 development:**
+- **UI Foundation**: Desktop-native interface ready for text selection features
+- **Component Integration**: PDF viewer embedded and ready for overlay system
+- **State Management**: Simplified state handling within unified interface
+- **Visual Design**: Consistent styling ready for text selection highlighting
+- **User Experience**: Streamlined workflow ready for advanced text interaction
 
-### Risk Mitigation Enhanced ✅
-- **User Confusion**: Eliminated through accurate progress display
-- **Navigation Failures**: Resolved through proper state handling
-- **Data Inconsistency**: Prevented through automatic page count updates
-- **Integration Problems**: Addressed through comprehensive testing
-- **Code Quality**: Maintained through systematic implementation
+### Risk Mitigation Improved ✅
+- **User Confusion**: Eliminated through simplified, focused interface design
+- **Navigation Complexity**: Resolved through single-window architecture
+- **Performance Issues**: Reduced through dependency cleanup and simplified routing
+- **Design Inconsistency**: Prevented through unified desktop application patterns
+- **Development Complexity**: Reduced through elimination of multi-page routing system
 
 ## Context for Next Session
 
-**PDF System Achievement**: 
-- **100% Complete + Bug-Free**: All PDF functionality working with resolved UX issues
-- **Production Ready**: No known critical issues preventing user adoption
-- **Data Integrity**: Database maintains accurate and consistent document metadata
-- **User Experience**: Smooth workflow from Dashboard to Reader with accurate progress
+**UI Transformation Achievement**: 
+- **Desktop App Design**: Successfully transformed from web-app to native macOS application feel
+- **Single-Window Architecture**: Unified interface with sidebar navigation and integrated panels
+- **Simplified Workflow**: Direct access to documents and knowledge without routing complexity
+- **Visual Excellence**: Clean, functional design appropriate for desktop application
 
 **Transition to Phase 3**:
-- **Text Selection**: Next logical step with stable PDF viewing foundation
-- **PDF.js Integration**: Text layer already prepared for coordinate extraction
-- **UI Development**: shadcn/ui components ready for selection interface
-- **Database Integration**: Schema ready for question and coordinate storage
+- **Enhanced Foundation**: Desktop-native interface provides excellent foundation for text selection
+- **Integrated Reader**: PDF viewer embedded within main interface ready for overlay system
+- **Simplified State**: Unified state management ready for text interaction features
+- **Visual Consistency**: Established design patterns ready for text selection highlighting
 
 **Key Success Factors**:
-1. **Bug-First Approach**: Identified and resolved critical user experience issues
-2. **Data Accuracy**: Ensured database reflects real document state
-3. **Seamless Navigation**: Implemented proper component communication
-4. **Quality Maintenance**: All fixes applied without breaking existing functionality
-5. **Production Readiness**: System now ready for real user adoption
+1. **User-Centered Design**: Eliminated web-app patterns in favor of desktop-native experience
+2. **Simplified Architecture**: Reduced complexity through single-window design
+3. **Visual Excellence**: Professional, clean interface appropriate for productivity application
+4. **Functional Focus**: Tool-like interface prioritizes core functionality over marketing
+5. **Development Readiness**: Enhanced foundation for text selection feature development
 
-**Next Focus**: Begin text selection overlay system (Task 3.1) with complete confidence in the stable, bug-free PDF viewing foundation. All user experience issues resolved and system ready for advanced text interaction features. 
+**Next Focus**: Begin text selection overlay system (Task 3.1) with complete confidence in the desktop-native interface foundation. Enhanced UI provides excellent foundation for advanced text interaction features with proper visual hierarchy and user experience patterns. 

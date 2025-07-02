@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   BookOpen, 
   Brain, 
@@ -11,17 +11,24 @@ import {
   Search, 
   Clock, 
   FileText,
-  Star,
-  ArrowRight
+  Plus,
+  ArrowRight,
+  Library,
+  Settings,
+  Upload
 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { getRecentDocuments, getDashboardStats } from "@/lib/api";
+import PDFViewer from "@/components/PDFViewer";
+import { getRecentDocuments, getDashboardStats, openPDFDialog, loadPDFDocument, updateDocumentState, updateDocumentTotalPages } from "@/lib/api";
 import type { Document } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+
+type ViewMode = 'library' | 'reader' | 'knowledge';
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [recentDocuments, setRecentDocuments] = useState<Document[]>([]);
+  const [currentDocument, setCurrentDocument] = useState<Document | undefined>();
+  const [viewMode, setViewMode] = useState<ViewMode>('library');
   const [dashboardStats, setDashboardStats] = useState({
     documentCount: 0,
     questionCount: 0,
@@ -30,6 +37,7 @@ const Dashboard = () => {
     noteCount: 0
   });
   const [loading, setLoading] = useState(true);
+  const [isUploadingPDF, setIsUploadingPDF] = useState(false);
   const { toast } = useToast();
 
   // Helper function to calculate reading progress
@@ -70,8 +78,8 @@ const Dashboard = () => {
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
         toast({
-          title: "Failed to Load Dashboard",
-          description: "Could not load recent documents and statistics.",
+          title: "Failed to Load Data",
+          description: "Could not load documents and statistics.",
           variant: "destructive",
         });
       } finally {
@@ -82,265 +90,414 @@ const Dashboard = () => {
     loadDashboardData();
   }, [toast]);
 
-  const recentQuestions = [
-    {
-      id: 1,
-      question: "What is the difference between supervised and unsupervised learning?",
-      document: "Introduction to Machine Learning",
-      timestamp: "2 hours ago",
-      concepts: 3
-    },
-    {
-      id: 2,
-      question: "How does quantum entanglement work?",
-      document: "Quantum Physics Fundamentals",
-      timestamp: "1 day ago",
-      concepts: 2
-    },
-    {
-      id: 3,
-      question: "What is the fundamental theorem of calculus?",
-      document: "Advanced Calculus",
-      timestamp: "2 days ago",
-      concepts: 4
+  // Handle PDF file upload
+  const handleUploadPDF = async () => {
+    try {
+      setIsUploadingPDF(true);
+      
+      // Open file dialog
+      const filePath = await openPDFDialog();
+      if (!filePath) {
+        setIsUploadingPDF(false);
+        return; // User cancelled
+      }
+      
+      // Load PDF document
+      const document = await loadPDFDocument(filePath);
+      setCurrentDocument(document);
+      setViewMode('reader');
+      
+      // Refresh document list
+      const documents = await getRecentDocuments();
+      setRecentDocuments(documents);
+      
+      toast({
+        title: "PDF Loaded",
+        description: `Opened "${document.title}" with ${document.totalPages} pages.`,
+      });
+      
+    } catch (error) {
+      console.error('Failed to load PDF:', error);
+      toast({
+        title: "Failed to Load PDF",
+        description: error instanceof Error ? error.message : "An unknown error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingPDF(false);
     }
+  };
+
+  // Handle document selection
+  const handleDocumentSelect = (document: Document) => {
+    setCurrentDocument(document);
+    setViewMode('reader');
+  };
+
+  // Handle document state updates with database sync
+  const handleDocumentUpdate = async (updates: Partial<Document>) => {
+    if (!currentDocument) return;
+    
+    const updatedDocument = { ...currentDocument, ...updates };
+    setCurrentDocument(updatedDocument);
+    
+    // Sync with database
+    try {
+      if (updates.currentPage !== undefined || updates.zoomLevel !== undefined) {
+        await updateDocumentState(
+          currentDocument.id,
+          updates.currentPage ?? currentDocument.currentPage,
+          updates.zoomLevel ?? currentDocument.zoomLevel
+        );
+      }
+    } catch (error) {
+      console.error('Failed to sync document state:', error);
+    }
+  };
+
+  // Handle page changes
+  const handlePageChange = (page: number) => {
+    handleDocumentUpdate({ currentPage: page });
+  };
+
+  // Handle zoom changes
+  const handleZoomChange = (zoom: number) => {
+    handleDocumentUpdate({ zoomLevel: zoom });
+  };
+
+  // Handle document load completion
+  const handleDocumentLoad = async (document: Document) => {
+    handleDocumentUpdate({ totalPages: document.totalPages });
+    
+    if (currentDocument && document.totalPages !== currentDocument.totalPages) {
+      try {
+        await updateDocumentTotalPages(currentDocument.id, document.totalPages);
+      } catch (error) {
+        console.error('Failed to update total pages in database:', error);
+      }
+    }
+  };
+
+  const sidebarItems = [
+    { id: 'library', label: 'Library', icon: Library, active: viewMode === 'library' },
+    { id: 'knowledge', label: 'Knowledge', icon: Brain, active: viewMode === 'knowledge' },
   ];
 
   const knowledgeStats = [
-    { label: "Total Concepts", value: dashboardStats.knowledgeCount, icon: Brain, color: "text-purple-600" },
-    { label: "Questions Asked", value: dashboardStats.questionCount, icon: MessageSquare, color: "text-blue-600" },
-    { label: "Documents Read", value: dashboardStats.documentCount, icon: BookOpen, color: "text-green-600" },
-    { label: "AI Responses", value: dashboardStats.responseCount, icon: Clock, color: "text-orange-600" }
+    { label: "Documents", value: dashboardStats.documentCount, icon: BookOpen, color: "text-blue-600" },
+    { label: "Concepts", value: dashboardStats.knowledgeCount, icon: Brain, color: "text-purple-600" },
+    { label: "Questions", value: dashboardStats.questionCount, icon: MessageSquare, color: "text-green-600" },
+  ];
+
+  const sampleKnowledge = [
+    {
+      id: 1,
+      concept: "Supervised Learning",
+      definition: "A machine learning approach where algorithms learn from labeled training data.",
+      context: "Introduction to ML Types",
+      tags: ["machine-learning", "algorithms"]
+    },
+    {
+      id: 2,
+      concept: "Neural Networks", 
+      definition: "Computing systems inspired by biological neural networks with interconnected nodes.",
+      context: "Deep Learning Fundamentals",
+      tags: ["neural-networks", "deep-learning"]
+    },
+    {
+      id: 3,
+      concept: "Gradient Descent",
+      definition: "An optimization algorithm used to minimize cost functions iteratively.",
+      context: "Optimization Techniques", 
+      tags: ["optimization", "algorithm"]
+    }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Link to="/" className="flex items-center space-x-3">
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-xl">
-                  <Brain className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                    GeniusReads
-                  </h1>
-                  <p className="text-xs text-slate-600">Dashboard</p>
-                </div>
-              </Link>
+    <div className="h-screen bg-slate-50 flex overflow-hidden">
+      {/* Sidebar */}
+      <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
+        {/* App Header */}
+        <div className="p-6 border-b border-slate-200">
+          <div className="flex items-center space-x-3">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
+              <Brain className="h-5 w-5 text-white" />
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-                <Input
-                  placeholder="Search knowledge..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-80"
-                />
-              </div>
-              <Link to="/reader">
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  Start Reading
-                </Button>
-              </Link>
+            <div>
+              <h1 className="text-lg font-bold text-slate-900">GeniusReads</h1>
+              <p className="text-xs text-slate-500">AI-Powered Reading</p>
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="container mx-auto px-6 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-slate-900 mb-2">Welcome back!</h2>
-          <p className="text-lg text-slate-600">Here's what you've been learning lately.</p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-          {knowledgeStats.map((stat, index) => (
-            <Card key={index} className="bg-white/60 backdrop-blur-sm border-slate-200 hover:shadow-lg transition-all duration-300">
-              <CardContent className="p-6">
-                {loading ? (
-                  <div className="flex items-center justify-between animate-pulse">
-                    <div>
-                      <div className="h-4 bg-slate-200 rounded w-20 mb-2"></div>
-                      <div className="h-8 bg-slate-200 rounded w-12"></div>
-                    </div>
-                    <div className="p-3 rounded-full bg-slate-200 w-12 h-12"></div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-slate-600 mb-1">{stat.label}</p>
-                      <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                    </div>
-                    <div className={`p-3 rounded-full bg-slate-100 ${stat.color}`}>
-                      <stat.icon className="h-6 w-6" />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Recent Documents */}
-          <div className="lg:col-span-2">
-            <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="text-xl text-slate-900">Recent Documents</CardTitle>
-                  <CardDescription>Continue where you left off</CardDescription>
+        {/* Stats */}
+        <div className="p-4 border-b border-slate-200">
+          <div className="grid grid-cols-1 gap-3">
+            {knowledgeStats.map((stat, index) => (
+              <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                  <span className="text-sm text-slate-600">{stat.label}</span>
                 </div>
-                <Button variant="outline" size="sm">
-                  View All
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {loading ? (
-                  // Loading state
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="p-4 bg-white rounded-lg border border-slate-100 animate-pulse">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
-                            <div className="h-3 bg-slate-200 rounded w-1/2 mb-2"></div>
-                            <div className="flex space-x-4">
-                              <div className="h-3 bg-slate-200 rounded w-16"></div>
-                              <div className="h-3 bg-slate-200 rounded w-20"></div>
-                              <div className="h-3 bg-slate-200 rounded w-18"></div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <div className="h-6 bg-slate-200 rounded w-12"></div>
-                            <div className="h-8 bg-slate-200 rounded w-8"></div>
-                          </div>
-                        </div>
-                        <div className="w-full bg-slate-200 rounded-full h-2"></div>
-                      </div>
-                    ))}
+                <span className="text-sm font-medium text-slate-900">{stat.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div className="p-4 border-b border-slate-200">
+          <div className="space-y-1">
+            {sidebarItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setViewMode(item.id as ViewMode)}
+                className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  item.active 
+                    ? 'bg-blue-100 text-blue-700' 
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <item.icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Upload Button */}
+        <div className="p-4">
+          <Button 
+            onClick={handleUploadPDF}
+            disabled={isUploadingPDF}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            {isUploadingPDF ? (
+              <>
+                <Clock className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Add PDF
+              </>
+            )}
+          </Button>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex-1 p-4">
+          <div className="text-xs text-slate-500 mb-2 uppercase tracking-wide">Quick Actions</div>
+          <div className="space-y-1">
+            <button className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">
+              <Search className="h-4 w-4" />
+              <span>Search Knowledge</span>
+            </button>
+            <button className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">
+              <Settings className="h-4 w-4" />
+              <span>Preferences</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {viewMode === 'library' && (
+          <div className="flex-1 flex flex-col">
+            {/* Toolbar */}
+            <div className="p-6 border-b border-slate-200 bg-white">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-900">Document Library</h2>
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search documents..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 w-80"
+                    />
                   </div>
-                ) : recentDocuments.length === 0 ? (
-                  // Empty state
-                  <div className="text-center py-8">
-                    <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-900 mb-2">No documents yet</h3>
-                    <p className="text-slate-600 mb-4">Start your learning journey by uploading your first PDF.</p>
-                    <Link to="/reader">
-                      <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                        <BookOpen className="mr-2 h-4 w-4" />
-                        Upload PDF
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  // Real documents
-                  recentDocuments.map((doc) => {
+                </div>
+              </div>
+            </div>
+
+            {/* Document Grid */}
+            <ScrollArea className="flex-1 p-6">
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((i) => (
+                    <Card key={i} className="animate-pulse">
+                      <CardContent className="p-6">
+                        <div className="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-slate-200 rounded w-1/2 mb-4"></div>
+                        <div className="h-2 bg-slate-200 rounded w-full"></div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : recentDocuments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <FileText className="h-16 w-16 text-slate-300 mb-4" />
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">No Documents Yet</h3>
+                  <p className="text-slate-500 mb-6 max-w-md">
+                    Start your learning journey by adding your first PDF document.
+                  </p>
+                  <Button 
+                    onClick={handleUploadPDF}
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Add Your First PDF
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {recentDocuments.map((doc) => {
                     const progress = calculateProgress(doc.currentPage, doc.totalPages);
                     return (
-                      <div key={doc.id} className="p-4 bg-white rounded-lg border border-slate-100 hover:shadow-md transition-all duration-200">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-slate-900 mb-1">{doc.title}</h3>
-                            <p className="text-sm text-slate-600 mb-2">
-                              {doc.author || 'Unknown Author'} • {doc.totalPages} pages
-                            </p>
-                            <div className="flex items-center space-x-4 text-xs text-slate-500">
-                              <span className="flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {formatLastAccessed(doc.lastAccessed)}
-                              </span>
-                              <span className="flex items-center">
-                                <FileText className="h-3 w-3 mr-1" />
-                                Page {doc.currentPage} of {doc.totalPages}
-                              </span>
-                              <span className="flex items-center">
-                                <MessageSquare className="h-3 w-3 mr-1" />
-                                0 questions
-                              </span>
+                      <Card key={doc.id} className="hover:shadow-md transition-all duration-200 cursor-pointer" onClick={() => handleDocumentSelect(doc)}>
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">{doc.title}</h3>
+                              <p className="text-sm text-slate-500 mb-2">
+                                {doc.author || 'Unknown Author'}
+                              </p>
+                              <div className="flex items-center space-x-4 text-xs text-slate-400">
+                                <span className="flex items-center">
+                                  <FileText className="h-3 w-3 mr-1" />
+                                  {doc.totalPages} pages
+                                </span>
+                                <span className="flex items-center">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {formatLastAccessed(doc.lastAccessed)}
+                                </span>
+                              </div>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-slate-400" />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-slate-500">Page {doc.currentPage} of {doc.totalPages}</span>
+                              <Badge variant="secondary" className="text-xs">{progress}%</Badge>
+                            </div>
+                            <div className="w-full bg-slate-200 rounded-full h-1.5">
+                              <div 
+                                className="bg-gradient-to-r from-blue-600 to-purple-600 h-1.5 rounded-full transition-all duration-300"
+                                style={{ width: `${progress}%` }}
+                              ></div>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant="secondary">{progress}%</Badge>
-                            <Link to="/reader" state={{ documentId: doc.id }}>
-                              <Button size="sm" variant="ghost">
-                                <ArrowRight className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                          </div>
-                        </div>
-                        <div className="w-full bg-slate-200 rounded-full h-2">
-                          <div 
-                            className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
+                        </CardContent>
+                      </Card>
                     );
-                  })
-                )}
-              </CardContent>
-            </Card>
+                  })}
+                </div>
+              )}
+            </ScrollArea>
           </div>
+        )}
 
-          {/* Recent Questions */}
-          <div>
-            <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-6">
-              <CardHeader>
-                <CardTitle className="text-xl text-slate-900">Recent Questions</CardTitle>
-                <CardDescription>Your latest learning moments</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {recentQuestions.map((question) => (
-                  <div key={question.id} className="p-3 bg-white rounded-lg border border-slate-100">
-                    <p className="text-sm text-slate-900 font-medium mb-2 line-clamp-2">
-                      {question.question}
-                    </p>
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                      <span className="flex items-center">
-                        <FileText className="h-3 w-3 mr-1" />
-                        {question.document}
-                      </span>
-                      <span className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
-                        {question.timestamp}
-                      </span>
-                    </div>
-                    <div className="mt-2">
-                      <Badge variant="outline" className="text-xs">
-                        {question.concepts} concepts learned
-                      </Badge>
+        {viewMode === 'reader' && (
+          <div className="flex-1 flex flex-col">
+            {currentDocument ? (
+              <>
+                {/* Reader Toolbar */}
+                <div className="p-4 border-b border-slate-200 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setViewMode('library')}
+                      >
+                        ← Library
+                      </Button>
+                      <h2 className="text-lg font-medium text-slate-900 truncate">
+                        {currentDocument.title}
+                      </h2>
                     </div>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card className="bg-gradient-to-r from-blue-600 to-purple-600 border-0 text-white">
-              <CardContent className="p-6">
-                <Star className="h-8 w-8 mb-4 text-yellow-300" />
-                <h3 className="text-lg font-semibold mb-2">Keep Learning!</h3>
-                <p className="text-sm text-blue-100 mb-4">
-                  Upload a new document or continue reading to expand your knowledge.
-                </p>
-                <Link to="/reader">
-                  <Button className="bg-white text-blue-600 hover:bg-blue-50 w-full">
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    Continue Reading
+                </div>
+                
+                {/* PDF Viewer */}
+                <div className="flex-1 overflow-hidden">
+                  <PDFViewer
+                    document={currentDocument}
+                    onDocumentLoad={handleDocumentLoad}
+                    onPageChange={handlePageChange}
+                    onZoomChange={handleZoomChange}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <FileText className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">No Document Selected</h3>
+                  <p className="text-slate-500 mb-4">Choose a document from your library to start reading.</p>
+                  <Button onClick={() => setViewMode('library')} variant="outline">
+                    Go to Library
                   </Button>
-                </Link>
-              </CardContent>
-            </Card>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
+        )}
+
+        {viewMode === 'knowledge' && (
+          <div className="flex-1 flex flex-col">
+            {/* Knowledge Toolbar */}
+            <div className="p-6 border-b border-slate-200 bg-white">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-900">Knowledge Base</h2>
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search concepts..."
+                      className="pl-10 w-80"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Knowledge Grid */}
+            <ScrollArea className="flex-1 p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sampleKnowledge.map((item) => (
+                  <Card key={item.id} className="hover:shadow-md transition-all duration-200">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base font-medium text-slate-900 flex items-center justify-between">
+                        {item.concept}
+                        <Brain className="h-4 w-4 text-purple-500" />
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-slate-600 mb-3 leading-relaxed">
+                        {item.definition}
+                      </p>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs text-slate-500">{item.context}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {item.tags.slice(0, 2).map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-xs px-2 py-0">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
       </div>
     </div>
   );
