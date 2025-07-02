@@ -31,6 +31,7 @@ interface PDFViewerProps {
   onPageChange?: (page: number) => void;
   onZoomChange?: (zoom: number) => void;
   onTextSelect?: (selection: TextSelection) => void;
+  clearSelectionTrigger?: number; // Trigger to clear selection from parent
 }
 
 const PDFViewer: React.FC<PDFViewerProps> = ({
@@ -38,7 +39,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   onDocumentLoad,
   onPageChange,
   onZoomChange,
-  onTextSelect
+  onTextSelect,
+  clearSelectionTrigger
 }) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -53,15 +55,14 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   // Text selection functionality
   const {
     isSelecting,
-    // currentSelection,
+    currentSelection,
     selectionRects,
     containerRef,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
-    // clearSelection,
+    clearSelection,
     hasSelection,
-    // selectedText
   } = useTextSelection({
     document,
     currentPage,
@@ -154,6 +155,39 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       handlePageChange(pageNum);
     }
   }, [numPages, handlePageChange]);
+
+  // Clear selection when document changes or when parent requests it
+  useEffect(() => {
+    if (document?.id !== currentSelection?.documentId) {
+      clearSelection();
+    }
+  }, [document?.id, currentSelection?.documentId, clearSelection]);
+
+  // Clear selection when parent triggers it
+  useEffect(() => {
+    if (clearSelectionTrigger && clearSelectionTrigger > 0) {
+      clearSelection();
+    }
+  }, [clearSelectionTrigger, clearSelection]);
+
+  // Add keyboard event listener for Escape key within PDF viewer
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && hasSelection) {
+        clearSelection();
+      }
+    };
+
+    if (containerRef.current) {
+      const container = containerRef.current;
+      container.addEventListener('keydown', handleKeyDown);
+      container.setAttribute('tabindex', '0'); // Make container focusable
+      
+      return () => {
+        container.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [hasSelection, clearSelection]);
 
   if (!document) {
     return (

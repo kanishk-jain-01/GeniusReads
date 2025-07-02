@@ -62,11 +62,19 @@ const TextSelectionOverlay: React.FC<TextSelectionOverlayProps> = ({
       {/* Selection feedback */}
       {hasSelection && !isSelecting && (
         <div className="absolute top-2 right-2 pointer-events-none">
-          <div className="bg-blue-600 text-white text-xs px-2 py-1 rounded-md shadow-lg flex items-center space-x-1">
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
-            </svg>
-            <span>Press CMD+K to chat</span>
+          <div className="bg-blue-600 text-white text-xs px-3 py-2 rounded-md shadow-lg space-y-1">
+            <div className="flex items-center space-x-1">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+              <span>Press CMD+K to chat</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+              <span>Press ESC to clear</span>
+            </div>
           </div>
         </div>
       )}

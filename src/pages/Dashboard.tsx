@@ -55,6 +55,7 @@ const Dashboard = () => {
   const [navigationState, setNavigationState] = useState<NavigationState>({
     currentTab: 'library'
   });
+  const [clearSelectionTrigger, setClearSelectionTrigger] = useState(0); // Trigger for clearing PDF selection
   const { toast } = useToast();
 
   // Handle CMD+K: Navigate directly to active chat interface
@@ -99,6 +100,7 @@ const Dashboard = () => {
   // Handle text selection being processed by ChatInterface
   const handleTextSelectionProcessed = () => {
     setCurrentTextSelection(undefined);
+    setClearSelectionTrigger(prev => prev + 1); // Trigger PDF selection clear
   };
 
   // Handle CMD+L: Toggle between active chat interface and reading position
@@ -124,6 +126,18 @@ const Dashboard = () => {
   const handleTextSelection = (selection: TextSelection) => {
     setCurrentTextSelection(selection);
     // Don't automatically navigate to chat - wait for CMD+K
+  };
+
+  // Handle clearing text selection with Escape key
+  const handleEscape = () => {
+    if (currentTextSelection) {
+      setCurrentTextSelection(undefined);
+      setClearSelectionTrigger(prev => prev + 1); // Trigger PDF selection clear
+      toast({
+        title: "Selection Cleared",
+        description: "Text selection has been cleared.",
+      });
+    }
   };
 
   // Convert TextSelection to HighlightedContext
@@ -203,6 +217,7 @@ const Dashboard = () => {
   useKeyboardShortcuts({
     onCmdK: handleCmdK,
     onCmdL: handleCmdL,
+    onEscape: handleEscape,
     currentTextSelection,
     enabled: true
   });
@@ -643,6 +658,7 @@ const Dashboard = () => {
                     onPageChange={handlePageChange}
                     onZoomChange={handleZoomChange}
                     onTextSelect={handleTextSelection}
+                    clearSelectionTrigger={clearSelectionTrigger}
                   />
                 </div>
               </>
