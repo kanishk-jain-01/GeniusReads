@@ -18,6 +18,7 @@ import {
   Upload
 } from "lucide-react";
 import PDFViewer from "@/components/PDFViewer";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { getRecentDocuments, getDashboardStats, openPDFDialog, loadPDFDocument, updateDocumentState, updateDocumentTotalPages } from "@/lib/api";
 import type { Document } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -214,39 +215,39 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="h-screen bg-slate-50 flex overflow-hidden">
+    <div className="h-screen bg-slate-50 dark:bg-slate-900 flex overflow-hidden">
       {/* Sidebar */}
-      <div className="w-64 bg-white border-r border-slate-200 flex flex-col">
+      <div className="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
         {/* App Header */}
-        <div className="p-6 border-b border-slate-200">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center space-x-3">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
               <Brain className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900">GeniusReads</h1>
-              <p className="text-xs text-slate-500">AI-Powered Reading</p>
+              <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100">GeniusReads</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">AI-Powered Reading</p>
             </div>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="p-4 border-b border-slate-200">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
           <div className="grid grid-cols-1 gap-3">
             {knowledgeStats.map((stat, index) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+              <div key={index} className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-700 rounded-lg">
                 <div className="flex items-center space-x-2">
                   <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                  <span className="text-sm text-slate-600">{stat.label}</span>
+                  <span className="text-sm text-slate-600 dark:text-slate-300">{stat.label}</span>
                 </div>
-                <span className="text-sm font-medium text-slate-900">{stat.value}</span>
+                <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{stat.value}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Navigation */}
-        <div className="p-4 border-b border-slate-200">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700">
           <div className="space-y-1">
             {sidebarItems.map((item) => (
               <button
@@ -254,8 +255,8 @@ const Dashboard = () => {
                 onClick={() => setViewMode(item.id as ViewMode)}
                 className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   item.active 
-                    ? 'bg-blue-100 text-blue-700' 
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' 
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
                 <item.icon className="h-4 w-4" />
@@ -290,14 +291,22 @@ const Dashboard = () => {
         <div className="flex-1 p-4">
           <div className="text-xs text-slate-500 mb-2 uppercase tracking-wide">Quick Actions</div>
           <div className="space-y-1">
-            <button className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">
+            <button className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
               <Search className="h-4 w-4" />
               <span>Search Knowledge</span>
             </button>
-            <button className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">
+            <button className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
               <Settings className="h-4 w-4" />
               <span>Preferences</span>
             </button>
+          </div>
+          
+          {/* Theme Toggle */}
+          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wide">Appearance</div>
+            <div className="flex justify-start">
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </div>
@@ -307,9 +316,9 @@ const Dashboard = () => {
         {viewMode === 'library' && (
           <div className="flex-1 flex flex-col">
             {/* Toolbar */}
-            <div className="p-6 border-b border-slate-200 bg-white">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-slate-900">Document Library</h2>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Document Library</h2>
                 <div className="flex items-center space-x-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
@@ -340,9 +349,9 @@ const Dashboard = () => {
                 </div>
               ) : recentDocuments.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center">
-                  <FileText className="h-16 w-16 text-slate-300 mb-4" />
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">No Documents Yet</h3>
-                  <p className="text-slate-500 mb-6 max-w-md">
+                  <FileText className="h-16 w-16 text-slate-300 dark:text-slate-600 mb-4" />
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">No Documents Yet</h3>
+                  <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md">
                     Start your learning journey by adding your first PDF document.
                   </p>
                   <Button 
@@ -358,15 +367,15 @@ const Dashboard = () => {
                   {recentDocuments.map((doc) => {
                     const progress = calculateProgress(doc.currentPage, doc.totalPages);
                     return (
-                      <Card key={doc.id} className="hover:shadow-md transition-all duration-200 cursor-pointer" onClick={() => handleDocumentSelect(doc)}>
+                      <Card key={doc.id} className="hover:shadow-md transition-all duration-200 cursor-pointer bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700" onClick={() => handleDocumentSelect(doc)}>
                         <CardContent className="p-6">
                           <div className="flex items-start justify-between mb-4">
                             <div className="flex-1">
-                              <h3 className="font-semibold text-slate-900 mb-1 line-clamp-2">{doc.title}</h3>
-                              <p className="text-sm text-slate-500 mb-2">
+                              <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1 line-clamp-2">{doc.title}</h3>
+                              <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">
                                 {doc.author || 'Unknown Author'}
                               </p>
-                              <div className="flex items-center space-x-4 text-xs text-slate-400">
+                              <div className="flex items-center space-x-4 text-xs text-slate-400 dark:text-slate-500">
                                 <span className="flex items-center">
                                   <FileText className="h-3 w-3 mr-1" />
                                   {doc.totalPages} pages
@@ -377,14 +386,14 @@ const Dashboard = () => {
                                 </span>
                               </div>
                             </div>
-                            <ArrowRight className="h-4 w-4 text-slate-400" />
+                            <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
                           </div>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-slate-500">Page {doc.currentPage} of {doc.totalPages}</span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">Page {doc.currentPage} of {doc.totalPages}</span>
                               <Badge variant="secondary" className="text-xs">{progress}%</Badge>
                             </div>
-                            <div className="w-full bg-slate-200 rounded-full h-1.5">
+                            <div className="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-1.5">
                               <div 
                                 className="bg-gradient-to-r from-blue-600 to-purple-600 h-1.5 rounded-full transition-all duration-300"
                                 style={{ width: `${progress}%` }}
@@ -406,7 +415,7 @@ const Dashboard = () => {
             {currentDocument ? (
               <>
                 {/* Reader Toolbar */}
-                <div className="p-4 border-b border-slate-200 bg-white">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <Button
@@ -416,7 +425,7 @@ const Dashboard = () => {
                       >
                         ← Library
                       </Button>
-                      <h2 className="text-lg font-medium text-slate-900 truncate">
+                      <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 truncate">
                         {currentDocument.title}
                       </h2>
                     </div>
@@ -436,9 +445,9 @@ const Dashboard = () => {
             ) : (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
-                  <FileText className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">No Document Selected</h3>
-                  <p className="text-slate-500 mb-4">Choose a document from your library to start reading.</p>
+                  <FileText className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">No Document Selected</h3>
+                  <p className="text-slate-500 dark:text-slate-400 mb-4">Choose a document from your library to start reading.</p>
                   <Button onClick={() => setViewMode('library')} variant="outline">
                     Go to Library
                   </Button>
@@ -451,9 +460,9 @@ const Dashboard = () => {
         {viewMode === 'knowledge' && (
           <div className="flex-1 flex flex-col">
             {/* Knowledge Toolbar */}
-            <div className="p-6 border-b border-slate-200 bg-white">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-slate-900">Knowledge Base</h2>
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Knowledge Base</h2>
                 <div className="flex items-center space-x-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
@@ -470,19 +479,19 @@ const Dashboard = () => {
             <ScrollArea className="flex-1 p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sampleKnowledge.map((item) => (
-                  <Card key={item.id} className="hover:shadow-md transition-all duration-200">
+                  <Card key={item.id} className="hover:shadow-md transition-all duration-200 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-base font-medium text-slate-900 flex items-center justify-between">
+                      <CardTitle className="text-base font-medium text-slate-900 dark:text-slate-100 flex items-center justify-between">
                         {item.concept}
                         <Brain className="h-4 w-4 text-purple-500" />
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-sm text-slate-600 mb-3 leading-relaxed">
+                      <p className="text-sm text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
                         {item.definition}
                       </p>
                       <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs text-slate-500">{item.context}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{item.context}</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {item.tags.slice(0, 2).map((tag) => (

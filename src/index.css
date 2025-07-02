@@ -181,10 +181,42 @@ All colors MUST be HSL.
 }
 
 .pdf-page .textLayer > span.selected {
-  @apply bg-yellow-200;
+  @apply bg-yellow-200 dark:bg-yellow-500/30;
 }
 
 /* Loading and error states */
 .react-pdf__message {
-  @apply flex items-center justify-center p-8 text-slate-600;
+  @apply flex items-center justify-center p-8 text-slate-600 dark:text-slate-400;
+}
+
+/* Dark mode enhancements for PDF viewing */
+.dark .react-pdf__Page {
+  @apply shadow-xl shadow-black/20;
+}
+
+/* Ensure PDF content remains readable in dark mode */
+.dark .react-pdf__Page__canvas {
+  @apply bg-white;
+}
+
+/* PDF viewer dark mode styling */
+.dark .pdf-viewer-container {
+  @apply bg-slate-900;
+}
+
+.dark .pdf-viewer-controls {
+  @apply bg-slate-800 border-slate-700;
+}
+
+.dark .pdf-viewer-content {
+  @apply bg-slate-800;
+}
+
+/* Dark mode text selection improvements */
+.dark .react-pdf__Page__textContent span::-moz-selection {
+  background: rgba(59, 130, 246, 0.4);
+}
+
+.dark .react-pdf__Page__textContent span::selection {
+  background: rgba(59, 130, 246, 0.4);
 }

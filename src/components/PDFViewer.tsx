@@ -136,13 +136,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
 
   if (!document) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm">
+      <div className="h-full flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="text-center">
-          <FileText className="h-16 w-16 text-slate-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-slate-900 mb-2">
+          <FileText className="h-16 w-16 text-slate-400 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
             No PDF Loaded
           </h3>
-          <p className="text-slate-600 mb-6">
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
             Click "Upload PDF" to select a document to read
           </p>
           <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
@@ -155,11 +155,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-slate-50 dark:bg-slate-900 pdf-viewer-container">
       {/* PDF Controls Header */}
-      <div className="p-6 border-b border-slate-200 bg-white/80 backdrop-blur-sm">
+      <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm pdf-viewer-controls">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-slate-900 truncate">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 truncate">
             {document.title}
           </h2>
           <div className="flex items-center space-x-2">
@@ -171,7 +171,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-slate-600 min-w-[60px] text-center">
+            <span className="text-sm text-slate-700 dark:text-slate-300 min-w-[60px] text-center font-medium">
               {zoomLevel}%
             </span>
             <Button
@@ -197,7 +197,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
             </Button>
             
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-slate-600">Page</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">Page</span>
               <Input
                 type="number"
                 value={pageInput}
@@ -206,7 +206,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 min={1}
                 max={numPages}
               />
-              <span className="text-sm text-slate-600">of {numPages}</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">of {numPages}</span>
             </div>
             
             <Button
@@ -220,7 +220,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
           </div>
           
           {numPages > 0 && (
-            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+            <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">
               {Math.round((currentPage / numPages) * 100)}% Complete
             </Badge>
           )}
@@ -228,19 +228,19 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       </div>
 
       {/* PDF Content */}
-      <div className="flex-1 overflow-auto bg-slate-100 p-6">
+      <div className="flex-1 overflow-auto bg-slate-100 dark:bg-slate-800 p-6 pdf-viewer-content">
         <div className="flex justify-center min-h-0">
-          <Card className="bg-white shadow-lg max-w-full">
+          <Card className="bg-white shadow-lg max-w-full border-slate-200 dark:shadow-xl dark:shadow-black/20">
             <CardContent className="p-0">
               {loading && (
-                <div className="flex items-center justify-center h-96">
+                <div className="flex items-center justify-center h-96 bg-white">
                   <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  <span className="ml-2 text-slate-600">Loading PDF...</span>
+                  <span className="ml-2 text-slate-700">Loading PDF...</span>
                 </div>
               )}
               
               {error && (
-                <div className="flex items-center justify-center h-96 text-red-600">
+                <div className="flex items-center justify-center h-96 text-red-600 bg-white">
                   <p>{error}</p>
                 </div>
               )}
@@ -251,13 +251,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                   onLoadSuccess={onDocumentLoadSuccess}
                   onLoadError={onDocumentLoadError}
                   loading={
-                    <div className="flex items-center justify-center h-96">
+                    <div className="flex items-center justify-center h-96 bg-white">
                       <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                      <span className="ml-2 text-slate-600">Loading PDF...</span>
+                      <span className="ml-2 text-slate-700">Loading PDF...</span>
                     </div>
                   }
                   error={
-                    <div className="flex items-center justify-center h-96 text-red-600">
+                    <div className="flex items-center justify-center h-96 text-red-600 bg-white">
                       <p>Failed to load PDF</p>
                     </div>
                   }
