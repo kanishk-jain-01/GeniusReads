@@ -1375,6 +1375,7 @@ dependencies = [
  "base64 0.22.1",
  "bigdecimal",
  "chrono",
+ "pgvector",
  "pyo3",
  "serde",
  "serde_json",
@@ -2777,6 +2778,15 @@ name = "percent-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
+
+[[package]]
+name = "pgvector"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc58e2d255979a31caa7cabfa7aac654af0354220719ab7a68520ae7a91e8c0b"
+dependencies = [
+ "sqlx",
+]
 
 [[package]]
 name = "phf"
