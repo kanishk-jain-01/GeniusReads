@@ -414,7 +414,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
               onClick={onBack}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              Chat List
             </Button>
             <div>
               <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">

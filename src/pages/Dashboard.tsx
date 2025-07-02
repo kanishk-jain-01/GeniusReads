@@ -33,7 +33,7 @@ import {
   getLastReadingPosition,
   getActiveChatSession
 } from "@/lib/api";
-import type { Document, TextSelection, NavigationState, HighlightedContext } from "@/lib/types";
+import type { Document, TextSelection, HighlightedContext } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 type ViewMode = 'library' | 'reader' | 'chat' | 'chat-interface' | 'knowledge' | 'preferences';
@@ -53,9 +53,6 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isUploadingPDF, setIsUploadingPDF] = useState(false);
   const [currentTextSelection, setCurrentTextSelection] = useState<TextSelection | undefined>();
-  const [navigationState, setNavigationState] = useState<NavigationState>({
-    currentTab: 'library'
-  });
   const [clearSelectionTrigger, setClearSelectionTrigger] = useState(0); // Trigger for clearing PDF selection
   const [viewingChatId, setViewingChatId] = useState<string | undefined>(); // For viewing specific ended chats
   const [chatListRefreshTrigger, setChatListRefreshTrigger] = useState(0); // Trigger for refreshing chat list
@@ -82,21 +79,7 @@ const Dashboard = () => {
       });
     }
     
-    // Save current reading position if in reader mode
-    if (viewMode === 'reader' && currentDocument) {
-      setNavigationState(prev => ({
-        ...prev,
-        previousTab: 'reader',
-        readingPosition: {
-          documentId: currentDocument.id,
-          page: currentDocument.currentPage,
-          zoom: currentDocument.zoomLevel,
-          scroll: 0 // TODO: Implement scroll position tracking
-        }
-      }));
-    }
-    
-    // Navigate directly to chat interface (not chat list)
+    // Navigate directly to chat interface
     setViewMode('chat-interface');
   };
 
@@ -219,15 +202,9 @@ const Dashboard = () => {
 
   // Handle chat interface actions
   const handleChatBack = () => {
-    // Clear viewing chat ID and return to previous location
+    // Always go back to chat list - CMD+L handles reader/chat toggling
     setViewingChatId(undefined);
-    
-    // Return to previous location based on how chat was accessed
-    if (navigationState.previousTab === 'reader') {
-      setViewMode('reader');
-    } else {
-      setViewMode('chat'); // Go to chat list
-    }
+    setViewMode('chat');
   };
 
   const handleChatEnd = () => {
