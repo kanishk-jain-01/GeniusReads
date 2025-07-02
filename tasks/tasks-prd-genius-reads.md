@@ -21,9 +21,9 @@
 - `src/App.css` - Additional component styles (✅ Updated)
 - `src/vite-env.d.ts` - Vite TypeScript environment definitions (✅ Created)
 
-### Pages (✅ Three-Tab Structure)
-- `src/pages/Dashboard.tsx` - Main application with Library tab (PDF reading) (✅ Created, needs CMD+K integration)
-- `src/pages/ChatInterface.tsx` - Chat tab with conversation list and active chat interface
+### Pages (✅ Four-View Structure)
+- `src/pages/Dashboard.tsx` - Main application with Library tab (PDF reading) and Chat tab (chat list) (✅ Created, ✅ Updated with chat navigation)
+- `src/pages/ChatInterface.tsx` - Individual chat conversation interface (separate from chat list) (✅ Created)
 - `src/pages/KnowledgeBase.tsx` - Knowledge tab with concept cards and detailed concept pages (✅ Created, needs updates)
 
 ### shadcn/ui Components (✅ Complete Library Integrated)
@@ -72,12 +72,13 @@
 
 ### Notes
 
-- **Three-Tab Architecture**: Library (PDF reading) → Chat (AI conversations) → Knowledge (concept browsing)
+- **Four-View Architecture**: Library (PDF reading) → Chat List (chat history) → Individual Chat (active conversation) → Knowledge (concept browsing)
 - **Database-First**: All application state stored in PostgreSQL, no caching layer for simplicity
-- **CMD+K Integration**: Text selection in Library tab triggers navigation to Chat tab with context
-- **CMD+L Toggle**: Switch between Library and Chat tabs while preserving state
+- **CMD+K Integration**: Text selection in Library tab triggers navigation DIRECTLY to active chat interface (not chat list)
+- **CMD+L Toggle**: Switch between active chat interface and current reading position while preserving state
 - **Single Active Chat**: One active chat accumulates highlighted contexts from multiple documents
-- **LangGraph Processing**: Background concept extraction triggered by user choice, not automatic
+- **Chat Management**: Save/Save+Analyze/Delete buttons make chat inactive and return to appropriate view
+- **LangGraph Processing**: Background concept extraction triggered by "Save + Analyze" choice
 - **Vector Search**: pgvector extension for semantic concept similarity and search
 
 ## Tasks
@@ -116,15 +117,18 @@
   - [ ] 3.8 Implement reading position preservation across navigation
 
 - [ ] 4.0 Develop Chat Interface and Session Management
-  - [ ] 4.1 Create ChatInterface page with two-state design (list and active chat)
-  - [ ] 4.2 Implement ChatList component with paginated conversation cards
-  - [ ] 4.3 Build ActiveChat component with ChatGPT-style message bubbles
-  - [ ] 4.4 Add streaming AI response system with real-time updates
-  - [ ] 4.5 Create HighlightedContext component for displaying selected text
-  - [ ] 4.6 Implement active chat session management (single active chat)
-  - [ ] 4.7 Add chat session storage and retrieval from database
-  - [ ] 4.8 Create chat action buttons (Save/Save+Analyze/Delete)
-  - [ ] 4.9 Implement auto-save for active chat drafts
+  - [x] 4.1 Update Chat tab to show chat list/history page (not active chat)
+  - [x] 4.2 Create separate ChatInterface page/component for individual conversations
+  - [ ] 4.3 Implement ChatList component with paginated conversation cards
+  - [ ] 4.4 Build ActiveChat component with ChatGPT-style message bubbles
+  - [ ] 4.5 Add streaming AI response system with real-time updates
+  - [ ] 4.6 Create HighlightedContext component for displaying selected text
+  - [ ] 4.7 Implement active chat session management (single active chat)
+  - [ ] 4.8 Add chat session storage and retrieval from database
+  - [ ] 4.9 Create chat action buttons (Save/Save+Analyze/Delete)
+  - [ ] 4.10 Update CMD+K to navigate directly to active chat interface
+  - [ ] 4.11 Update CMD+L to toggle between active chat and reading position
+  - [ ] 4.12 Implement database tracking for active chat and navigation state
 
 - [ ] 5.0 Integrate AI Processing and OpenAI Chat
   - [ ] 5.1 Set up OpenAI API integration for chat conversations

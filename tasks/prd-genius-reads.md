@@ -51,35 +51,41 @@ GeniusReads is a MacOS-native desktop application that helps curious learners de
 12. The system must allow highlighted text contexts from different documents in the same chat
 13. The system must display highlighted text contexts with clear visual distinction in chat interface
 
-### AI Chat System (Chat Tab)
-14. The system must provide a ChatGPT-style interface with message bubbles and streaming responses
-15. The system must display highlighted text contexts as the first message with visual highlighting
-16. The system must support only one active chat at a time that accumulates highlighted contexts
-17. The system must provide a chat list page with paginated cards showing previous conversations
-18. The system must allow users to start new chats or continue the active chat
-19. The system must show chat previews, source document information, and analysis status on chat cards
+### AI Chat System (Chat Tab and Individual Chat Interface)
+14. The Chat tab must display a chat list/history page with paginated cards showing previous conversations
+15. The system must show chat previews, source document information, and analysis status on chat cards
+16. The system must allow users to click on chat cards to open individual chat conversations
+17. The individual chat interface must provide a ChatGPT-style interface with message bubbles and streaming responses
+18. The system must display highlighted text contexts as the first message with visual highlighting
+19. The system must support only one active chat at a time that accumulates highlighted contexts
+20. CMD+K with selected text must navigate DIRECTLY to the active chat interface (bypassing chat list)
+21. CMD+L must toggle between the active chat interface and current reading position
 
 ### Chat Management and Storage
-20. The system must provide three options when ending a chat: Save, Save + Analyze, or Delete
-21. The system must store chat conversations in local PostgreSQL database
-22. The system must return users to their exact reading position after saving if accessed via CMD+K
-23. The system must return users to chat list page if accessed directly from Chat tab
-24. The system must auto-save active chat drafts to prevent data loss
+22. The system must provide three options when ending a chat: Save, Save + Analyze, or Delete
+23. The system must store chat conversations in local PostgreSQL database
+24. Save/Save+Analyze must make the chat inactive and return users to their exact reading position if accessed via CMD+K
+25. Save+Analyze must additionally navigate to Knowledge tab and trigger LangGraph concept extraction
+26. The system must return users to chat list page if chat was accessed directly from Chat tab
+27. Delete must remove the chat entirely and return to appropriate previous location
+28. The system must auto-save active chat drafts to prevent data loss
+29. The system must track active chat state and navigation history in the database
 
 ### Knowledge Extraction and Analysis (Knowledge Tab)
-25. The system must use LangGraph to extract concepts from chat conversations when user chooses "Save + Analyze"
-26. The system must show real-time progress indicators during concept extraction process
-27. The system must store extracted concepts with vector embeddings using pgvector extension
-28. The system must display concepts as categorized cards in the Knowledge tab
-29. The system must make concept cards clickable, leading to detailed pages showing source chats and book sections
-30. The system must link concepts back to their source conversations and document locations
+30. The system must use LangGraph to extract concepts from chat conversations when user chooses "Save + Analyze"
+31. The system must show real-time progress indicators during concept extraction process
+32. The system must store extracted concepts with vector embeddings using pgvector extension
+33. The system must display concepts as categorized cards in the Knowledge tab
+34. The system must make concept cards clickable, leading to detailed pages showing source chats and book sections
+35. The system must link concepts back to their source conversations and document locations
 
 ### Data Persistence and Performance
-31. The system must use PostgreSQL for all data storage (no caching layer)
-32. The system must maintain user session state across app restarts
-33. The system must provide fast navigation between tabs without data loss
-34. The system must handle LangGraph processing in background without blocking UI
-35. The system must paginate chat lists and concept displays for performance
+36. The system must use PostgreSQL for all data storage (no caching layer)
+37. The system must maintain user session state across app restarts
+38. The system must provide fast navigation between views without data loss
+39. The system must handle LangGraph processing in background without blocking UI
+40. The system must paginate chat lists and concept displays for performance
+41. The system must persist active chat state, reading position, and navigation history in database
 
 ## Non-Goals (Out of Scope for MVP)
 

@@ -19,8 +19,8 @@ flowchart TD
         E --> F["Press CMD+K"]
     end
     
-    subgraph "Chat Tab - AI Conversations"
-        F --> G["Navigate to Chat Tab"]
+    subgraph "Individual Chat Interface - AI Conversations"
+        F --> G["Navigate DIRECTLY to Active Chat Interface"]
         G --> H["Highlighted Text as First Message"]
         H --> I["AI Conversation Begins"]
         I --> J["Streaming AI Response"]
@@ -31,47 +31,56 @@ flowchart TD
         N --> O["Add to Same Active Chat"]
         O --> I
         K -->|No| P{"End Chat Options"}
-        P -->|Save| Q["Store Chat in Database"]
-        P -->|Save + Analyze| R["Store + Trigger LangGraph"]
-        P -->|Delete| S["Discard Chat"]
+        P -->|Save| Q["Store Chat in Database → Return to Reading"]
+        P -->|Save + Analyze| R["Store + Trigger LangGraph → Navigate to Knowledge Tab"]
+        P -->|Delete| S["Discard Chat → Return to Reading"]
+    end
+    
+    subgraph "Chat Tab - Chat List/History"
+        T["Chat Tab (Sidebar)"] --> U["Chat List Page"]
+        U --> V["Previous Conversations"]
+        V --> W["Click Chat Card"]
+        W --> X["Navigate to Individual Chat Interface"]
+        X --> I
     end
     
     subgraph "Knowledge Tab - Concept Discovery"
-        R --> T["LangGraph Concept Extraction"]
-        T --> U["Extract Key Concepts"]
-        U --> V["Vector Embedding Generation"]
-        V --> W["Store in Knowledge Base"]
-        W --> X["Update Concept Cards"]
-        X --> Y["User Browses Concepts"]
-        Y --> Z["Click Concept Card"]
-        Z --> AA["View Source Chats & Book Sections"]
+        R --> Y["LangGraph Concept Extraction"]
+        Y --> Z["Extract Key Concepts"]
+        Z --> AA["Vector Embedding Generation"]
+        AA --> BB["Store in Knowledge Base"]
+        BB --> CC["Update Concept Cards"]
+        CC --> DD["User Browses Concepts"]
+        DD --> EE["Click Concept Card"]
+        EE --> FF["View Source Chats & Book Sections"]
     end
     
     subgraph "Navigation Features"
-        BB["CMD+L Toggle"] --> CC["Switch Library ↔ Chat"]
-        CC --> DD["Preserve Reading Position"]
-        DD --> EE["Maintain Active Chat State"]
+        GG["CMD+L Toggle"] --> HH["Switch Active Chat ↔ Reading Position"]
+        HH --> II["Preserve Reading Position"]
+        II --> JJ["Maintain Active Chat State"]
     end
     
     subgraph "Database-First Architecture"
-        FF["All State in PostgreSQL"]
-        GG["Session Persistence"]
-        HH["Auto-save Active Chats"]
-        II["Vector Search with pgvector"]
+        KK["All State in PostgreSQL"]
+        LL["Session Persistence"]
+        MM["Auto-save Active Chats"]
+        NN["Vector Search with pgvector"]
+        OO["Navigation History Tracking"]
     end
     
-    Q --> JJ["Return to Reading Position"]
-    R --> JJ
-    S --> JJ
-    JJ --> C
+    Q --> PP["Return to Reading Position"]
+    S --> PP
+    PP --> C
     
-    BB -.-> G
-    BB -.-> C
+    GG -.-> G
+    GG -.-> C
     
     style A fill:#e1f5fe
     style G fill:#f3e5f5
-    style Y fill:#e8f5e8
-    style BB fill:#fff3e0
+    style U fill:#e8f5e8
+    style DD fill:#e8f5e8
+    style GG fill:#fff3e0
 ```
 
 ### Workflow Explanation
