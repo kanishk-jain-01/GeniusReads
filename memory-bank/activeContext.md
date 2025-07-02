@@ -2,166 +2,199 @@
 
 ## Current Work Focus
 
-**Primary Achievement**: Desktop Application UI Restructure Complete ✅ + PDF System Production Ready + Dark Mode Implementation ✅
-**Phase**: UI Enhancement → Text Selection System (Phase 3)
-**Status**: Native macOS desktop app interface with single-window architecture and complete dark mode support
+**Major Planning Update Complete**: Three-Tab Chat-Based Architecture ✅
+**Phase**: Foundation Complete → Planning Documents Updated → Ready for Phase 2 (Text Selection & Navigation)
+**Status**: Comprehensive vision refinement with database-first chat-centric design
 
 ## Recent Activities
 
-### DARK MODE SYSTEM IMPLEMENTED (Latest Session) - COMPLETE THEME SUPPORT ✅
-1. **Theme Provider Architecture**: Implemented React Context-based theme management system
-   - **Created**: ThemeProvider component with localStorage persistence and system detection
-   - **Added**: useTheme hook for theme state management across components
-   - **Integrated**: Theme switching with light, dark, and system preference options
+### PLANNING DOCUMENTS COMPLETELY UPDATED (Latest Session) - NEW ARCHITECTURE DEFINED ✅
 
-2. **Theme Toggle Interface**: Professional theme switching component
-   - **Created**: ThemeToggle component with dropdown menu using shadcn/ui components
-   - **Added**: Sun/Moon icons with smooth transitions and accessibility support
-   - **Integrated**: Theme toggle into Dashboard sidebar with proper visual hierarchy
+1. **Vision Refinement**: Evolved from question-answer model to chat-based learning system
+   - **New Approach**: Text selection → CMD+K → Chat tab → AI conversations → Optional concept extraction
+   - **Three-Tab Structure**: Library (PDF reading) → Chat (AI conversations) → Knowledge (concept browsing)
+   - **User Control**: Explicit choice for knowledge base integration via "Save + Analyze" option
+   - **Single Active Chat**: Accumulates highlighted contexts from multiple documents
 
-3. **Comprehensive Dark Mode Styling**: Enhanced visual experience for all UI components
-   - **Updated**: All Dashboard components with dark mode CSS classes
-   - **Enhanced**: PDF viewing experience with optimized dark mode support
-   - **Improved**: Text selection styling for both light and dark themes
-   - **Maintained**: Visual consistency and professional appearance across themes
+2. **PRD Complete Rewrite**: Updated Product Requirements Document with new vision
+   - **Updated User Stories**: Chat-based learning workflow with CMD+K and CMD+L shortcuts
+   - **35 New Functional Requirements**: Three-tab interface, chat session management, concept extraction
+   - **Database-First Architecture**: All state stored in PostgreSQL, no caching layer complexity
+   - **Simplified Scope**: Focus on core chat workflow with LangGraph concept extraction
 
-### MAJOR UI RESTRUCTURE COMPLETED (Previous Session) - DESKTOP APP TRANSFORMATION ✅
-1. **Single-Window Architecture Implemented**: Transformed from web-app to desktop-app design
-   - **Removed**: Multi-page routing system (Index, Reader, NotFound pages)
-   - **Implemented**: Single Dashboard as main application window
-   - **Integrated**: PDF reader as embedded panel within main interface
-   - **Result**: Native macOS app experience with sidebar navigation
+3. **Architecture Diagrams Redesigned**: Complete system architecture update
+   - **New User Flow**: Three-tab navigation with seamless state preservation
+   - **Updated Data Model**: Chat sessions, messages, concepts, and vector embeddings
+   - **LangGraph Workflow**: Automated concept extraction with user-controlled triggers
+   - **Technical Implementation**: Database-first design with pgvector extension
 
-2. **Desktop-Native Interface Design**: Eliminated web-style patterns
-   - **Removed**: Web-style headers, navigation bars, and marketing copy
-   - **Implemented**: macOS-style sidebar with sections (Library, Knowledge)
-   - **Added**: Compact stats display and integrated upload functionality
-   - **Enhanced**: Toolbar patterns common in desktop applications
+4. **Task List Restructured**: 54 tasks reorganized into 6 logical phases
+   - **Phase 1**: Foundation ✅ Complete (Tauri + React + PDF system)
+   - **Phase 2**: Text Selection & Navigation (CMD+K, CMD+L, state management)
+   - **Phase 3**: Chat Interface (ChatGPT-style conversations)
+   - **Phase 4**: AI Integration (OpenAI API, streaming responses)
+   - **Phase 5**: LangGraph & Concepts (Python bridge, vector embeddings)
+   - **Phase 6**: Knowledge Base (Concept browsing, source traceability)
 
-3. **Improved User Experience**: Streamlined workflow and navigation
-   - **Eliminated**: "Welcome back!" marketing copy and web-style hero sections
-   - **Simplified**: Direct access to documents and knowledge base
-   - **Enhanced**: Single-click document opening with integrated reader
-   - **Optimized**: Sidebar-based navigation with clear visual hierarchy
+### ARCHITECTURAL DECISIONS FINALIZED (Current Session) - ENGINEERING PRINCIPLES APPLIED ✅
 
-### Previous Session Accomplishments - PDF SYSTEM COMPLETION ✅
-1. **PDF System Implementation Completed**: Full PDF viewing functionality with enterprise-grade features
-   - Native File Picker: ✅ macOS dialog with PDF filtering
-   - PDF Loading System: ✅ Base64 transfer through Tauri for security
-   - Document Navigation: ✅ Page controls, zoom, progress tracking
-   - Database Integration: ✅ Document metadata storage with duplicate handling
-   - State Persistence: ✅ Page position and zoom level saved across sessions
-   - Error Handling: ✅ Comprehensive file access and PDF parsing error management
+1. **Database-First Approach**: Simplified state management strategy
+   - **Single Source of Truth**: All application state stored in PostgreSQL
+   - **Session Persistence**: User navigation and active chats survive app restarts
+   - **No Caching Layer**: Eliminate complexity of cache invalidation and synchronization
+   - **Performance**: Rely on PostgreSQL with proper indexing for speed
 
-2. **Critical Bug Fixes Applied**: Production-ready user experience
-   - **Progress Calculation Fixed**: Real progress percentages instead of incorrect 100%
-   - **Navigation Flow Working**: Dashboard arrows navigate to specific documents
-   - **Data Integrity**: Automatic page count updates maintain accuracy
+2. **Three-Tab Navigation Pattern**: Leverages existing UI structure
+   - **Library Tab**: PDF reading with text selection and highlighting
+   - **Chat Tab**: Two-state interface (chat list and active conversation)
+   - **Knowledge Tab**: Concept cards with detailed exploration pages
+   - **Seamless Switching**: CMD+K and CMD+L shortcuts for fluid navigation
+
+3. **Chat-Centric Learning Design**: Focus on natural conversation workflow
+   - **One Active Chat**: Single conversation accumulates contexts from multiple documents
+   - **User-Controlled Analysis**: Explicit choice for LangGraph concept extraction
+   - **Background Processing**: Non-blocking concept extraction with progress indicators
+   - **Source Traceability**: Concepts link back to source conversations and book sections
+
+### FOUNDATION ACHIEVEMENTS MAINTAINED (Previous Sessions) - PRODUCTION READY ✅
+
+1. **Complete PDF System**: Production-ready with all critical fixes applied
+   - **Native File Picker**: macOS dialog with PDF filtering
+   - **PDF Loading**: Base64 transfer through Tauri with PDF.js compatibility
+   - **Navigation & State**: Page controls, zoom, progress tracking, database persistence
+   - **Bug Fixes Applied**: Accurate progress calculation and seamless navigation flow
+
+2. **Enhanced UI System**: Desktop-native interface with dark mode support
+   - **Single-Window Architecture**: Eliminated web-app patterns for desktop experience
+   - **Dark Mode System**: Complete theme switching with React Context
+   - **Component Library**: 40+ shadcn/ui components fully integrated
+   - **Visual Excellence**: Professional, clean interface for productivity application
+
+3. **Robust Technical Foundation**: Enterprise-grade infrastructure
+   - **Database Integration**: PostgreSQL with comprehensive schema and operations
+   - **Code Quality**: Zero warnings/errors in ESLint, Clippy, TypeScript compilation
+   - **Build System**: Optimized Vite + SWC builds with proper configuration
+   - **IPC Communication**: Verified Tauri-React bridge with test commands
 
 ## Active Decisions
 
-### Desktop Application Design Principles ✅
-**Successfully implemented native macOS app patterns:**
+### Three-Tab Chat Architecture ✅ **FINALIZED**
 
-#### Single-Window Architecture ✅
-- **Main Interface**: Dashboard serves as primary application window
-- **Integrated Views**: Library, Reader, and Knowledge as panels within single window
-- **Navigation**: Sidebar-based switching between functional areas
-- **State Management**: Seamless transitions between document library and reader
+#### User Experience Flow
+- **Text Selection**: User highlights text in Library tab → press CMD+K
+- **Chat Navigation**: Automatically navigate to Chat tab with highlighted text as context
+- **AI Conversation**: ChatGPT-style interface with streaming responses
+- **Context Accumulation**: Single active chat accumulates highlighted text from any document
+- **Chat Completion**: User chooses Save/Save+Analyze/Delete options
+- **Knowledge Building**: Optional LangGraph analysis extracts concepts for Knowledge tab
 
-#### Native macOS UI Patterns ✅
-- **Sidebar Navigation**: Clean, functional sidebar with sections and stats
-- **Toolbar Design**: Context-appropriate toolbars for each view mode
-- **Visual Hierarchy**: Proper spacing, typography, and component organization
-- **Interaction Design**: Single-click document opening with immediate reader access
+#### Navigation Shortcuts
+- **CMD+K**: Highlight text → Navigate to Chat tab with context
+- **CMD+L**: Toggle between Library and Chat tabs (preserves reading position)
+- **State Preservation**: Exact reading position and active chat state maintained
 
-#### Eliminated Web-App Patterns ✅
-- **Removed Routing**: No more React Router or multi-page navigation
-- **Removed Marketing**: No hero sections, "Welcome back!" copy, or web-style headers
-- **Simplified Navigation**: Direct functional access without web-style navigation bars
-- **Enhanced Focus**: Tool-like interface focused on document reading and knowledge management
+#### Database Schema Design
+```sql
+-- Core chat system tables
+ACTIVE_CHAT_SESSION (single active chat)
+CHAT_SESSIONS (completed conversations)
+CHAT_MESSAGES (individual messages)
+HIGHLIGHTED_CONTEXTS (text selections with coordinates)
+USER_SESSION_STATE (navigation state persistence)
 
-### Technical Architecture Enhanced ✅
-1. **Simplified Component Structure**: Removed routing complexity and unused components
-2. **Integrated Functionality**: PDF viewer embedded within main dashboard interface
-3. **State Management**: Unified state handling within single application window
-4. **Dependency Cleanup**: Removed React Router and associated routing dependencies
-5. **Performance**: Reduced bundle size and eliminated unnecessary page transitions
+-- Knowledge extraction tables
+CONCEPTS (extracted concepts with vector embeddings)
+CONCEPT_CHAT_LINKS (relationships with relevance scores)
+LANGRAPH_PROCESSING (background processing status)
+```
+
+### Engineering Principles Applied ✅ **VALIDATED**
+
+1. **Simplicity First**: Database-first approach eliminates caching complexity
+2. **User Control**: Explicit choice for knowledge base integration
+3. **Progressive Enhancement**: Each tab builds on previous tab's data
+4. **State Persistence**: All important state survives app restarts
+5. **Performance**: PostgreSQL with pgvector for semantic search
 
 ## Next Steps
 
-### Immediate (Phase 3: Text Selection System) - **READY TO START WITH ENHANCED UI**
-**With desktop-native interface complete and PDF system operational:**
+### Immediate Priority: Phase 2 - Text Selection & Navigation System **READY TO START**
 
-1. **Task 3.1**: Text selection overlay system for PDF content
-   - Create transparent overlay component for capturing mouse events within integrated reader
-   - Implement click-and-drag text highlighting functionality
-   - Extract text coordinates from PDF.js selection system
+**Task 3.1**: Implement text selection overlay system for PDF content
+- Create transparent overlay component for capturing mouse events
+- Implement click-and-drag text highlighting functionality
+- Extract text coordinates from PDF.js text layer
 
-2. **Task 3.2**: Question input interface triggered by text selection
-   - Create QuestionInput component that appears on text selection within reader panel
-   - Implement text selection state management with custom hooks
-   - Add visual feedback for selected text with highlighting styles
+**Task 3.2**: Add CMD+K keyboard shortcut integration
+- Implement global keyboard shortcut handler
+- Create navigation from Library to Chat tab with context transfer
+- Add highlighted text context to active chat session
 
-3. **Task 3.3**: Text extraction and coordinate storage
-   - Store selected text and coordinates in QUESTIONS table
-   - Handle edge cases for text selection across page boundaries
-   - Add selection clearing when navigating pages or opening new documents
+**Task 3.3**: Create navigation state management
+- Implement user session state persistence in database
+- Add reading position preservation across tab switches
+- Create seamless navigation experience
 
-### Short-term (Complete Phase 3)
-- Text selection overlay system using PDF.js coordinates within integrated reader
-- Click-and-drag highlighting with visual feedback in desktop interface
-- Question input interface triggered by text selection with native app styling
-- Text extraction and coordinate storage in database
+### Short-term (Phase 2 Complete): Navigation & State Management
+- CMD+K and CMD+L keyboard shortcuts fully functional
+- Text selection and context transfer working smoothly
+- Reading position preservation across all navigation
+- Visual indicators for active chat state
 
-### Medium-term (Phase 4: AI Integration)
-- Python environment setup with pyo3 bridge
-- LangGraph workflow implementation for question processing
-- Streaming AI response system with desktop-appropriate notifications
+### Medium-term (Phase 3-4): Chat System Implementation
+- ChatGPT-style conversation interface
+- OpenAI API integration with streaming responses
+- Active chat session management
+- Chat list with pagination and preview cards
+
+### Long-term (Phase 5-6): Knowledge Extraction & Management
+- LangGraph concept extraction workflow
+- Vector embeddings with pgvector extension
+- Knowledge base interface with concept browsing
+- Complete learning workflow integration
 
 ## Active Considerations
 
-### Desktop Application Excellence Achieved ✅
-1. **Native App Feel**: Interface now feels like proper macOS desktop application
-2. **Simplified Workflow**: Single-window design eliminates navigation complexity
-3. **Functional Focus**: Tool-like interface prioritizes document reading and knowledge management
-4. **Visual Consistency**: Cohesive design language throughout all interface elements
-5. **Performance**: Reduced complexity improves application responsiveness
+### Implementation Readiness Enhanced ✅
+1. **Clear Vision**: Three-tab chat-based architecture fully defined
+2. **Simplified Engineering**: Database-first approach reduces complexity
+3. **Proven Foundation**: Production-ready PDF system and UI components
+4. **Logical Progression**: Each phase builds naturally on the previous
+5. **User-Centric Design**: Natural workflow from reading to chatting to knowledge building
 
-### Development Readiness Enhanced ✅
-**All systems optimized for Phase 3 development:**
-- **UI Foundation**: Desktop-native interface ready for text selection features
-- **Component Integration**: PDF viewer embedded and ready for overlay system
-- **State Management**: Simplified state handling within unified interface
-- **Visual Design**: Consistent styling ready for text selection highlighting
-- **User Experience**: Streamlined workflow ready for advanced text interaction
+### Development Strategy Optimized ✅
+- **Leverage Existing**: Build on proven PDF system and UI components
+- **Incremental Development**: Start with text selection, add chat, then knowledge extraction
+- **Database-First**: Consistent state management strategy throughout
+- **Quality Maintenance**: Continue zero-warning policy and comprehensive testing
 
 ### Risk Mitigation Improved ✅
-- **User Confusion**: Eliminated through simplified, focused interface design
-- **Navigation Complexity**: Resolved through single-window architecture
-- **Performance Issues**: Reduced through dependency cleanup and simplified routing
-- **Design Inconsistency**: Prevented through unified desktop application patterns
-- **Development Complexity**: Reduced through elimination of multi-page routing system
+- **Scope Clarity**: Well-defined phases with clear deliverables
+- **Technical Simplicity**: Database-first eliminates state synchronization issues
+- **User Experience**: Natural three-tab workflow with familiar patterns
+- **Engineering Confidence**: Building on proven, production-ready foundation
 
 ## Context for Next Session
 
-**UI Transformation Achievement**: 
-- **Desktop App Design**: Successfully transformed from web-app to native macOS application feel
-- **Single-Window Architecture**: Unified interface with sidebar navigation and integrated panels
-- **Simplified Workflow**: Direct access to documents and knowledge without routing complexity
-- **Visual Excellence**: Clean, functional design appropriate for desktop application
+**Planning Achievement**: 
+- **Complete Vision Refinement**: Evolved from Q&A to chat-based learning system
+- **Updated Planning Documents**: PRD, architecture diagrams, and task list completely rewritten
+- **Engineering Principles Applied**: Database-first, three-tab navigation, user-controlled analysis
+- **Clear Development Path**: 6 logical phases with 54 well-defined tasks
 
-**Transition to Phase 3**:
-- **Enhanced Foundation**: Desktop-native interface provides excellent foundation for text selection
-- **Integrated Reader**: PDF viewer embedded within main interface ready for overlay system
-- **Simplified State**: Unified state management ready for text interaction features
-- **Visual Consistency**: Established design patterns ready for text selection highlighting
+**Implementation Readiness**:
+- **Foundation Excellence**: Production-ready PDF system with resolved UX issues
+- **Technical Clarity**: Database schema designed, component architecture planned
+- **User Experience**: Natural workflow from text selection to knowledge building
+- **Development Confidence**: Clear next steps with proven technical foundation
+
+**Next Focus**: Begin Phase 2 (Text Selection & Navigation) with complete confidence in the refined architecture. The three-tab chat-based design provides an excellent foundation for natural learning workflow with simplified engineering approach.
 
 **Key Success Factors**:
-1. **User-Centered Design**: Eliminated web-app patterns in favor of desktop-native experience
-2. **Simplified Architecture**: Reduced complexity through single-window design
-3. **Visual Excellence**: Professional, clean interface appropriate for productivity application
-4. **Functional Focus**: Tool-like interface prioritizes core functionality over marketing
-5. **Development Readiness**: Enhanced foundation for text selection feature development
+1. **Vision Clarity**: Chat-based learning system with user-controlled knowledge extraction
+2. **Technical Simplicity**: Database-first architecture eliminates complexity
+3. **User Experience**: Natural three-tab workflow with seamless navigation
+4. **Engineering Excellence**: Building on proven, production-ready foundation
+5. **Logical Progression**: Each development phase builds naturally on the previous
 
-**Next Focus**: Begin text selection overlay system (Task 3.1) with complete confidence in the desktop-native interface foundation. Enhanced UI provides excellent foundation for advanced text interaction features with proper visual hierarchy and user experience patterns. 
+The planning update represents a significant improvement in both user experience design and engineering approach, setting up the project for successful implementation with clear direction and simplified technical architecture. 

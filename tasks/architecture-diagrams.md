@@ -2,71 +2,100 @@
 
 ## Overview
 
-This document contains the core architecture diagrams for GeniusReads, including the user workflow and data model. These diagrams provide a visual representation of how the application functions and how data flows through the system.
+This document contains the core architecture diagrams for GeniusReads, including the three-tab user workflow and updated data model. These diagrams provide a visual representation of how the chat-based application functions and how data flows through the system.
 
 ## Core Functionality Flow
 
-This diagram illustrates the complete user workflow and core features of GeniusReads:
+This diagram illustrates the complete three-tab user workflow and core features of GeniusReads:
 
 ```mermaid
 flowchart TD
-    A["User Opens PDF"] --> B["PDF Viewer Displays Document"]
-    B --> C["User Reads Content"]
-    C --> D{"Encounters Confusing Text?"}
-    
-    D -->|No| C
-    D -->|Yes| E["User Highlights Text"]
-    
-    E --> F["Question Input Appears"]
-    F --> G["User Types Question"]
-    G --> H["AI Processing via LangGraph"]
-    
-    H --> I["Streaming AI Response"]
-    I --> J["Response Displayed"]
-    J --> K["Knowledge Auto-Saved"]
-    
-    K --> L["Knowledge Added to Sidebar"]
-    L --> M["User Can Add Personal Notes"]
-    
-    M --> N{"Continue Reading?"}
-    N -->|Yes| C
-    N -->|No| O["Knowledge Corpus Available"]
-    
-    O --> P["User Can Search Previous Learning"]
-    P --> Q["Review Definitions & Concepts"]
-    
-    subgraph "Core Features"
-        R["PDF Navigation<br/>Previous/Next Page<br/>Zoom Controls"]
-        S["Text Selection<br/>Click & Drag<br/>Visual Highlighting"]
-        T["AI Explanations<br/>ELI5 Tone<br/>Contextual Help"]
-        U["Knowledge Management<br/>Auto-Save Q&A<br/>Searchable Corpus"]
-        V["Note Taking<br/>Personal Annotations<br/>Linked to Text"]
+    subgraph "Library Tab - Reading"
+        A["User Opens PDF"] --> B["PDF Viewer Displays Document"]
+        B --> C["User Reads Content"]
+        C --> D{"Encounters Confusing Text?"}
+        D -->|No| C
+        D -->|Yes| E["User Highlights Text"]
+        E --> F["Press CMD+K"]
     end
     
-    subgraph "Data Persistence"
-        W["Local PostgreSQL<br/>Questions & Answers<br/>Document Metadata<br/>User Notes"]
+    subgraph "Chat Tab - AI Conversations"
+        F --> G["Navigate to Chat Tab"]
+        G --> H["Highlighted Text as First Message"]
+        H --> I["AI Conversation Begins"]
+        I --> J["Streaming AI Response"]
+        J --> K{"Continue Chat?"}
+        K -->|Yes| L["User Adds More Context"]
+        L --> M["Highlight More Text (Any Document)"]
+        M --> N["Press CMD+K Again"]
+        N --> O["Add to Same Active Chat"]
+        O --> I
+        K -->|No| P{"End Chat Options"}
+        P -->|Save| Q["Store Chat in Database"]
+        P -->|Save + Analyze| R["Store + Trigger LangGraph"]
+        P -->|Delete| S["Discard Chat"]
     end
     
-    B -.-> R
-    E -.-> S
-    H -.-> T
-    K -.-> U
-    M -.-> V
-    L -.-> W
+    subgraph "Knowledge Tab - Concept Discovery"
+        R --> T["LangGraph Concept Extraction"]
+        T --> U["Extract Key Concepts"]
+        U --> V["Vector Embedding Generation"]
+        V --> W["Store in Knowledge Base"]
+        W --> X["Update Concept Cards"]
+        X --> Y["User Browses Concepts"]
+        Y --> Z["Click Concept Card"]
+        Z --> AA["View Source Chats & Book Sections"]
+    end
+    
+    subgraph "Navigation Features"
+        BB["CMD+L Toggle"] --> CC["Switch Library ↔ Chat"]
+        CC --> DD["Preserve Reading Position"]
+        DD --> EE["Maintain Active Chat State"]
+    end
+    
+    subgraph "Database-First Architecture"
+        FF["All State in PostgreSQL"]
+        GG["Session Persistence"]
+        HH["Auto-save Active Chats"]
+        II["Vector Search with pgvector"]
+    end
+    
+    Q --> JJ["Return to Reading Position"]
+    R --> JJ
+    S --> JJ
+    JJ --> C
+    
+    BB -.-> G
+    BB -.-> C
+    
+    style A fill:#e1f5fe
+    style G fill:#f3e5f5
+    style Y fill:#e8f5e8
+    style BB fill:#fff3e0
 ```
 
 ### Workflow Explanation
 
-1. **Reading Flow**: User opens PDF → reads content → encounters confusing text
-2. **AI Interaction**: User highlights text → asks questions → receives streaming AI explanations  
-3. **Knowledge Building**: AI responses are auto-saved → added to knowledge sidebar → user can add personal notes
-4. **Knowledge Management**: Users can search their accumulated learning and review previous concepts
+**Three-Tab Structure**:
+1. **Library Tab**: PDF reading with text selection and highlighting
+2. **Chat Tab**: AI conversations with ChatGPT-style interface
+3. **Knowledge Tab**: Concept browsing and detailed concept pages
 
-The diagram shows five core feature areas and the local PostgreSQL data persistence layer that supports the entire workflow.
+**Core Interaction Flow**:
+1. **Reading → Chatting**: User highlights text → CMD+K → navigates to Chat tab
+2. **Active Chat**: One active chat accumulates highlighted contexts from any document
+3. **Chat Completion**: User chooses Save/Save+Analyze/Delete options
+4. **Knowledge Building**: LangGraph extracts concepts from analyzed chats
+5. **Knowledge Discovery**: Users browse concepts and trace back to source conversations
+
+**Navigation Features**:
+- CMD+K: Highlight text → Chat tab
+- CMD+L: Toggle between Library and Chat tabs
+- Preserved reading positions and active chat state
 
 ## Data Model
 
-This diagram shows the complete database schema with relationships between entities:
+This diagram shows the updated database schema optimized for chat-based conversations:
 
 ```mermaid
 erDiagram
@@ -80,123 +109,269 @@ erDiagram
         timestamp last_accessed
         integer last_page_viewed
         float zoom_level
+        float scroll_position
     }
     
-    QUESTIONS {
+    USER_SESSION_STATE {
         uuid id PK
-        uuid document_id FK
-        text selected_text
-        text user_question
-        integer page_number
-        json text_coordinates
-        timestamp created_at
-        string status
+        uuid current_document_id FK
+        integer current_page
+        float zoom_level
+        float scroll_position
+        timestamp updated_at
     }
     
-    AI_RESPONSES {
+    ACTIVE_CHAT_SESSION {
         uuid id PK
-        uuid question_id FK
-        text response_content
-        text explanation
-        json extracted_definitions
-        timestamp created_at
-        string ai_model_used
-        integer processing_time_ms
-    }
-    
-    KNOWLEDGE_ENTRIES {
-        uuid id PK
-        uuid document_id FK
-        uuid question_id FK
-        string concept_term
-        text definition
-        text context
-        json tags
-        timestamp created_at
-        timestamp last_reviewed
-    }
-    
-    USER_NOTES {
-        uuid id PK
-        uuid document_id FK
-        text note_content
-        text selected_text
-        integer page_number
-        json text_coordinates
+        text title
         timestamp created_at
         timestamp updated_at
-        string note_type
+        boolean is_active
     }
     
-    SEARCH_INDEX {
+    CHAT_SESSIONS {
         uuid id PK
-        uuid reference_id FK
-        string reference_type
-        text searchable_content
-        json keywords
-        timestamp indexed_at
+        text title
+        text preview_text
+        integer source_document_count
+        string analysis_status
+        timestamp created_at
+        timestamp completed_at
     }
     
-    DOCUMENTS ||--o{ QUESTIONS : "contains"
-    QUESTIONS ||--|| AI_RESPONSES : "generates"
-    DOCUMENTS ||--o{ KNOWLEDGE_ENTRIES : "builds"
-    QUESTIONS ||--o{ KNOWLEDGE_ENTRIES : "creates"
-    DOCUMENTS ||--o{ USER_NOTES : "annotates"
-    KNOWLEDGE_ENTRIES ||--o{ SEARCH_INDEX : "indexed_by"
-    AI_RESPONSES ||--o{ SEARCH_INDEX : "indexed_by"
-    USER_NOTES ||--o{ SEARCH_INDEX : "indexed_by"
+    CHAT_MESSAGES {
+        uuid id PK
+        uuid chat_session_id FK
+        text content
+        string sender_type
+        timestamp created_at
+        json metadata
+    }
+    
+    HIGHLIGHTED_CONTEXTS {
+        uuid id PK
+        uuid chat_session_id FK
+        uuid document_id FK
+        text selected_text
+        integer page_number
+        json text_coordinates
+        timestamp created_at
+    }
+    
+    CONCEPTS {
+        uuid id PK
+        string concept_name
+        text description
+        json tags
+        vector embedding
+        integer source_chat_count
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    CONCEPT_CHAT_LINKS {
+        uuid id PK
+        uuid concept_id FK
+        uuid chat_session_id FK
+        float relevance_score
+        timestamp created_at
+    }
+    
+    LANGRAPH_PROCESSING {
+        uuid id PK
+        uuid chat_session_id FK
+        string status
+        json processing_stages
+        text error_message
+        timestamp started_at
+        timestamp completed_at
+    }
+    
+    DOCUMENTS ||--o{ HIGHLIGHTED_CONTEXTS : "contains"
+    DOCUMENTS ||--|| USER_SESSION_STATE : "tracks"
+    
+    ACTIVE_CHAT_SESSION ||--o{ HIGHLIGHTED_CONTEXTS : "accumulates"
+    
+    CHAT_SESSIONS ||--o{ CHAT_MESSAGES : "contains"
+    CHAT_SESSIONS ||--o{ HIGHLIGHTED_CONTEXTS : "references"
+    CHAT_SESSIONS ||--|| LANGRAPH_PROCESSING : "processes"
+    
+    CONCEPTS ||--o{ CONCEPT_CHAT_LINKS : "sourced_from"
+    CHAT_SESSIONS ||--o{ CONCEPT_CHAT_LINKS : "generates"
 ```
 
 ### Data Model Explanation
 
-The database schema consists of six main entities:
+The database schema supports the three-tab chat-based architecture:
 
 #### Core Entities
 
-- **DOCUMENTS**: Stores PDF metadata, file paths, and reading state (current page, zoom level)
-- **QUESTIONS**: User questions with selected text and page coordinates for precise location tracking
-- **AI_RESPONSES**: Complete AI explanations with extracted definitions and processing metadata
-- **KNOWLEDGE_ENTRIES**: Processed concepts, terms, and definitions extracted from AI responses
-- **USER_NOTES**: Personal annotations linked to specific text locations in documents
+- **DOCUMENTS**: PDF metadata and reading state (page, zoom, scroll position)
+- **USER_SESSION_STATE**: Current navigation state for seamless tab switching
+- **ACTIVE_CHAT_SESSION**: Single active chat that accumulates highlighted contexts
+- **CHAT_SESSIONS**: Completed chat conversations with metadata
+- **CHAT_MESSAGES**: Individual messages in ChatGPT-style conversations
 
-#### Supporting Entities
+#### Context and Knowledge Entities
 
-- **SEARCH_INDEX**: Enables full-text search across all content types (knowledge, responses, notes)
+- **HIGHLIGHTED_CONTEXTS**: Text selections with precise coordinates and source documents
+- **CONCEPTS**: Extracted concepts with vector embeddings for semantic search
+- **CONCEPT_CHAT_LINKS**: Relationships between concepts and source conversations
+- **LANGRAPH_PROCESSING**: Background processing status and progress tracking
 
 #### Key Relationships
 
-- Documents contain multiple questions and user notes
-- Each question generates exactly one AI response
-- AI responses create multiple knowledge entries (extracted concepts)
-- All content types are indexed for search functionality
+- One active chat session accumulates contexts from multiple documents
+- Chat sessions contain multiple messages and highlighted contexts
+- LangGraph processing extracts multiple concepts from chat sessions
+- Concepts link back to source chats with relevance scores
+- User session state maintains navigation context across tabs
 
-### Data Flow
+### Data Flow Patterns
 
-1. **Document Loading**: PDF metadata stored in DOCUMENTS table
-2. **Question Creation**: User highlights text → QUESTIONS record with coordinates
-3. **AI Processing**: Question generates AI_RESPONSES with explanations
-4. **Knowledge Extraction**: AI responses create KNOWLEDGE_ENTRIES for concepts
-5. **Search Indexing**: All content indexed for fast retrieval
-6. **Note Taking**: User annotations stored as USER_NOTES linked to document locations
+1. **Text Selection Flow**: Document → Highlighted Context → Active Chat
+2. **Chat Flow**: Active Chat → Messages → Completed Chat Session
+3. **Analysis Flow**: Chat Session → LangGraph Processing → Concepts
+4. **Knowledge Flow**: Concepts → Chat Links → Source Documents
+5. **Navigation Flow**: User Session State ↔ All Tabs
 
-## Technical Implementation Notes
+## LangGraph Concept Extraction Workflow
 
-### Frontend Architecture
-- **React components** handle UI state and user interactions
-- **Custom hooks** manage complex state (text selection, AI streaming)
-- **Tauri commands** bridge frontend to Rust backend
+This diagram shows the automated concept extraction process:
 
-### Backend Architecture
-- **Rust backend** with embedded Python via pyo3
-- **PostgreSQL** for robust data storage and search
-- **LangGraph** for AI workflow orchestration
-- **Streaming responses** for real-time user feedback
+```mermaid
+flowchart TD
+    subgraph "Input Processing"
+        A[Chat Session Completed] --> B[User Chooses "Save + Analyze"]
+        B --> C[Trigger LangGraph Workflow]
+        C --> D[Parse Chat Messages]
+        D --> E[Clean and Structure Content]
+    end
 
-### Key Design Decisions
-- **Local-first**: All data remains on user's machine
-- **Single PDF**: MVP limitation for simplified state management
-- **Coordinate-based selection**: Precise text location tracking
-- **Streaming AI**: Progressive response display for better UX
+    subgraph "Concept Extraction & Analysis"
+        E --> F[Extract Key Concepts/Entities]
+        F --> G[Generate Concept Descriptions]
+        G --> H{Loop Through Each Concept}
+    end
+
+    subgraph "Knowledge Base Interaction"
+        H --> I{Concept Exists in DB?}
+        I -->|Yes| J[Calculate Vector Similarity]
+        J --> K{Similarity > Threshold?}
+        K -->|Yes| L[Merge with Existing Concept]
+        K -->|No| M[Create New Related Concept]
+        
+        I -->|No| N[Generate Vector Embedding]
+        N --> O[Create New Concept Entry]
+        
+        L --> P[Update Concept Description]
+        M --> Q[Store as Separate Concept]
+        O --> Q
+        P --> R[Create Chat-Concept Link]
+        Q --> R
+    end
+
+    subgraph "Output & Storage"
+        R --> S[Update Concept Cards UI]
+        S --> T[Mark Processing Complete]
+        T --> U[Update Knowledge Tab]
+    end
+
+    subgraph "Error Handling"
+        V[Processing Error] --> W[Log Error Message]
+        W --> X[Show Retry Option]
+        X --> Y[Mark Processing Failed]
+    end
+    
+    style A fill:#e1f5fe
+    style I fill:#fff3e0
+    style S fill:#e8f5e8
+    style V fill:#ffebee
+```
+
+### LangGraph Processing Stages
+
+1. **Input Processing**: Parse completed chat sessions and prepare for analysis
+2. **Concept Extraction**: Use LangGraph to identify key concepts and generate descriptions
+3. **Similarity Analysis**: Compare new concepts with existing knowledge base using vector embeddings
+4. **Knowledge Integration**: Merge similar concepts or create new entries as appropriate
+5. **UI Updates**: Refresh Knowledge tab with new concepts and processing status
+
+## Technical Implementation Architecture
+
+```mermaid
+flowchart TB
+    subgraph "Frontend - React Three-Tab Interface"
+        A[Library Tab - PDF Reader]
+        B[Chat Tab - Conversation Interface] 
+        C[Knowledge Tab - Concept Browser]
+        D[Navigation State Manager]
+    end
+    
+    subgraph "Backend - Rust + Tauri"
+        E[PDF Handler]
+        F[Text Selection Manager]
+        G[Chat Session Controller]
+        H[LangGraph Bridge via pyo3]
+        I[Database Operations]
+    end
+    
+    subgraph "AI Processing - Python"
+        J[OpenAI Chat API]
+        K[LangGraph Concept Extractor]
+        L[Vector Embedding Generator]
+    end
+    
+    subgraph "Database - PostgreSQL + pgvector"
+        M[Documents & Session State]
+        N[Chat Sessions & Messages]
+        O[Concepts & Vector Embeddings]
+        P[Processing Status & Links]
+    end
+    
+    A <--> E
+    A <--> F
+    B <--> G
+    C <--> I
+    D <--> I
+    
+    F --> G
+    G <--> H
+    H <--> J
+    H <--> K
+    K --> L
+    
+    E <--> M
+    G <--> N
+    K <--> O
+    H <--> P
+    
+    style A fill:#e3f2fd
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+    style H fill:#fff3e0
+    style O fill:#e0f2f1
+```
+
+## Architecture Design Principles
+
+### Database-First Architecture
+- **Single Source of Truth**: All state stored in PostgreSQL
+- **Session Persistence**: Survives app restarts and crashes
+- **No Caching Layer**: Simplified architecture with database performance
+- **Vector Search**: pgvector extension for semantic concept matching
+
+### Three-Tab Navigation
+- **Seamless Switching**: CMD+K and CMD+L for quick navigation
+- **State Preservation**: Reading positions and active chats maintained
+- **Progressive Enhancement**: Each tab builds on the previous tab's data
+
+### Chat-Centric Design
+- **One Active Chat**: Accumulates contexts from multiple documents
+- **User Control**: Explicit choice for knowledge base integration
+- **Background Processing**: Non-blocking concept extraction
+
+This architecture provides a solid foundation for the chat-based learning workflow while maintaining simplicity and performance through the database-first approach.
 
 ---
 
