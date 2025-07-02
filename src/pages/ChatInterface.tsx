@@ -17,7 +17,8 @@ import {
   setActiveChatSession,
   endChatSession,
   updateUserSessionState,
-  sendChatMessage
+  sendChatMessage,
+  analyzeChatSession
 } from "@/lib/api";
 
 interface ChatInterfaceProps {
@@ -358,21 +359,35 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (!currentChatSessionId) return;
     
     try {
-      // TODO: In Phase 6, trigger knowledge extraction from chat messages
-      await updateUserSessionState({
-        activeTab: 'knowledge' // Navigate to knowledge tab
-      });
-      
+      // Show loading state
       toast({
-        title: "Chat Analysis Started",
-        description: "Your conversation will be analyzed for concepts.",
+        title: "Analysis Starting",
+        description: "Analyzing your conversation for key concepts...",
       });
-      onAnalyze();
+
+      // Trigger LangGraph concept extraction
+      const result = await analyzeChatSession(currentChatSessionId);
+      
+      if (result.success) {
+        // Navigate to knowledge tab
+        await updateUserSessionState({
+          activeTab: 'knowledge'
+        });
+        
+        toast({
+          title: "Analysis Complete",
+          description: `Successfully extracted ${result.conceptsExtracted} concepts in ${result.processingTimeMs}ms`,
+        });
+        
+        onAnalyze();
+      } else {
+        throw new Error("Analysis failed");
+      }
     } catch (error) {
       console.error('Failed to analyze chat:', error);
       toast({
-        title: "Error",
-        description: "Failed to analyze chat.",
+        title: "Analysis Failed",
+        description: "Failed to analyze your conversation. Please try again.",
         variant: "destructive",
       });
     }

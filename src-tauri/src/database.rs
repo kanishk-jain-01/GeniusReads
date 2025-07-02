@@ -191,6 +191,26 @@ pub struct UserSessionState {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct ChatSessionForAnalysis {
+    pub id: Uuid,
+    pub title: String,
+    pub messages: Vec<ChatMessage>,
+    pub highlighted_contexts: Vec<HighlightedContext>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct ExtractedConcept {
+    pub id: Uuid,
+    pub name: String,
+    pub description: String,
+    pub tags: Vec<String>,
+    pub confidence_score: f64,
+    pub source_chat_count: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
 // ============================================================================
 // Document Operations
 // ============================================================================
@@ -754,6 +774,293 @@ impl Database {
         .context("Failed to update chat session title")?;
 
         Ok(())
+    }
+
+    /// Update chat session analysis status
+    pub async fn update_chat_analysis_status(
+        &self,
+        chat_session_id: Uuid,
+        status: &str,
+    ) -> Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE chat_sessions 
+            SET analysis_status = $1, updated_at = NOW()
+            WHERE id = $2
+            "#,
+            status,
+            chat_session_id
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to update chat analysis status")?;
+
+        Ok(())
+    }
+
+    /// Get chat session data for analysis (messages and contexts)
+    pub async fn get_chat_session_for_analysis(
+        &self,
+        chat_session_id: Uuid,
+    ) -> Result<Option<ChatSessionForAnalysis>> {
+        // Get the chat session
+        let session = sqlx::query!(
+            r#"
+            SELECT id, title
+            FROM chat_sessions
+            WHERE id = $1
+            "#,
+            chat_session_id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to get chat session")?;
+
+        if let Some(session_row) = session {
+            // Get messages
+            let message_rows = sqlx::query!(
+                r#"
+                SELECT id, content, sender_type, created_at, metadata
+                FROM chat_messages
+                WHERE chat_session_id = $1
+                ORDER BY created_at ASC
+                "#,
+                chat_session_id
+            )
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to get chat messages")?;
+
+                            let messages: Vec<ChatMessage> = message_rows
+                .into_iter()
+                .map(|row| ChatMessage {
+                    id: row.id,
+                    chat_session_id,
+                    content: row.content,
+                    sender_type: row.sender_type,
+                    created_at: row.created_at,
+                    metadata: row.metadata.unwrap_or_else(|| serde_json::json!({})),
+                })
+                .collect();
+
+            // Get highlighted contexts
+            let context_rows = sqlx::query!(
+                r#"
+                SELECT id, document_id, document_title, page_number, selected_text, text_coordinates, created_at
+                FROM highlighted_contexts
+                WHERE chat_session_id = $1
+                ORDER BY created_at ASC
+                "#,
+                chat_session_id
+            )
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to get highlighted contexts")?;
+
+            let highlighted_contexts: Vec<HighlightedContext> = context_rows
+                .into_iter()
+                .map(|row| HighlightedContext {
+                    id: row.id,
+                    chat_session_id,
+                    document_id: row.document_id,
+                    document_title: row.document_title,
+                    page_number: row.page_number,
+                    selected_text: row.selected_text,
+                    text_coordinates: row.text_coordinates,
+                    created_at: row.created_at,
+                })
+                .collect();
+
+            Ok(Some(ChatSessionForAnalysis {
+                id: session_row.id,
+                title: session_row.title,
+                messages,
+                highlighted_contexts,
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Store an extracted concept in the database
+    pub async fn store_extracted_concept(
+        &self,
+        chat_session_id: Uuid,
+        name: &str,
+        description: &str,
+        tags: &[String],
+        confidence_score: f64,
+        related_concepts: &[String],
+    ) -> Result<Uuid> {
+        let concept_id = Uuid::new_v4();
+
+        // Insert into concepts table
+        sqlx::query!(
+            r#"
+            INSERT INTO concepts (id, name, description, tags, confidence_score, source_chat_count, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, 1, NOW(), NOW())
+            "#,
+            concept_id,
+            name,
+            description,
+            serde_json::to_value(tags).unwrap(),
+            confidence_score
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to insert concept")?;
+
+        // Link concept to chat session
+        sqlx::query!(
+            r#"
+            INSERT INTO concept_chat_links (id, concept_id, chat_session_id, relevance_score, created_at)
+            VALUES ($1, $2, $3, $4, NOW())
+            "#,
+            Uuid::new_v4(),
+            concept_id,
+            chat_session_id,
+            confidence_score
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to link concept to chat session")?;
+
+        // Store related concepts if any
+        for related_concept_name in related_concepts {
+            if !related_concept_name.trim().is_empty() {
+                // For now, just store as a simple relationship
+                // In a more advanced implementation, we'd check if the related concept exists
+                // and create proper relationships
+                sqlx::query!(
+                    r#"
+                    INSERT INTO concept_relationships (id, source_concept_id, target_concept_id, relationship_type, similarity_score, created_at)
+                    VALUES ($1, $2, $2, 'related', 0.5, NOW())
+                    "#,
+                    Uuid::new_v4(),
+                    concept_id
+                )
+                .execute(&self.pool)
+                .await
+                .ok(); // Ignore errors for now
+            }
+        }
+
+        Ok(concept_id)
+    }
+
+    /// Get all extracted concepts
+    pub async fn get_all_concepts(&self) -> Result<Vec<ExtractedConcept>> {
+        let rows = sqlx::query!(
+            r#"
+            SELECT id, name, description, tags, confidence_score, source_chat_count, created_at, updated_at
+            FROM concepts
+            ORDER BY updated_at DESC
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to get concepts")?;
+
+                    let concepts: Vec<ExtractedConcept> = rows
+            .into_iter()
+            .map(|row| ExtractedConcept {
+                id: row.id,
+                name: row.name,
+                description: row.description,
+                tags: row.tags
+                    .and_then(|t| serde_json::from_value(t).ok())
+                    .unwrap_or_default(),
+                confidence_score: row.confidence_score,
+                source_chat_count: row.source_chat_count,
+                created_at: row.created_at,
+                updated_at: row.updated_at,
+            })
+            .collect();
+
+        Ok(concepts)
+    }
+
+    /// Get a specific concept by ID with its relationships
+    pub async fn get_concept_by_id(&self, concept_id: Uuid) -> Result<Option<serde_json::Value>> {
+        let concept_row = sqlx::query!(
+            r#"
+            SELECT id, name, description, tags, confidence_score, source_chat_count, created_at, updated_at
+            FROM concepts
+            WHERE id = $1
+            "#,
+            concept_id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to get concept by ID")?;
+
+        if let Some(concept) = concept_row {
+            // Get related chat sessions
+            let chat_links = sqlx::query!(
+                r#"
+                SELECT cs.id, cs.title, ccl.relevance_score
+                FROM concept_chat_links ccl
+                JOIN chat_sessions cs ON ccl.chat_session_id = cs.id
+                WHERE ccl.concept_id = $1
+                ORDER BY ccl.relevance_score DESC
+                "#,
+                concept_id
+            )
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to get concept chat links")?;
+
+            let source_chats: Vec<serde_json::Value> = chat_links
+                .into_iter()
+                .map(|row| serde_json::json!({
+                    "id": row.id,
+                    "title": row.title,
+                    "relevanceScore": row.relevance_score
+                }))
+                .collect();
+
+            // Get related concepts
+            let related_concepts = sqlx::query!(
+                r#"
+                SELECT c.id, c.name, cr.relationship_type, cr.similarity_score
+                FROM concept_relationships cr
+                JOIN concepts c ON cr.target_concept_id = c.id
+                WHERE cr.source_concept_id = $1
+                ORDER BY cr.similarity_score DESC
+                "#,
+                concept_id
+            )
+            .fetch_all(&self.pool)
+            .await
+            .context("Failed to get related concepts")?;
+
+            let related: Vec<serde_json::Value> = related_concepts
+                .into_iter()
+                .map(|row| serde_json::json!({
+                    "id": row.id,
+                    "name": row.name,
+                    "relationshipType": row.relationship_type,
+                    "similarityScore": row.similarity_score
+                }))
+                .collect();
+
+            Ok(Some(serde_json::json!({
+                "id": concept.id,
+                "name": concept.name,
+                "description": concept.description,
+                "tags": concept.tags
+                    .and_then(|t| serde_json::from_value(t).ok())
+                    .unwrap_or_else(|| Vec::<String>::new()),
+                "confidenceScore": concept.confidence_score,
+                "sourceChatCount": concept.source_chat_count,
+                "createdAt": concept.created_at.to_rfc3339(),
+                "updatedAt": concept.updated_at.to_rfc3339(),
+                "sourceChats": source_chats,
+                "relatedConcepts": related
+            })))
+        } else {
+            Ok(None)
+        }
     }
 }
 

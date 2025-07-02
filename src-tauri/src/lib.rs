@@ -9,6 +9,7 @@ mod langraph_bridge;
 
 use database::Database;
 use pdf_handler::PDFHandler;
+use langraph_bridge::{LangGraphBridge, ConceptExtractionInput, ChatMessageForExtraction, HighlightedContextForExtraction};
 
 // Global database instance
 type DbState = Arc<Mutex<Option<Database>>>;
@@ -632,6 +633,142 @@ async fn get_user_preferences(
     }
 }
 
+// ============================================================================
+// LangGraph Concept Extraction Commands
+// ============================================================================
+
+#[tauri::command]
+async fn analyze_chat_session(
+    chat_session_id: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<serde_json::Value, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let session_id = uuid::Uuid::parse_str(&chat_session_id)
+            .map_err(|e| format!("Invalid UUID: {}", e))?;
+        
+        // Update analysis status to 'processing'
+        database.update_chat_analysis_status(session_id, "processing").await
+            .map_err(|e| format!("Failed to update analysis status: {}", e))?;
+        
+        // Get chat session data for analysis
+        let chat_data = database.get_chat_session_for_analysis(session_id).await
+            .map_err(|e| format!("Failed to get chat session data: {}", e))?;
+        
+        if chat_data.is_none() {
+            return Err("Chat session not found".to_string());
+        }
+        
+        let chat_session = chat_data.unwrap();
+        
+        // Prepare data for LangGraph
+        let messages: Vec<ChatMessageForExtraction> = chat_session.messages.into_iter().map(|msg| {
+            ChatMessageForExtraction {
+                content: msg.content,
+                sender_type: msg.sender_type,
+                created_at: msg.created_at.to_rfc3339(),
+            }
+        }).collect();
+        
+        let highlighted_contexts: Vec<HighlightedContextForExtraction> = chat_session.highlighted_contexts.into_iter().map(|ctx| {
+            HighlightedContextForExtraction {
+                document_title: ctx.document_title,
+                page_number: ctx.page_number,
+                selected_text: ctx.selected_text,
+            }
+        }).collect();
+        
+        let extraction_input = ConceptExtractionInput {
+            chat_session_id: session_id,
+            messages,
+            highlighted_contexts,
+        };
+        
+        // Initialize LangGraph bridge and extract concepts
+        let bridge = LangGraphBridge::new();
+        let extraction_result = match bridge.extract_concepts(extraction_input) {
+            Ok(result) => result,
+            Err(e) => {
+                // Update status to 'failed'
+                let _ = database.update_chat_analysis_status(session_id, "failed").await;
+                return Err(format!("Concept extraction failed: {}", e));
+            }
+        };
+        
+        if extraction_result.success {
+            // Store extracted concepts in database
+            for concept in &extraction_result.concepts {
+                match database.store_extracted_concept(
+                    session_id,
+                    &concept.name,
+                    &concept.description,
+                    &concept.tags,
+                    concept.confidence_score,
+                    &concept.related_concepts,
+                ).await {
+                    Ok(_) => {},
+                    Err(e) => {
+                        tracing::warn!("Failed to store concept '{}': {}", concept.name, e);
+                    }
+                }
+            }
+            
+            // Update analysis status to 'complete'
+            database.update_chat_analysis_status(session_id, "complete").await
+                .map_err(|e| format!("Failed to update analysis status: {}", e))?;
+            
+            Ok(serde_json::json!({
+                "success": true,
+                "conceptsExtracted": extraction_result.total_concepts_found,
+                "processingTimeMs": extraction_result.processing_time_ms,
+                "message": format!("Successfully extracted {} concepts", extraction_result.total_concepts_found)
+            }))
+        } else {
+            // Update status to 'failed'
+            database.update_chat_analysis_status(session_id, "failed").await
+                .map_err(|e| format!("Failed to update analysis status: {}", e))?;
+            
+            Err(extraction_result.error_message.unwrap_or_else(|| "Unknown extraction error".to_string()))
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn get_extraction_concepts(
+    db: tauri::State<'_, DbState>,
+) -> Result<serde_json::Value, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        match database.get_all_concepts().await {
+            Ok(concepts) => Ok(serde_json::to_value(concepts).unwrap()),
+            Err(e) => Err(format!("Failed to get concepts: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn get_concept_by_id(
+    concept_id: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<Option<serde_json::Value>, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let id = uuid::Uuid::parse_str(&concept_id)
+            .map_err(|e| format!("Invalid UUID: {}", e))?;
+        
+        match database.get_concept_by_id(id).await {
+            Ok(concept) => Ok(concept),
+            Err(e) => Err(format!("Failed to get concept: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -667,7 +804,10 @@ pub fn run() {
             save_reading_position,
             get_last_reading_position,
             save_user_preferences,
-            get_user_preferences
+            get_user_preferences,
+            analyze_chat_session,
+            get_extraction_concepts,
+            get_concept_by_id
         ])
         .setup(|app| {
             // Initialize database connection
@@ -683,6 +823,19 @@ pub fn run() {
                     }
                     Err(e) => {
                         tracing::error!("Failed to connect to database: {}", e);
+                    }
+                }
+            });
+
+            // Initialize LangGraph bridge
+            tauri::async_runtime::spawn(async move {
+                match langraph_bridge::initialize_langraph() {
+                    Ok(_) => {
+                        tracing::info!("LangGraph bridge initialized successfully");
+                    }
+                    Err(e) => {
+                        tracing::warn!("Failed to initialize LangGraph bridge: {}", e);
+                        tracing::warn!("Concept extraction features will not be available");
                     }
                 }
             });

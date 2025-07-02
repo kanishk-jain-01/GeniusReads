@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT cs.id, cs.title, ccl.relevance_score\n                FROM concept_chat_links ccl\n                JOIN chat_sessions cs ON ccl.chat_session_id = cs.id\n                WHERE ccl.concept_id = $1\n                ORDER BY ccl.relevance_score DESC\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "relevance_score",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e9b2f9d6ebf159691a9a1f99e55156f06857b86dd157ecce30a597610459c7e8"
+}

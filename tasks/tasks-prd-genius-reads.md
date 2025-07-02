@@ -147,7 +147,7 @@
   - [x] 6.3 Create concept_extractor.py with LangGraph workflow implementation
   - [x] 6.4 Implement vector embedding generation for concepts
   - [x] 6.5 Build concept similarity matching and merging logic
-  - [ ] 6.6 Create background processing system for concept extraction
+  - [x] 6.6 Create background processing system for concept extraction
   - [ ] 6.7 Add processing status tracking and progress indicators
   - [ ] 6.8 Implement concept storage with vector embeddings
   - [ ] 6.9 Create concept-chat linking system with relevance scores

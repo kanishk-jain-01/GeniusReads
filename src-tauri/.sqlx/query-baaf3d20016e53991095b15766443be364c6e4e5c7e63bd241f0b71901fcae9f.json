@@ -1,0 +1,62 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id, name, description, tags, confidence_score, source_chat_count, created_at, updated_at\n            FROM concepts\n            ORDER BY updated_at DESC\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "tags",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "confidence_score",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 5,
+        "name": "source_chat_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "baaf3d20016e53991095b15766443be364c6e4e5c7e63bd241f0b71901fcae9f"
+}

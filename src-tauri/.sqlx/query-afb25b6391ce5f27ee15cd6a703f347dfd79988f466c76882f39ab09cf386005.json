@@ -1,0 +1,58 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT id, document_id, document_title, page_number, selected_text, text_coordinates, created_at\n                FROM highlighted_contexts\n                WHERE chat_session_id = $1\n                ORDER BY created_at ASC\n                ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "document_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "document_title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 3,
+        "name": "page_number",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "selected_text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "text_coordinates",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "afb25b6391ce5f27ee15cd6a703f347dfd79988f466c76882f39ab09cf386005"
+}

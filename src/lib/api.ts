@@ -800,4 +800,38 @@ export async function testTauriCommunication(): Promise<{
     results,
     errors
   };
-} 
+}
+
+// ============================================================================
+// LangGraph Concept Extraction API
+// ============================================================================
+
+export const analyzeChatSession = async (chatSessionId: string): Promise<any> => {
+  try {
+    const result = await invoke<any>('analyze_chat_session', { chatSessionId });
+    return result;
+  } catch (error) {
+    console.error('Failed to analyze chat session:', error);
+    throw new Error(`Failed to analyze chat session: ${error}`);
+  }
+};
+
+export const getExtractionConcepts = async (): Promise<any[]> => {
+  try {
+    const result = await invoke<any[]>('get_extraction_concepts');
+    return result;
+  } catch (error) {
+    console.error('Failed to get extraction concepts:', error);
+    throw new Error(`Failed to get extraction concepts: ${error}`);
+  }
+};
+
+export const getConceptById = async (conceptId: string): Promise<any | null> => {
+  try {
+    const result = await invoke<any | null>('get_concept_by_id', { conceptId });
+    return result;
+  } catch (error) {
+    console.error('Failed to get concept by ID:', error);
+    throw new Error(`Failed to get concept by ID: ${error}`);
+  }
+}; 
