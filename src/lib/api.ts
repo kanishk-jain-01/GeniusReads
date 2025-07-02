@@ -6,9 +6,6 @@ import type {
   Document, 
   TauriResponse, 
   AppError,
-  TauriCommand,
-  ChatMessage,
-  HighlightedContext,
   Concept
 } from './types';
 

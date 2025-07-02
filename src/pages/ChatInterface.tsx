@@ -5,9 +5,7 @@ import {
   ArrowLeft,
   Brain,
   Square,
-  Loader2,
-  CheckCircle,
-  AlertCircle
+  Loader2
 } from "lucide-react";
 import ActiveChat from "@/components/ActiveChat";
 import type { TextSelection, Document, ChatMessage, HighlightedContext } from "@/lib/types";

@@ -3,7 +3,6 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
 import { 
   Loader2, 
-  Brain, 
   CheckCircle, 
   AlertCircle,
   Clock

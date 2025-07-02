@@ -8,6 +8,7 @@ use serde_json::Value;
 use sqlx::{PgPool, Row};
 use std::str::FromStr;
 use uuid::Uuid;
+use pgvector::Vector;
 
 // ============================================================================
 // Database Connection Management
@@ -896,6 +897,8 @@ impl Database {
 
         // Generate vector embedding for the concept
         let embedding_vector = self.generate_concept_embedding(name, description).await?;
+        let f32_embedding: Vec<f32> = embedding_vector.iter().map(|&x| x as f32).collect();
+        let pgvector_embedding = Vector::from(f32_embedding);
 
         // Insert into concepts table with embedding
         sqlx::query!(
@@ -907,7 +910,7 @@ impl Database {
             name,
             description,
             serde_json::to_value(tags).unwrap(),
-            embedding_vector,
+            pgvector_embedding as _,
             confidence_score
         )
         .execute(&self.pool)
@@ -1018,7 +1021,7 @@ impl Database {
         // Get embeddings for both concepts
         let embeddings = sqlx::query!(
             r#"
-            SELECT id, embedding FROM concepts 
+            SELECT id, embedding as "embedding: Vector" FROM concepts 
             WHERE id = $1 OR id = $2
             "#,
             concept1_id,
@@ -1036,8 +1039,9 @@ impl Database {
         let mut embedding2: Option<Vec<f64>> = None;
         
         for row in embeddings {
-            if let Some(emb_vec) = row.embedding {
-                let embedding: Vec<f64> = emb_vec.into();
+            if let Some(pgvector) = row.embedding {
+                let f32_vec: Vec<f32> = pgvector.into();
+                let embedding: Vec<f64> = f32_vec.iter().map(|&x| x as f64).collect();
                 if row.id == concept1_id {
                     embedding1 = Some(embedding);
                 } else if row.id == concept2_id {
@@ -1079,7 +1083,7 @@ impl Database {
             "#,
             concept_id,
             similarity_threshold,
-            max_results
+            max_results as i64
         )
         .fetch_all(&self.pool)
         .await
@@ -1099,20 +1103,22 @@ impl Database {
         Ok(results)
     }
 
-    /// Search concepts by text similarity using vector embeddings
+        /// Search concepts by text similarity using vector embeddings
     pub async fn search_concepts_by_text(&self, query_text: &str, similarity_threshold: f64, max_results: i32) -> Result<Vec<serde_json::Value>> {
         // Generate embedding for the query text
         let query_embedding = self.generate_concept_embedding("search", query_text).await?;
-        
+        let f32_query: Vec<f32> = query_embedding.iter().map(|&x| x as f32).collect();
+        let pgvector_query = Vector::from(f32_query);
+
         // Use the database function for vector similarity search
         let similar_concepts = sqlx::query!(
             r#"
             SELECT concept_id, concept_name, concept_description, similarity_score
-            FROM find_similar_concepts($1::vector, $2, $3)
+            FROM find_similar_concepts($1, $2, $3)
             "#,
-            query_embedding,
+            pgvector_query as _,
             similarity_threshold,
-            max_results
+            max_results as i64
         )
         .fetch_all(&self.pool)
         .await
