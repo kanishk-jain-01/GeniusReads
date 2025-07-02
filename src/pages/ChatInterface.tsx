@@ -16,7 +16,6 @@ import {
   getActiveChatSession,
   setActiveChatSession,
   deleteChatSession,
-  updateChatSessionTitle,
   updateUserSessionState,
   sendChatMessage
 } from "@/lib/api";
@@ -182,7 +181,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setMessages(prev => [...prev, aiResponse]);
 
       // Prepare conversation history for OpenAI
-      const conversationHistory = messages.map(msg => ({
+      const conversationHistory: Array<{role: 'user' | 'assistant' | 'system', content: string}> = messages.map(msg => ({
         role: msg.senderType === 'user' ? 'user' as const : 'assistant' as const,
         content: msg.content
       }));

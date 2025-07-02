@@ -1,11 +1,10 @@
 import { useEffect, useCallback } from 'react';
-import type { NavigationState, TextSelection } from '@/lib/types';
+import type { TextSelection } from '@/lib/types';
 
 interface UseKeyboardShortcutsProps {
   onCmdK: (textSelection?: TextSelection) => void;
   onCmdL: () => void;
   currentTextSelection?: TextSelection;
-  navigationState: NavigationState;
   enabled?: boolean;
 }
 
@@ -13,7 +12,6 @@ export const useKeyboardShortcuts = ({
   onCmdK,
   onCmdL,
   currentTextSelection,
-  navigationState,
   enabled = true
 }: UseKeyboardShortcutsProps) => {
   

@@ -53,15 +53,15 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   // Text selection functionality
   const {
     isSelecting,
-    currentSelection,
+    // currentSelection,
     selectionRects,
     containerRef,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
-    clearSelection,
+    // clearSelection,
     hasSelection,
-    selectedText
+    // selectedText
   } = useTextSelection({
     document,
     currentPage,

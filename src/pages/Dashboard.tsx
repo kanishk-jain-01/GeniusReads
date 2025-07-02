@@ -179,7 +179,6 @@ const Dashboard = () => {
     onCmdK: handleCmdK,
     onCmdL: handleCmdL,
     currentTextSelection,
-    navigationState,
     enabled: true
   });
 

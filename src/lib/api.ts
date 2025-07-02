@@ -653,7 +653,7 @@ export const sendChatMessage = async (
                   fullResponse += content;
                   onStreamChunk(content);
                 }
-              } catch (e) {
+              } catch {
                 // Skip invalid JSON chunks
                 continue;
               }
