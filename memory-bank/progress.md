@@ -43,6 +43,8 @@
 - **✅ State Management**: Reading position preserved during navigation
 - **✅ Multi-Document Support**: Text selections from different PDFs
 - **✅ Context Transfer**: Selected text automatically included in conversations
+- **✅ Reading Position Persistence**: Automatic save/restore of page and zoom position ✅ **JUST COMPLETED**
+- **✅ Session State Tracking**: Complete user session persistence in database ✅ **JUST COMPLETED**
 
 ### **Phase 2: PDF System** ✅ **100% COMPLETE**
 - **✅ Native File Picker**: macOS dialog with PDF filtering

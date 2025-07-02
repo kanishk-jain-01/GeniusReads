@@ -136,7 +136,7 @@ export const getRecentDocuments = async (): Promise<Document[]> => {
       fileName: doc.file_name || doc.title,
       fileSize: doc.file_size,
       totalPages: doc.total_pages,
-      currentPage: doc.last_page_viewed || 1,
+      currentPage: doc.current_page || 1,
       zoomLevel: doc.zoom_level || 100,
       lastAccessed: new Date(doc.last_accessed),
       createdAt: new Date(doc.created_at),

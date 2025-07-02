@@ -107,14 +107,14 @@
   - [x] 2.7 Add comprehensive error handling for PDF operations
   - [x] 2.8 Implement document state persistence across app sessions
 
-- [ ] 3.0 Build Text Selection and Chat Navigation System
+- [x] 3.0 Build Text Selection and Chat Navigation System ✅ **COMPLETE**
   - [x] 3.1 Implement text selection overlay system for PDF content
   - [x] 3.2 Add CMD+K keyboard shortcut for text selection → Chat navigation
   - [x] 3.3 Create navigation state management for seamless tab switching
   - [x] 3.4 Implement CMD+L toggle between Library and Chat tabs
   - [x] 3.5 Add highlighted text context transfer to Chat tab
-  - [ ] 3.6 Create user session state persistence in database
-  - [ ] 3.7 Implement reading position preservation across navigation
+  - [x] 3.6 Create user session state persistence in database ✅ **JUST COMPLETED**
+  - [x] 3.7 Implement reading position preservation across navigation ✅ **JUST COMPLETED**
 
 - [x] 4.0 Develop Chat Interface and Session Management ✅ **COMPLETE**
   - [x] 4.1 Update Chat tab to show chat list/history page (not active chat)

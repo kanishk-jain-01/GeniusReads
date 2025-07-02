@@ -22,7 +22,16 @@ import ChatInterface from "@/pages/ChatInterface";
 import ChatList from "@/components/ChatList";
 import Preferences from "@/pages/Preferences";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { getRecentDocuments, getDashboardStats, openPDFDialog, loadPDFDocument, updateDocumentState, updateDocumentTotalPages } from "@/lib/api";
+import { 
+  getRecentDocuments, 
+  getDashboardStats, 
+  openPDFDialog, 
+  loadPDFDocument, 
+  updateDocumentState, 
+  updateDocumentTotalPages,
+  saveReadingPosition,
+  getLastReadingPosition
+} from "@/lib/api";
 import type { Document, TextSelection, NavigationState, HighlightedContext } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -217,6 +226,34 @@ const Dashboard = () => {
         
         setRecentDocuments(documents);
         setDashboardStats(stats);
+        
+        // Restore last reading position
+        try {
+          const lastPosition = await getLastReadingPosition();
+          if (lastPosition && documents.length > 0) {
+            // Find the document that was being read
+            const lastDocument = documents.find(doc => doc.id === lastPosition.documentId);
+            if (lastDocument) {
+              // Update document with saved position
+              const restoredDocument = {
+                ...lastDocument,
+                currentPage: lastPosition.page,
+                zoomLevel: lastPosition.zoom
+              };
+              setCurrentDocument(restoredDocument);
+              setViewMode('reader');
+              
+              toast({
+                title: "Reading Position Restored",
+                description: `Returned to page ${lastPosition.page} of "${lastDocument.title}"`,
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Failed to restore reading position:', error);
+          // Don't show error toast for this - it's not critical
+        }
+        
       } catch (error) {
         console.error('Failed to load dashboard data:', error);
         toast({
@@ -231,6 +268,23 @@ const Dashboard = () => {
 
     loadDashboardData();
   }, [toast]);
+
+  // Save reading position when document changes or component unmounts
+  useEffect(() => {
+    return () => {
+      // Save current reading position when navigating away or closing app
+      if (currentDocument && viewMode === 'reader') {
+        saveReadingPosition(
+          currentDocument.id, 
+          currentDocument.currentPage, 
+          currentDocument.zoomLevel, 
+          0
+        ).catch(error => {
+          console.error('Failed to save reading position on cleanup:', error);
+        });
+      }
+    };
+  }, [currentDocument, viewMode]);
 
   // Handle PDF file upload
   const handleUploadPDF = async () => {
@@ -298,13 +352,31 @@ const Dashboard = () => {
   };
 
   // Handle page changes
-  const handlePageChange = (page: number) => {
+  const handlePageChange = async (page: number) => {
     handleDocumentUpdate({ currentPage: page });
+    
+    // Save reading position to database
+    if (currentDocument) {
+      try {
+        await saveReadingPosition(currentDocument.id, page, currentDocument.zoomLevel, 0);
+      } catch (error) {
+        console.error('Failed to save reading position:', error);
+      }
+    }
   };
 
   // Handle zoom changes
-  const handleZoomChange = (zoom: number) => {
+  const handleZoomChange = async (zoom: number) => {
     handleDocumentUpdate({ zoomLevel: zoom });
+    
+    // Save reading position to database
+    if (currentDocument) {
+      try {
+        await saveReadingPosition(currentDocument.id, currentDocument.currentPage, zoom, 0);
+      } catch (error) {
+        console.error('Failed to save reading position:', error);
+      }
+    }
   };
 
   // Handle document load completion
