@@ -264,6 +264,275 @@ async fn get_documents(db: tauri::State<'_, DbState>) -> Result<serde_json::Valu
     }
 }
 
+// ============================================================================
+// Chat Session Management Commands
+// ============================================================================
+
+#[tauri::command]
+async fn create_chat_session(
+    title: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<String, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        match database.create_chat_session(&title).await {
+            Ok(session_id) => Ok(session_id.to_string()),
+            Err(e) => Err(format!("Failed to create chat session: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn get_chat_sessions(
+    db: tauri::State<'_, DbState>,
+) -> Result<serde_json::Value, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        match database.get_chat_sessions().await {
+            Ok(sessions) => Ok(serde_json::to_value(sessions).unwrap()),
+            Err(e) => Err(format!("Failed to get chat sessions: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn get_active_chat_session(
+    db: tauri::State<'_, DbState>,
+) -> Result<Option<serde_json::Value>, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        match database.get_active_chat_session().await {
+            Ok(session) => Ok(session),
+            Err(e) => Err(format!("Failed to get active chat session: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn set_active_chat_session(
+    chat_session_id: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<(), String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let session_id = uuid::Uuid::parse_str(&chat_session_id)
+            .map_err(|e| format!("Invalid UUID: {}", e))?;
+        
+        match database.set_active_chat_session(session_id).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to set active chat session: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn add_chat_message(
+    chat_session_id: String,
+    content: String,
+    sender_type: String,
+    metadata: serde_json::Value,
+    db: tauri::State<'_, DbState>,
+) -> Result<String, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let session_id = uuid::Uuid::parse_str(&chat_session_id)
+            .map_err(|e| format!("Invalid UUID: {}", e))?;
+        
+        match database.add_chat_message(session_id, &content, &sender_type, metadata).await {
+            Ok(message_id) => Ok(message_id.to_string()),
+            Err(e) => Err(format!("Failed to add chat message: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn add_highlighted_context(
+    chat_session_id: String,
+    document_id: String,
+    document_title: String,
+    page_number: i32,
+    selected_text: String,
+    text_coordinates: serde_json::Value,
+    db: tauri::State<'_, DbState>,
+) -> Result<String, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let session_id = uuid::Uuid::parse_str(&chat_session_id)
+            .map_err(|e| format!("Invalid chat session UUID: {}", e))?;
+        let doc_id = uuid::Uuid::parse_str(&document_id)
+            .map_err(|e| format!("Invalid document UUID: {}", e))?;
+        
+        match database.add_highlighted_context(
+            session_id,
+            doc_id,
+            &document_title,
+            page_number,
+            &selected_text,
+            text_coordinates,
+        ).await {
+            Ok(context_id) => Ok(context_id.to_string()),
+            Err(e) => Err(format!("Failed to add highlighted context: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn delete_chat_session(
+    chat_session_id: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<(), String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let session_id = uuid::Uuid::parse_str(&chat_session_id)
+            .map_err(|e| format!("Invalid UUID: {}", e))?;
+        
+        match database.delete_chat_session(session_id).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to delete chat session: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn update_chat_session_title(
+    chat_session_id: String,
+    title: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<(), String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let session_id = uuid::Uuid::parse_str(&chat_session_id)
+            .map_err(|e| format!("Invalid UUID: {}", e))?;
+        
+        match database.update_chat_session_title(session_id, &title).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to update chat session title: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+// ============================================================================
+// Navigation State Management Commands
+// ============================================================================
+
+#[tauri::command]
+async fn get_user_session_state(
+    db: tauri::State<'_, DbState>,
+) -> Result<Option<serde_json::Value>, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        match database.get_user_session_state().await {
+            Ok(state) => Ok(state.map(|s| serde_json::to_value(s).unwrap())),
+            Err(e) => Err(format!("Failed to get user session state: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn update_user_session_state(
+    state: serde_json::Value,
+    db: tauri::State<'_, DbState>,
+) -> Result<(), String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        // Parse the state object
+        let current_document_id = state.get("currentDocumentId")
+            .and_then(|v| v.as_str())
+            .and_then(|s| uuid::Uuid::parse_str(s).ok());
+        
+        let current_page = state.get("currentPage")
+            .and_then(|v| v.as_i64())
+            .map(|i| i as i32);
+        
+        let zoom_level = state.get("zoomLevel")
+            .and_then(|v| v.as_i64())
+            .map(|i| i as i32);
+        
+        let scroll_position = state.get("scrollPosition")
+            .and_then(|v| v.as_i64())
+            .map(|i| i as i32);
+        
+        let active_tab = state.get("activeTab")
+            .and_then(|v| v.as_str());
+        
+        let active_chat_id = state.get("activeChatId")
+            .and_then(|v| v.as_str())
+            .and_then(|s| uuid::Uuid::parse_str(s).ok());
+        
+        let last_reading_position = state.get("lastReadingPosition").cloned();
+        
+        match database.update_user_session_state(
+            current_document_id,
+            current_page,
+            zoom_level,
+            scroll_position,
+            active_tab,
+            active_chat_id,
+            last_reading_position,
+        ).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to update user session state: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn save_reading_position(
+    document_id: String,
+    page: i32,
+    zoom: i32,
+    scroll: i32,
+    db: tauri::State<'_, DbState>,
+) -> Result<(), String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let doc_id = uuid::Uuid::parse_str(&document_id)
+            .map_err(|e| format!("Invalid UUID: {}", e))?;
+        
+        match database.save_reading_position(doc_id, page, zoom, scroll).await {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to save reading position: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
+#[tauri::command]
+async fn get_last_reading_position(
+    db: tauri::State<'_, DbState>,
+) -> Result<Option<serde_json::Value>, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        match database.get_last_reading_position().await {
+            Ok(position) => Ok(position),
+            Err(e) => Err(format!("Failed to get last reading position: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -282,7 +551,19 @@ pub fn run() {
             get_recent_documents,
             test_database_connection,
             get_database_stats,
-            get_documents
+            get_documents,
+            create_chat_session,
+            get_chat_sessions,
+            get_active_chat_session,
+            set_active_chat_session,
+            add_chat_message,
+            add_highlighted_context,
+            delete_chat_session,
+            update_chat_session_title,
+            get_user_session_state,
+            update_user_session_state,
+            save_reading_position,
+            get_last_reading_position
         ])
         .setup(|app| {
             // Initialize database connection

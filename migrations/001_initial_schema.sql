@@ -184,6 +184,80 @@ CREATE TABLE search_index (
 );
 
 -- ============================================================================
+-- Chat Sessions Table
+-- Stores chat conversations and their metadata
+-- ============================================================================
+CREATE TABLE chat_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(500) NOT NULL,
+    preview_text TEXT,
+    source_document_count INTEGER NOT NULL DEFAULT 0,
+    analysis_status VARCHAR(20) NOT NULL DEFAULT 'none',
+    is_active BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE,
+    
+    CONSTRAINT chat_analysis_status_valid CHECK (analysis_status IN ('none', 'pending', 'processing', 'complete', 'failed')),
+    CONSTRAINT chat_source_document_count_positive CHECK (source_document_count >= 0)
+);
+
+-- ============================================================================
+-- Chat Messages Table
+-- Individual messages within chat sessions
+-- ============================================================================
+CREATE TABLE chat_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    chat_session_id UUID NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    sender_type VARCHAR(10) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    metadata JSONB DEFAULT '{}',
+    
+    CONSTRAINT chat_sender_type_valid CHECK (sender_type IN ('user', 'assistant', 'system')),
+    CONSTRAINT chat_content_not_empty CHECK (LENGTH(TRIM(content)) > 0)
+);
+
+-- ============================================================================
+-- Highlighted Contexts Table
+-- Text selections that provide context to chat sessions
+-- ============================================================================
+CREATE TABLE highlighted_contexts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    chat_session_id UUID NOT NULL REFERENCES chat_sessions(id) ON DELETE CASCADE,
+    document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    document_title VARCHAR(500) NOT NULL,
+    page_number INTEGER NOT NULL,
+    selected_text TEXT NOT NULL,
+    text_coordinates JSONB NOT NULL, -- Array of {x, y, width, height}
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    
+    CONSTRAINT highlighted_page_number_positive CHECK (page_number > 0),
+    CONSTRAINT highlighted_text_not_empty CHECK (LENGTH(TRIM(selected_text)) > 0)
+);
+
+-- ============================================================================
+-- User Session State Table
+-- Tracks user navigation and reading state
+-- ============================================================================
+CREATE TABLE user_session_state (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    current_document_id UUID REFERENCES documents(id) ON DELETE SET NULL,
+    current_page INTEGER NOT NULL DEFAULT 1,
+    zoom_level INTEGER NOT NULL DEFAULT 100,
+    scroll_position INTEGER NOT NULL DEFAULT 0,
+    active_tab VARCHAR(20) NOT NULL DEFAULT 'library',
+    active_chat_id UUID REFERENCES chat_sessions(id) ON DELETE SET NULL,
+    last_reading_position JSONB, -- {documentId, page, zoom, scroll}
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    
+    CONSTRAINT session_active_tab_valid CHECK (active_tab IN ('library', 'reader', 'chat', 'knowledge')),
+    CONSTRAINT session_current_page_positive CHECK (current_page > 0),
+    CONSTRAINT session_zoom_level_range CHECK (zoom_level BETWEEN 25 AND 500),
+    CONSTRAINT session_scroll_position_positive CHECK (scroll_position >= 0)
+);
+
+-- ============================================================================
 -- Indexes for Performance
 -- ============================================================================
 
@@ -235,6 +309,28 @@ CREATE INDEX idx_search_document_id ON search_index(document_id);
 CREATE INDEX idx_search_keywords ON search_index USING GIN(keywords);
 CREATE INDEX idx_search_text ON search_index USING GIN(to_tsvector('english', searchable_text));
 
+-- Chat Sessions
+CREATE INDEX idx_chat_sessions_is_active ON chat_sessions(is_active);
+CREATE INDEX idx_chat_sessions_created_at ON chat_sessions(created_at DESC);
+CREATE INDEX idx_chat_sessions_updated_at ON chat_sessions(updated_at DESC);
+CREATE INDEX idx_chat_sessions_analysis_status ON chat_sessions(analysis_status);
+
+-- Chat Messages
+CREATE INDEX idx_chat_messages_session_id ON chat_messages(chat_session_id);
+CREATE INDEX idx_chat_messages_sender_type ON chat_messages(sender_type);
+CREATE INDEX idx_chat_messages_created_at ON chat_messages(created_at DESC);
+
+-- Highlighted Contexts
+CREATE INDEX idx_highlighted_contexts_session_id ON highlighted_contexts(chat_session_id);
+CREATE INDEX idx_highlighted_contexts_document_id ON highlighted_contexts(document_id);
+CREATE INDEX idx_highlighted_contexts_page_number ON highlighted_contexts(page_number);
+CREATE INDEX idx_highlighted_contexts_created_at ON highlighted_contexts(created_at DESC);
+
+-- User Session State
+CREATE INDEX idx_user_session_state_current_document ON user_session_state(current_document_id);
+CREATE INDEX idx_user_session_state_active_chat ON user_session_state(active_chat_id);
+CREATE INDEX idx_user_session_state_updated_at ON user_session_state(updated_at DESC);
+
 -- ============================================================================
 -- Triggers for Automatic Timestamps
 -- ============================================================================
@@ -261,28 +357,17 @@ CREATE TRIGGER update_notes_updated_at BEFORE UPDATE ON user_notes
 CREATE TRIGGER update_search_updated_at BEFORE UPDATE ON search_index
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_chat_sessions_updated_at BEFORE UPDATE ON chat_sessions
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_session_state_updated_at BEFORE UPDATE ON user_session_state
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- ============================================================================
--- Sample Data for Testing (Optional)
+-- Sample Data for Testing (Optional) - REMOVED FOR CLEAN STARTUP
 -- ============================================================================
 
--- Insert a sample document for testing
-INSERT INTO documents (
-    title, 
-    author, 
-    file_path, 
-    file_name, 
-    file_size, 
-    total_pages,
-    metadata
-) VALUES (
-    'Introduction to Machine Learning',
-    'Sample Author',
-    '/sample/path/ml-intro.pdf',
-    'ml-intro.pdf',
-    2048576, -- 2MB
-    245,
-    '{"subject": "Machine Learning", "keywords": ["AI", "ML", "algorithms"], "producer": "Sample Publisher"}'::jsonb
-);
+-- No sample data - clean database for production use
 
 -- ============================================================================
 -- Views for Common Queries
@@ -318,4 +403,59 @@ SELECT
     array_agg(DISTINCT unnest(k.tags)) FILTER (WHERE array_length(k.tags, 1) > 0) as all_tags
 FROM documents d
 LEFT JOIN knowledge_entries k ON d.id = k.document_id
-GROUP BY d.id, d.title; 
+GROUP BY d.id, d.title;
+
+-- View for chat session summary
+CREATE VIEW chat_session_summary AS
+SELECT 
+    cs.id,
+    cs.title,
+    cs.preview_text,
+    cs.source_document_count,
+    cs.analysis_status,
+    cs.is_active,
+    cs.created_at,
+    cs.updated_at,
+    COUNT(DISTINCT cm.id) as message_count,
+    COUNT(DISTINCT hc.id) as context_count,
+    MAX(cm.created_at) as last_message_at
+FROM chat_sessions cs
+LEFT JOIN chat_messages cm ON cs.id = cm.chat_session_id
+LEFT JOIN highlighted_contexts hc ON cs.id = hc.chat_session_id
+GROUP BY cs.id, cs.title, cs.preview_text, cs.source_document_count, cs.analysis_status, cs.is_active, cs.created_at, cs.updated_at;
+
+-- View for active chat session with full details
+CREATE VIEW active_chat_session AS
+SELECT 
+    cs.id,
+    cs.title,
+    cs.preview_text,
+    cs.source_document_count,
+    cs.analysis_status,
+    cs.created_at,
+    cs.updated_at,
+    json_agg(
+        json_build_object(
+            'id', hc.id,
+            'documentId', hc.document_id,
+            'documentTitle', hc.document_title,
+            'pageNumber', hc.page_number,
+            'selectedText', hc.selected_text,
+            'textCoordinates', hc.text_coordinates,
+            'createdAt', hc.created_at
+        ) ORDER BY hc.created_at
+    ) FILTER (WHERE hc.id IS NOT NULL) as highlighted_contexts,
+    json_agg(
+        json_build_object(
+            'id', cm.id,
+            'content', cm.content,
+            'senderType', cm.sender_type,
+            'createdAt', cm.created_at,
+            'metadata', cm.metadata
+        ) ORDER BY cm.created_at
+    ) FILTER (WHERE cm.id IS NOT NULL) as messages
+FROM chat_sessions cs
+LEFT JOIN highlighted_contexts hc ON cs.id = hc.chat_session_id
+LEFT JOIN chat_messages cm ON cs.id = cm.chat_session_id
+WHERE cs.is_active = true
+GROUP BY cs.id, cs.title, cs.preview_text, cs.source_document_count, cs.analysis_status, cs.created_at, cs.updated_at; 

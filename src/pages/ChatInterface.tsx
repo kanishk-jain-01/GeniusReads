@@ -1,25 +1,24 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
 import { 
   ArrowLeft,
-  Send,
-  MessageSquare, 
-  FileText,
-  Clock,
   Save,
   Brain,
-  Trash2,
-  User,
-  Bot,
-  Loader2
+  Trash2
 } from "lucide-react";
-import type { TextSelection, Document, ChatMessage } from "@/lib/types";
+import ActiveChat from "@/components/ActiveChat";
+import type { TextSelection, Document, ChatMessage, HighlightedContext } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  createChatSession, 
+  addChatMessage, 
+  addHighlightedContext, 
+  getActiveChatSession,
+  setActiveChatSession,
+  deleteChatSession,
+  updateChatSessionTitle,
+  updateUserSessionState
+} from "@/lib/api";
 
 interface ChatInterfaceProps {
   textSelection?: TextSelection;
@@ -39,91 +38,257 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onDelete
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [currentMessage, setCurrentMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
   const [chatTitle, setChatTitle] = useState("");
+  const [currentChatSessionId, setCurrentChatSessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Initialize chat with text selection context
-  useEffect(() => {
-    if (textSelection && messages.length === 0) {
-      // Generate a title from the selected text
-      const title = textSelection.selectedText.length > 50 
-        ? `Discussion about: ${textSelection.selectedText.substring(0, 50)}...`
-        : `Discussion about: ${textSelection.selectedText}`;
-      setChatTitle(title);
+  // Convert TextSelection to HighlightedContext
+  const getHighlightedContext = (): HighlightedContext | undefined => {
+    if (!textSelection || !document) return undefined;
+    
+    return {
+      id: textSelection.id,
+      documentId: textSelection.documentId,
+      documentTitle: document.title,
+      pageNumber: textSelection.pageNumber,
+      selectedText: textSelection.selectedText,
+      textCoordinates: textSelection.boundingBoxes.map(box => ({
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height
+      })),
+      createdAt: textSelection.createdAt
+    };
+  };
 
-      // Add initial context message
-      const contextMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        chatSessionId: "active-chat",
-        content: `I'd like to understand this text better: "${textSelection.selectedText}"`,
+  // Initialize chat session
+  useEffect(() => {
+    initializeChatSession();
+  }, [textSelection]);
+
+  const initializeChatSession = async () => {
+    try {
+      // First try to get existing active chat session
+      const activeSession = await getActiveChatSession();
+      
+      if (activeSession) {
+        // Use existing session
+        setCurrentChatSessionId(activeSession.id);
+        setChatTitle(activeSession.title);
+        setMessages(activeSession.messages || []);
+      } else if (textSelection && document) {
+        // Create new session with text selection
+        const title = textSelection.selectedText.length > 50 
+          ? `Discussion about: ${textSelection.selectedText.substring(0, 50)}...`
+          : `Discussion about: ${textSelection.selectedText}`;
+        
+        const sessionId = await createChatSession(title);
+        setCurrentChatSessionId(sessionId);
+        setChatTitle(title);
+        
+        // Add highlighted context
+        await addHighlightedContext(
+          sessionId,
+          textSelection.documentId,
+          document.title,
+          textSelection.pageNumber,
+          textSelection.selectedText,
+          textSelection.boundingBoxes.map(box => ({
+            x: box.x,
+            y: box.y,
+            width: box.width,
+            height: box.height
+          }))
+        );
+        
+        // Set as active session
+        await setActiveChatSession(sessionId);
+        
+        // Update user session state
+        await updateUserSessionState({
+          activeTab: 'chat',
+          activeChatId: sessionId
+        });
+        
+        // Add initial context message
+        const messageId = await addChatMessage(
+          sessionId,
+          `I'd like to understand this text better: "${textSelection.selectedText}"`,
+          'user'
+        );
+        
+        const contextMessage: ChatMessage = {
+          id: messageId,
+          chatSessionId: sessionId,
+          content: `I'd like to understand this text better: "${textSelection.selectedText}"`,
+          senderType: 'user',
+          createdAt: new Date()
+        };
+        
+        setMessages([contextMessage]);
+      }
+    } catch (error) {
+      console.error('Failed to initialize chat session:', error);
+      toast({
+        title: "Error",
+        description: "Failed to initialize chat session.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSendMessage = async (message: string) => {
+    if (!currentChatSessionId) {
+      toast({
+        title: "Error",
+        description: "No active chat session.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Save user message to database
+      const userMessageId = await addChatMessage(currentChatSessionId, message, 'user');
+      const userMessage: ChatMessage = {
+        id: userMessageId,
+        chatSessionId: currentChatSessionId,
+        content: message,
         senderType: 'user',
         createdAt: new Date()
       };
-      setMessages([contextMessage]);
-    }
-  }, [textSelection, messages.length]);
 
-  const handleSendMessage = async () => {
-    if (!currentMessage.trim()) return;
+      setMessages(prev => [...prev, userMessage]);
+      setIsLoading(true);
 
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      chatSessionId: "active-chat",
-      content: currentMessage,
-      senderType: 'user',
-      createdAt: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setCurrentMessage("");
-    setIsLoading(true);
-
-    // Simulate AI response (will be replaced with actual OpenAI integration in Phase 5)
-    setTimeout(() => {
+      // Create AI response message immediately for streaming simulation
+      const aiResponseId = crypto.randomUUID();
       const aiResponse: ChatMessage = {
-        id: crypto.randomUUID(),
-        chatSessionId: "active-chat",
-        content: `I understand you're asking about "${currentMessage}". This is a placeholder response that will be replaced with actual AI conversation in Phase 5. The system will integrate with OpenAI GPT-4 to provide real explanations about the selected text.`,
+        id: aiResponseId,
+        chatSessionId: currentChatSessionId,
+        content: "", // Will be filled by streaming
         senderType: 'assistant',
-        createdAt: new Date()
+        createdAt: new Date(),
+        metadata: {
+          isStreaming: true
+        }
       };
-      setMessages(prev => [...prev, aiResponse]);
-      setIsLoading(false);
-    }, 1500);
-  };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+      setMessages(prev => [...prev, aiResponse]);
+
+      // Simulate streaming response (will be replaced with actual OpenAI streaming in Phase 5)
+      const fullResponse = `I understand you're asking about "${message}". This is a placeholder response that demonstrates streaming functionality. The system will integrate with OpenAI GPT-4 to provide real explanations about the selected text. Each word appears gradually to simulate the streaming effect.`;
+      
+      const words = fullResponse.split(' ');
+      setIsStreaming(true);
+      setStreamingContent("");
+
+      for (let i = 0; i < words.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100)); // Simulate typing delay
+        const partialContent = words.slice(0, i + 1).join(' ');
+        setStreamingContent(partialContent);
+      }
+
+      // Save AI response to database
+      const savedAiMessageId = await addChatMessage(currentChatSessionId, fullResponse, 'assistant');
+
+      // Complete the streaming
+      setIsStreaming(false);
+      setStreamingContent("");
+      setMessages(prev => prev.map(msg => 
+        msg.id === aiResponseId 
+          ? { ...msg, id: savedAiMessageId, content: fullResponse, metadata: { isComplete: true } }
+          : msg
+      ));
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send message.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+      setIsStreaming(false);
     }
   };
 
-  const handleSaveChat = () => {
-    toast({
-      title: "Chat Saved",
-      description: "Your conversation has been saved to chat history.",
-    });
-    onSave();
+  const handleSaveChat = async () => {
+    if (!currentChatSessionId) return;
+    
+    try {
+      // Chat is already saved to database, just update UI state
+      await updateUserSessionState({
+        activeTab: 'library' // Navigate back to library
+      });
+      
+      toast({
+        title: "Chat Saved",
+        description: "Your conversation has been saved to chat history.",
+      });
+      onSave();
+    } catch (error) {
+      console.error('Failed to save chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save chat.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSaveAndAnalyze = () => {
-    toast({
-      title: "Chat Saved & Analysis Started",
-      description: "Your conversation has been saved and will be analyzed for concepts.",
-    });
-    onSaveAndAnalyze();
+  const handleSaveAndAnalyze = async () => {
+    if (!currentChatSessionId) return;
+    
+    try {
+      // TODO: In Phase 6, trigger knowledge extraction from chat messages
+      await updateUserSessionState({
+        activeTab: 'knowledge' // Navigate to knowledge tab
+      });
+      
+      toast({
+        title: "Chat Saved & Analysis Started",
+        description: "Your conversation has been saved and will be analyzed for concepts.",
+      });
+      onSaveAndAnalyze();
+    } catch (error) {
+      console.error('Failed to save and analyze chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save and analyze chat.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteChat = () => {
-    toast({
-      title: "Chat Deleted",
-      description: "Your conversation has been deleted.",
-      variant: "destructive",
-    });
-    onDelete();
+  const handleDeleteChat = async () => {
+    if (!currentChatSessionId) return;
+    
+    try {
+      await deleteChatSession(currentChatSessionId);
+      await updateUserSessionState({
+        activeTab: 'library',
+        activeChatId: null
+      });
+      
+      toast({
+        title: "Chat Deleted",
+        description: "Your conversation has been deleted.",
+        variant: "destructive",
+      });
+      onDelete();
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete chat.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -183,148 +348,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       </div>
 
-      {/* Selected Text Context */}
-      {textSelection && (
-        <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-blue-50 dark:bg-blue-900/20">
-          <Card className="border-blue-200 dark:border-blue-800">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-medium text-blue-900 dark:text-blue-100 flex items-center">
-                <FileText className="h-4 w-4 mr-2" />
-                Selected Text Context
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-blue-800 dark:text-blue-200 leading-relaxed mb-3 italic">
-                "{textSelection.selectedText}"
-              </p>
-              <div className="flex items-center text-sm text-blue-600 dark:text-blue-400">
-                <FileText className="h-3 w-3 mr-1" />
-                Page {textSelection.pageNumber}
-                {document && (
-                  <>
-                    <span className="mx-2">•</span>
-                    {document.title}
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
-      {/* Chat Messages */}
-      <ScrollArea className="flex-1 p-6">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.senderType === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`flex items-start space-x-3 max-w-[80%] ${
-                  message.senderType === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-                }`}
-              >
-                {/* Avatar */}
-                <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                    message.senderType === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-purple-600 text-white'
-                  }`}
-                >
-                  {message.senderType === 'user' ? (
-                    <User className="h-4 w-4" />
-                  ) : (
-                    <Bot className="h-4 w-4" />
-                  )}
-                </div>
 
-                {/* Message Bubble */}
-                <div
-                  className={`rounded-lg px-4 py-3 ${
-                    message.senderType === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700'
-                  }`}
-                >
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                    {message.content}
-                  </p>
-                  <div
-                    className={`text-xs mt-2 ${
-                      message.senderType === 'user'
-                        ? 'text-blue-100'
-                        : 'text-slate-500 dark:text-slate-400'
-                    }`}
-                  >
-                    {message.createdAt.toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="flex items-start space-x-3 max-w-[80%]">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center">
-                  <Bot className="h-4 w-4" />
-                </div>
-                <div className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-3">
-                  <div className="flex items-center space-x-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-sm">AI is thinking...</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
-
-      {/* Message Input */}
-      <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-end space-x-3">
-            <div className="flex-1">
-              <Textarea
-                value={currentMessage}
-                onChange={(e) => setCurrentMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask a question about the selected text..."
-                className="min-h-[60px] max-h-[120px] resize-none"
-                disabled={isLoading}
-              />
-            </div>
-            <Button
-              onClick={handleSendMessage}
-              disabled={!currentMessage.trim() || isLoading}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex items-center justify-between mt-3">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Press Enter to send, Shift+Enter for new line
-            </p>
-            <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
-              <span className="flex items-center">
-                <MessageSquare className="h-3 w-3 mr-1" />
-                {messages.length} messages
-              </span>
-              <span className="flex items-center">
-                <Clock className="h-3 w-3 mr-1" />
-                Active chat
-              </span>
-            </div>
-          </div>
-        </div>
+      {/* Chat Content */}
+      <div className="flex-1 overflow-hidden">
+        <ActiveChat
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          highlightedContexts={getHighlightedContext() ? [getHighlightedContext()!] : []}
+          isLoading={isLoading}
+          isStreaming={isStreaming}
+          streamingContent={streamingContent}
+          placeholder="Ask a question about the selected text..."
+          showTypingIndicator={isLoading && !isStreaming}
+          maxHeight="100%"
+        />
       </div>
     </div>
   );

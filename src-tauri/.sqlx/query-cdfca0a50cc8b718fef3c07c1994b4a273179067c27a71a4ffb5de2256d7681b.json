@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE chat_sessions \n            SET source_document_count = (\n                SELECT COUNT(DISTINCT document_id) \n                FROM highlighted_contexts \n                WHERE chat_session_id = $1\n            )\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cdfca0a50cc8b718fef3c07c1994b4a273179067c27a71a4ffb5de2256d7681b"
+}

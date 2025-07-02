@@ -1,0 +1,68 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM active_chat_session LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "title",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "preview_text",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "source_document_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "analysis_status",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "highlighted_contexts",
+        "type_info": "Json"
+      },
+      {
+        "ordinal": 8,
+        "name": "messages",
+        "type_info": "Json"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "6632ce6495235c17cd7e6aad707239f015e6886d6608dc5eeb4ab118bc54773d"
+}

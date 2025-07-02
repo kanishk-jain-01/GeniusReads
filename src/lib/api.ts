@@ -312,6 +312,226 @@ export async function processQuestion(command: any): Promise<TauriResponse> {
 }
 
 // ============================================================================
+// Chat Session Management
+// ============================================================================
+
+export const createChatSession = async (title: string, highlightedContexts: any[] = []): Promise<string> => {
+  try {
+    const result = await invoke<string>('create_chat_session', {
+      title,
+      highlightedContexts
+    });
+    return result;
+  } catch (error) {
+    console.error('Failed to create chat session:', error);
+    throw new Error(`Failed to create chat session: ${error}`);
+  }
+};
+
+export const getChatSessions = async (): Promise<any[]> => {
+  try {
+    const result = await invoke<any[]>('get_chat_sessions');
+    return result.map((session: any) => ({
+      id: session.id,
+      title: session.title,
+      previewText: session.preview_text,
+      sourceDocumentCount: session.source_document_count,
+      analysisStatus: session.analysis_status,
+      createdAt: new Date(session.created_at),
+      completedAt: session.completed_at ? new Date(session.completed_at) : undefined
+    }));
+  } catch (error) {
+    console.error('Failed to get chat sessions:', error);
+    throw new Error(`Failed to get chat sessions: ${error}`);
+  }
+};
+
+export const getActiveChatSession = async (): Promise<any | null> => {
+  try {
+    const result = await invoke<any>('get_active_chat_session');
+    if (!result) return null;
+    
+    return {
+      id: result.id,
+      title: result.title,
+      highlightedContexts: result.highlighted_contexts || [],
+      messages: result.messages || [],
+      createdAt: new Date(result.created_at),
+      updatedAt: new Date(result.updated_at),
+      isActive: true
+    };
+  } catch (error) {
+    console.error('Failed to get active chat session:', error);
+    throw new Error(`Failed to get active chat session: ${error}`);
+  }
+};
+
+export const setActiveChatSession = async (chatSessionId: string): Promise<void> => {
+  try {
+    await invoke('set_active_chat_session', { chatSessionId });
+  } catch (error) {
+    console.error('Failed to set active chat session:', error);
+    throw new Error(`Failed to set active chat session: ${error}`);
+  }
+};
+
+export const addChatMessage = async (
+  chatSessionId: string,
+  content: string,
+  senderType: 'user' | 'assistant' | 'system',
+  metadata?: Record<string, any>
+): Promise<string> => {
+  try {
+    const result = await invoke<string>('add_chat_message', {
+      chatSessionId,
+      content,
+      senderType,
+      metadata: metadata || {}
+    });
+    return result;
+  } catch (error) {
+    console.error('Failed to add chat message:', error);
+    throw new Error(`Failed to add chat message: ${error}`);
+  }
+};
+
+export const addHighlightedContext = async (
+  chatSessionId: string,
+  documentId: string,
+  documentTitle: string,
+  pageNumber: number,
+  selectedText: string,
+  textCoordinates: Array<{x: number, y: number, width: number, height: number}>
+): Promise<string> => {
+  try {
+    const result = await invoke<string>('add_highlighted_context', {
+      chatSessionId,
+      documentId,
+      documentTitle,
+      pageNumber,
+      selectedText,
+      textCoordinates
+    });
+    return result;
+  } catch (error) {
+    console.error('Failed to add highlighted context:', error);
+    throw new Error(`Failed to add highlighted context: ${error}`);
+  }
+};
+
+export const deleteChatSession = async (chatSessionId: string): Promise<void> => {
+  try {
+    await invoke('delete_chat_session', { chatSessionId });
+  } catch (error) {
+    console.error('Failed to delete chat session:', error);
+    throw new Error(`Failed to delete chat session: ${error}`);
+  }
+};
+
+export const updateChatSessionTitle = async (chatSessionId: string, title: string): Promise<void> => {
+  try {
+    await invoke('update_chat_session_title', { chatSessionId, title });
+  } catch (error) {
+    console.error('Failed to update chat session title:', error);
+    throw new Error(`Failed to update chat session title: ${error}`);
+  }
+};
+
+// ============================================================================
+// Navigation State Management
+// ============================================================================
+
+export const getUserSessionState = async (): Promise<any> => {
+  try {
+    const result = await invoke<any>('get_user_session_state');
+    if (!result) {
+      // Return default state if none exists
+      return {
+        currentDocumentId: null,
+        currentPage: 1,
+        zoomLevel: 100,
+        scrollPosition: 0,
+        activeTab: 'library',
+        activeChatId: null,
+        lastReadingPosition: null,
+        updatedAt: new Date()
+      };
+    }
+    
+    return {
+      id: result.id,
+      currentDocumentId: result.current_document_id,
+      currentPage: result.current_page,
+      zoomLevel: result.zoom_level,
+      scrollPosition: result.scroll_position,
+      activeTab: result.active_tab,
+      activeChatId: result.active_chat_id,
+      lastReadingPosition: result.last_reading_position,
+      updatedAt: new Date(result.updated_at)
+    };
+  } catch (error) {
+    console.error('Failed to get user session state:', error);
+    throw new Error(`Failed to get user session state: ${error}`);
+  }
+};
+
+export const updateUserSessionState = async (state: {
+  currentDocumentId?: string | null;
+  currentPage?: number;
+  zoomLevel?: number;
+  scrollPosition?: number;
+  activeTab?: 'library' | 'reader' | 'chat' | 'knowledge';
+  activeChatId?: string | null;
+  lastReadingPosition?: {
+    documentId: string;
+    page: number;
+    zoom: number;
+    scroll: number;
+  } | null;
+}): Promise<void> => {
+  try {
+    await invoke('update_user_session_state', { state });
+  } catch (error) {
+    console.error('Failed to update user session state:', error);
+    throw new Error(`Failed to update user session state: ${error}`);
+  }
+};
+
+export const saveReadingPosition = async (
+  documentId: string,
+  page: number,
+  zoom: number,
+  scroll: number
+): Promise<void> => {
+  try {
+    await invoke('save_reading_position', {
+      documentId,
+      page,
+      zoom,
+      scroll
+    });
+  } catch (error) {
+    console.error('Failed to save reading position:', error);
+    throw new Error(`Failed to save reading position: ${error}`);
+  }
+};
+
+export const getLastReadingPosition = async (): Promise<{
+  documentId: string;
+  page: number;
+  zoom: number;
+  scroll: number;
+} | null> => {
+  try {
+    const result = await invoke<any>('get_last_reading_position');
+    return result;
+  } catch (error) {
+    console.error('Failed to get last reading position:', error);
+    throw new Error(`Failed to get last reading position: ${error}`);
+  }
+};
+
+// ============================================================================
 // Database Commands (Future Implementation)
 // ============================================================================
 

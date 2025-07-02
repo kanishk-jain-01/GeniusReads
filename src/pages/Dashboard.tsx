@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,10 +19,11 @@ import {
 } from "lucide-react";
 import PDFViewer from "@/components/PDFViewer";
 import ChatInterface from "@/pages/ChatInterface";
+import ChatList from "@/components/ChatList";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { getRecentDocuments, getDashboardStats, openPDFDialog, loadPDFDocument, updateDocumentState, updateDocumentTotalPages } from "@/lib/api";
-import type { Document, TextSelection, NavigationState } from "@/lib/types";
+import type { Document, TextSelection, NavigationState, HighlightedContext } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 
 type ViewMode = 'library' | 'reader' | 'chat' | 'chat-interface' | 'knowledge';
@@ -98,6 +99,39 @@ const Dashboard = () => {
   const handleTextSelection = (selection: TextSelection) => {
     setCurrentTextSelection(selection);
     // Don't automatically navigate to chat - wait for CMD+K
+  };
+
+  // Convert TextSelection to HighlightedContext
+  const getHighlightedContext = (): HighlightedContext | undefined => {
+    if (!currentTextSelection || !currentDocument) return undefined;
+    
+    return {
+      id: currentTextSelection.id,
+      documentId: currentTextSelection.documentId,
+      documentTitle: currentDocument.title,
+      pageNumber: currentTextSelection.pageNumber,
+      selectedText: currentTextSelection.selectedText,
+      textCoordinates: currentTextSelection.boundingBoxes.map(box => ({
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height
+      })),
+      createdAt: currentTextSelection.createdAt
+    };
+  };
+
+  // Handle chat selection from ChatList
+  const handleChatSelect = (_chatId: string) => {
+    // Navigate to individual chat interface
+    setViewMode('chat-interface');
+    // TODO: Load specific chat data based on chatId in future tasks
+  };
+
+  // Handle starting new chat from ChatList
+  const handleStartNewChat = () => {
+    // Navigate to active chat interface
+    setViewMode('chat-interface');
   };
 
   // Handle chat interface actions
@@ -299,29 +333,7 @@ const Dashboard = () => {
     { label: "Questions", value: dashboardStats.questionCount, icon: MessageSquare, color: "text-green-600" },
   ];
 
-  const sampleKnowledge = [
-    {
-      id: 1,
-      concept: "Supervised Learning",
-      definition: "A machine learning approach where algorithms learn from labeled training data.",
-      context: "Introduction to ML Types",
-      tags: ["machine-learning", "algorithms"]
-    },
-    {
-      id: 2,
-      concept: "Neural Networks", 
-      definition: "Computing systems inspired by biological neural networks with interconnected nodes.",
-      context: "Deep Learning Fundamentals",
-      tags: ["neural-networks", "deep-learning"]
-    },
-    {
-      id: 3,
-      concept: "Gradient Descent",
-      definition: "An optimization algorithm used to minimize cost functions iteratively.",
-      context: "Optimization Techniques", 
-      tags: ["optimization", "algorithm"]
-    }
-  ];
+  // TODO: Replace with real API calls to fetch knowledge entries from database
 
   return (
     <div className="h-screen bg-slate-50 dark:bg-slate-900 flex overflow-hidden">
@@ -568,172 +580,12 @@ const Dashboard = () => {
         )}
 
         {viewMode === 'chat' && (
-          <div className="flex-1 flex flex-col">
-            {/* Chat List Toolbar */}
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Chat History</h2>
-                <div className="flex items-center space-x-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-                    <Input
-                      placeholder="Search conversations..."
-                      className="pl-10 w-80"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Chat List Content */}
-            <ScrollArea className="flex-1 p-6">
-              {/* Active Chat Section */}
-              <div className="mb-8">
-                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4 uppercase tracking-wide">
-                  Active Chat
-                </h3>
-                {currentTextSelection ? (
-                  <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-blue-200 dark:border-blue-800 cursor-pointer hover:shadow-md transition-all duration-200">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Active Conversation</span>
-                          </div>
-                          <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-2">
-                            Discussion about: "{currentTextSelection.selectedText.substring(0, 60)}..."
-                          </h4>
-                          <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
-                            From: {currentDocument?.title} • Page {currentTextSelection.pageNumber}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
-                            <span className="flex items-center">
-                              <MessageSquare className="h-3 w-3 mr-1" />
-                              Ready for conversation
-                            </span>
-                            <span className="flex items-center">
-                              <Clock className="h-3 w-3 mr-1" />
-                              Just now
-                            </span>
-                          </div>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                      </div>
-                      <div className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-blue-200 dark:border-blue-700">
-                        <p className="text-sm text-slate-700 dark:text-slate-300 italic">
-                          "{currentTextSelection.selectedText}"
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card className="border-dashed border-2 border-slate-300 dark:border-slate-600">
-                    <CardContent className="p-6 text-center">
-                      <MessageSquare className="h-8 w-8 text-slate-400 dark:text-slate-600 mx-auto mb-2" />
-                      <p className="text-sm text-slate-600 dark:text-slate-400">
-                        No active chat. Highlight text in a PDF and press CMD+K to start.
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-
-              {/* Previous Conversations Section */}
-              <div>
-                <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4 uppercase tracking-wide">
-                  Previous Conversations
-                </h3>
-                
-                {/* Sample Previous Chats */}
-                <div className="space-y-4">
-                  {[
-                    {
-                      id: 1,
-                      title: "Machine Learning Basics",
-                      preview: "Discussion about supervised learning algorithms and their applications...",
-                      document: "Introduction to AI.pdf",
-                      messageCount: 12,
-                      lastActivity: "2 hours ago",
-                      status: "analyzed"
-                    },
-                    {
-                      id: 2,
-                      title: "Neural Network Architecture",
-                      preview: "Exploring different types of neural networks and their use cases...",
-                      document: "Deep Learning Guide.pdf",
-                      messageCount: 8,
-                      lastActivity: "1 day ago",
-                      status: "saved"
-                    },
-                    {
-                      id: 3,
-                      title: "Gradient Descent Optimization",
-                      preview: "Understanding how gradient descent works in machine learning...",
-                      document: "Mathematical Foundations.pdf",
-                      messageCount: 15,
-                      lastActivity: "3 days ago",
-                      status: "analyzed"
-                    }
-                  ].map((chat) => (
-                    <Card key={chat.id} className="hover:shadow-md transition-all duration-200 cursor-pointer bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <h4 className="font-semibold text-slate-900 dark:text-slate-100">
-                                {chat.title}
-                              </h4>
-                              <Badge 
-                                variant={chat.status === 'analyzed' ? 'default' : 'secondary'} 
-                                className="text-xs"
-                              >
-                                {chat.status === 'analyzed' ? 'Analyzed' : 'Saved'}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-2 line-clamp-2">
-                              {chat.preview}
-                            </p>
-                            <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
-                              <span className="flex items-center">
-                                <FileText className="h-3 w-3 mr-1" />
-                                {chat.document}
-                              </span>
-                              <span className="flex items-center">
-                                <MessageSquare className="h-3 w-3 mr-1" />
-                                {chat.messageCount} messages
-                              </span>
-                              <span className="flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                {chat.lastActivity}
-                              </span>
-                            </div>
-                          </div>
-                          <ArrowRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                {/* Empty State for New Users */}
-                {false && (
-                  <div className="text-center py-12">
-                    <MessageSquare className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-                      No Conversations Yet
-                    </h3>
-                    <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
-                      Start your first conversation by highlighting text in a PDF and pressing CMD+K.
-                    </p>
-                    <Button onClick={() => setViewMode('library')} variant="outline">
-                      Go to Library
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </div>
+          <ChatList
+            activeTextSelection={getHighlightedContext()}
+            currentDocument={currentDocument}
+            onChatSelect={handleChatSelect}
+            onStartNewChat={handleStartNewChat}
+          />
         )}
 
         {viewMode === 'chat-interface' && (
@@ -767,32 +619,15 @@ const Dashboard = () => {
 
             {/* Knowledge Grid */}
             <ScrollArea className="flex-1 p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sampleKnowledge.map((item) => (
-                  <Card key={item.id} className="hover:shadow-md transition-all duration-200 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base font-medium text-slate-900 dark:text-slate-100 flex items-center justify-between">
-                        {item.concept}
-                        <Brain className="h-4 w-4 text-purple-500" />
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-slate-600 dark:text-slate-300 mb-3 leading-relaxed">
-                        {item.definition}
-                      </p>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-xs text-slate-500 dark:text-slate-400">{item.context}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {item.tags.slice(0, 2).map((tag) => (
-                          <Badge key={tag} variant="outline" className="text-xs px-2 py-0">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              {/* Empty State for Knowledge */}
+              <div className="text-center py-12">
+                <Brain className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
+                  No Concepts Yet
+                </h3>
+                <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
+                  Start conversations about your PDFs to build your knowledge base. Concepts will appear here after AI analysis.
+                </p>
               </div>
             </ScrollArea>
           </div>

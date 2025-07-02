@@ -143,6 +143,54 @@ pub struct KnowledgeEntry {
     pub updated_at: DateTime<Utc>,
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct ChatSession {
+    pub id: Uuid,
+    pub title: String,
+    pub preview_text: Option<String>,
+    pub source_document_count: i32,
+    pub analysis_status: String,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub completed_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct ChatMessage {
+    pub id: Uuid,
+    pub chat_session_id: Uuid,
+    pub content: String,
+    pub sender_type: String,
+    pub created_at: DateTime<Utc>,
+    pub metadata: Value,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct HighlightedContext {
+    pub id: Uuid,
+    pub chat_session_id: Uuid,
+    pub document_id: Uuid,
+    pub document_title: String,
+    pub page_number: i32,
+    pub selected_text: String,
+    pub text_coordinates: Value,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct UserSessionState {
+    pub id: Uuid,
+    pub current_document_id: Option<Uuid>,
+    pub current_page: i32,
+    pub zoom_level: i32,
+    pub scroll_position: i32,
+    pub active_tab: String,
+    pub active_chat_id: Option<Uuid>,
+    pub last_reading_position: Option<Value>,
+    pub updated_at: DateTime<Utc>,
+}
+
 // ============================================================================
 // Document Operations
 // ============================================================================
@@ -392,6 +440,322 @@ impl Database {
         .context("Failed to create search index entry")?;
 
         Ok(id)
+    }
+}
+
+// ============================================================================
+// Chat Session Operations
+// ============================================================================
+
+impl Database {
+    /// Create a new chat session
+    pub async fn create_chat_session(&self, title: &str) -> Result<Uuid> {
+        let id = Uuid::new_v4();
+
+        sqlx::query!(
+            r#"
+            INSERT INTO chat_sessions (id, title)
+            VALUES ($1, $2)
+            "#,
+            id,
+            title
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to create chat session")?;
+
+        Ok(id)
+    }
+
+    /// Get all chat sessions
+    pub async fn get_chat_sessions(&self) -> Result<Vec<ChatSession>> {
+        let sessions = sqlx::query_as!(
+            ChatSession,
+            "SELECT * FROM chat_sessions ORDER BY updated_at DESC"
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to fetch chat sessions")?;
+
+        Ok(sessions)
+    }
+
+    /// Get active chat session
+    pub async fn get_active_chat_session(&self) -> Result<Option<Value>> {
+        let result = sqlx::query!(
+            "SELECT * FROM active_chat_session LIMIT 1"
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to fetch active chat session")?;
+
+        if let Some(row) = result {
+            Ok(Some(serde_json::json!({
+                "id": row.id,
+                "title": row.title,
+                "highlighted_contexts": row.highlighted_contexts,
+                "messages": row.messages,
+                "created_at": row.created_at,
+                "updated_at": row.updated_at
+            })))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Set active chat session
+    pub async fn set_active_chat_session(&self, chat_session_id: Uuid) -> Result<()> {
+        // First, deactivate all chat sessions
+        sqlx::query!("UPDATE chat_sessions SET is_active = false")
+            .execute(&self.pool)
+            .await
+            .context("Failed to deactivate chat sessions")?;
+
+        // Then activate the specified session
+        sqlx::query!(
+            "UPDATE chat_sessions SET is_active = true WHERE id = $1",
+            chat_session_id
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to set active chat session")?;
+
+        Ok(())
+    }
+
+    /// Add a message to a chat session
+    pub async fn add_chat_message(
+        &self,
+        chat_session_id: Uuid,
+        content: &str,
+        sender_type: &str,
+        metadata: Value,
+    ) -> Result<Uuid> {
+        let id = Uuid::new_v4();
+
+        sqlx::query!(
+            r#"
+            INSERT INTO chat_messages (id, chat_session_id, content, sender_type, metadata)
+            VALUES ($1, $2, $3, $4, $5)
+            "#,
+            id,
+            chat_session_id,
+            content,
+            sender_type,
+            metadata
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to add chat message")?;
+
+        // Update chat session's updated_at timestamp
+        sqlx::query!(
+            "UPDATE chat_sessions SET updated_at = NOW() WHERE id = $1",
+            chat_session_id
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to update chat session timestamp")?;
+
+        Ok(id)
+    }
+
+    /// Add highlighted context to a chat session
+    pub async fn add_highlighted_context(
+        &self,
+        chat_session_id: Uuid,
+        document_id: Uuid,
+        document_title: &str,
+        page_number: i32,
+        selected_text: &str,
+        text_coordinates: Value,
+    ) -> Result<Uuid> {
+        let id = Uuid::new_v4();
+
+        sqlx::query!(
+            r#"
+            INSERT INTO highlighted_contexts (
+                id, chat_session_id, document_id, document_title, 
+                page_number, selected_text, text_coordinates
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            "#,
+            id,
+            chat_session_id,
+            document_id,
+            document_title,
+            page_number,
+            selected_text,
+            text_coordinates
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to add highlighted context")?;
+
+        // Update source document count
+        sqlx::query!(
+            r#"
+            UPDATE chat_sessions 
+            SET source_document_count = (
+                SELECT COUNT(DISTINCT document_id) 
+                FROM highlighted_contexts 
+                WHERE chat_session_id = $1
+            )
+            WHERE id = $1
+            "#,
+            chat_session_id
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to update source document count")?;
+
+        Ok(id)
+    }
+
+    /// Delete a chat session
+    pub async fn delete_chat_session(&self, chat_session_id: Uuid) -> Result<()> {
+        sqlx::query!("DELETE FROM chat_sessions WHERE id = $1", chat_session_id)
+            .execute(&self.pool)
+            .await
+            .context("Failed to delete chat session")?;
+
+        Ok(())
+    }
+
+    /// Update chat session title
+    pub async fn update_chat_session_title(&self, chat_session_id: Uuid, title: &str) -> Result<()> {
+        sqlx::query!(
+            "UPDATE chat_sessions SET title = $2, updated_at = NOW() WHERE id = $1",
+            chat_session_id,
+            title
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to update chat session title")?;
+
+        Ok(())
+    }
+}
+
+// ============================================================================
+// Navigation State Operations
+// ============================================================================
+
+impl Database {
+    /// Get user session state
+    pub async fn get_user_session_state(&self) -> Result<Option<UserSessionState>> {
+        let state = sqlx::query_as!(
+            UserSessionState,
+            "SELECT * FROM user_session_state ORDER BY updated_at DESC LIMIT 1"
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .context("Failed to fetch user session state")?;
+
+        Ok(state)
+    }
+
+    /// Update user session state
+    pub async fn update_user_session_state(
+        &self,
+        current_document_id: Option<Uuid>,
+        current_page: Option<i32>,
+        zoom_level: Option<i32>,
+        scroll_position: Option<i32>,
+        active_tab: Option<&str>,
+        active_chat_id: Option<Uuid>,
+        last_reading_position: Option<Value>,
+    ) -> Result<()> {
+        // First try to get existing state
+        let existing_state = self.get_user_session_state().await?;
+
+        if let Some(state) = existing_state {
+            // Update existing state
+            sqlx::query!(
+                r#"
+                UPDATE user_session_state 
+                SET 
+                    current_document_id = COALESCE($2, current_document_id),
+                    current_page = COALESCE($3, current_page),
+                    zoom_level = COALESCE($4, zoom_level),
+                    scroll_position = COALESCE($5, scroll_position),
+                    active_tab = COALESCE($6, active_tab),
+                    active_chat_id = COALESCE($7, active_chat_id),
+                    last_reading_position = COALESCE($8, last_reading_position),
+                    updated_at = NOW()
+                WHERE id = $1
+                "#,
+                state.id,
+                current_document_id,
+                current_page,
+                zoom_level,
+                scroll_position,
+                active_tab,
+                active_chat_id,
+                last_reading_position
+            )
+            .execute(&self.pool)
+            .await
+            .context("Failed to update user session state")?;
+        } else {
+            // Create new state
+            let id = Uuid::new_v4();
+            sqlx::query!(
+                r#"
+                INSERT INTO user_session_state (
+                    id, current_document_id, current_page, zoom_level, 
+                    scroll_position, active_tab, active_chat_id, last_reading_position
+                )
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                "#,
+                id,
+                current_document_id,
+                current_page.unwrap_or(1),
+                zoom_level.unwrap_or(100),
+                scroll_position.unwrap_or(0),
+                active_tab.unwrap_or("library"),
+                active_chat_id,
+                last_reading_position
+            )
+            .execute(&self.pool)
+            .await
+            .context("Failed to create user session state")?;
+        }
+
+        Ok(())
+    }
+
+    /// Save reading position
+    pub async fn save_reading_position(
+        &self,
+        document_id: Uuid,
+        page: i32,
+        zoom: i32,
+        scroll: i32,
+    ) -> Result<()> {
+        let reading_position = serde_json::json!({
+            "documentId": document_id,
+            "page": page,
+            "zoom": zoom,
+            "scroll": scroll
+        });
+
+        self.update_user_session_state(
+            Some(document_id),
+            Some(page),
+            Some(zoom),
+            Some(scroll),
+            None,
+            None,
+            Some(reading_position),
+        )
+        .await
+    }
+
+    /// Get last reading position
+    pub async fn get_last_reading_position(&self) -> Result<Option<Value>> {
+        let state = self.get_user_session_state().await?;
+        Ok(state.and_then(|s| s.last_reading_position))
     }
 }
 
