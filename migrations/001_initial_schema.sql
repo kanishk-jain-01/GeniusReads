@@ -454,28 +454,39 @@ SELECT
     cs.analysis_status,
     cs.created_at,
     cs.updated_at,
-    json_agg(
-        json_build_object(
-            'id', hc.id,
-            'documentId', hc.document_id,
-            'documentTitle', hc.document_title,
-            'pageNumber', hc.page_number,
-            'selectedText', hc.selected_text,
-            'textCoordinates', hc.text_coordinates,
-            'createdAt', hc.created_at
-        ) ORDER BY hc.created_at
-    ) FILTER (WHERE hc.id IS NOT NULL) as highlighted_contexts,
-    json_agg(
-        json_build_object(
-            'id', cm.id,
-            'content', cm.content,
-            'senderType', cm.sender_type,
-            'createdAt', cm.created_at,
-            'metadata', cm.metadata
-        ) ORDER BY cm.created_at
-    ) FILTER (WHERE cm.id IS NOT NULL) as messages
+    COALESCE(hc_data.highlighted_contexts, '[]'::json) as highlighted_contexts,
+    COALESCE(cm_data.messages, '[]'::json) as messages
 FROM chat_sessions cs
-LEFT JOIN highlighted_contexts hc ON cs.id = hc.chat_session_id
-LEFT JOIN chat_messages cm ON cs.id = cm.chat_session_id
-WHERE cs.is_active = true
-GROUP BY cs.id, cs.title, cs.preview_text, cs.source_document_count, cs.analysis_status, cs.created_at, cs.updated_at; 
+LEFT JOIN (
+    SELECT 
+        chat_session_id,
+        json_agg(
+            json_build_object(
+                'id', id,
+                'documentId', document_id,
+                'documentTitle', document_title,
+                'pageNumber', page_number,
+                'selectedText', selected_text,
+                'textCoordinates', text_coordinates,
+                'createdAt', created_at
+            ) ORDER BY created_at
+        ) as highlighted_contexts
+    FROM highlighted_contexts
+    GROUP BY chat_session_id
+) hc_data ON cs.id = hc_data.chat_session_id
+LEFT JOIN (
+    SELECT 
+        chat_session_id,
+        json_agg(
+            json_build_object(
+                'id', id,
+                'content', content,
+                'senderType', sender_type,
+                'createdAt', created_at,
+                'metadata', metadata
+            ) ORDER BY created_at
+        ) as messages
+    FROM chat_messages
+    GROUP BY chat_session_id
+) cm_data ON cs.id = cm_data.chat_session_id
+WHERE cs.is_active = true; 

@@ -48,26 +48,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [currentChatSessionId, setCurrentChatSessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Convert TextSelection to HighlightedContext
-  const getHighlightedContext = (): HighlightedContext | undefined => {
-    if (!textSelection || !document) return undefined;
-    
-    return {
-      id: textSelection.id,
-      documentId: textSelection.documentId,
-      documentTitle: document.title,
-      pageNumber: textSelection.pageNumber,
-      selectedText: textSelection.selectedText,
-      textCoordinates: textSelection.boundingBoxes.map(box => ({
-        x: box.x,
-        y: box.y,
-        width: box.width,
-        height: box.height
-      })),
-      createdAt: textSelection.createdAt
-    };
-  };
-
   // Initialize chat session
   useEffect(() => {
     initializeChatSession();
@@ -83,59 +63,74 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
         setCurrentChatSessionId(activeSession.id);
         setChatTitle(activeSession.title);
         setMessages(activeSession.messages || []);
-        setHighlightedContexts(activeSession.highlightedContexts || []);
         
-        // If we have a new text selection, add it to the existing session
+        // Ensure highlighted contexts have unique IDs for React rendering
+        const existingContexts = (activeSession.highlightedContexts || []).map((context: HighlightedContext) => ({
+          ...context,
+          id: context.id || crypto.randomUUID() // Ensure unique ID
+        }));
+        
+        setHighlightedContexts(existingContexts);
+        
+        // If we have a new text selection, check if it's already in the contexts
         if (textSelection && document) {
-          // Add highlighted context to existing session
-          await addHighlightedContext(
-            activeSession.id,
-            textSelection.documentId,
-            document.title,
-            textSelection.pageNumber,
-            textSelection.selectedText,
-            textSelection.boundingBoxes.map(box => ({
-              x: box.x,
-              y: box.y,
-              width: box.width,
-              height: box.height
-            }))
+          const isDuplicate = existingContexts.some((context: HighlightedContext) => 
+            context.selectedText === textSelection.selectedText &&
+            context.pageNumber === textSelection.pageNumber &&
+            context.documentId === textSelection.documentId
           );
           
-          // Add to local highlighted contexts state
-          const newHighlightedContext: HighlightedContext = {
-            id: crypto.randomUUID(),
-            documentId: textSelection.documentId,
-            documentTitle: document.title,
-            pageNumber: textSelection.pageNumber,
-            selectedText: textSelection.selectedText,
-            textCoordinates: textSelection.boundingBoxes.map(box => ({
-              x: box.x,
-              y: box.y,
-              width: box.width,
-              height: box.height
-            })),
-            createdAt: new Date()
-          };
-          
-          setHighlightedContexts(prev => [...prev, newHighlightedContext]);
-          
-          // Add a new context message to the conversation
-          const messageId = await addChatMessage(
-            activeSession.id,
-            `I'd also like to understand this text: "${textSelection.selectedText}"`,
-            'user'
-          );
-          
-          const contextMessage: ChatMessage = {
-            id: messageId,
-            chatSessionId: activeSession.id,
-            content: `I'd also like to understand this text: "${textSelection.selectedText}"`,
-            senderType: 'user',
-            createdAt: new Date()
-          };
-          
-          setMessages(prev => [...prev, contextMessage]);
+          if (!isDuplicate) {
+            // Add highlighted context to existing session only if it's not a duplicate
+            await addHighlightedContext(
+              activeSession.id,
+              textSelection.documentId,
+              document.title,
+              textSelection.pageNumber,
+              textSelection.selectedText,
+              textSelection.boundingBoxes.map(box => ({
+                x: box.x,
+                y: box.y,
+                width: box.width,
+                height: box.height
+              }))
+            );
+            
+            // Add to local highlighted contexts state with unique ID
+            const newHighlightedContext: HighlightedContext = {
+              id: crypto.randomUUID(), // Generate new unique ID
+              documentId: textSelection.documentId,
+              documentTitle: document.title,
+              pageNumber: textSelection.pageNumber,
+              selectedText: textSelection.selectedText,
+              textCoordinates: textSelection.boundingBoxes.map(box => ({
+                x: box.x,
+                y: box.y,
+                width: box.width,
+                height: box.height
+              })),
+              createdAt: new Date()
+            };
+            
+            setHighlightedContexts(prev => [...prev, newHighlightedContext]);
+            
+            // Add a new context message to the conversation
+            const messageId = await addChatMessage(
+              activeSession.id,
+              `I'd also like to understand this text: "${textSelection.selectedText}"`,
+              'user'
+            );
+            
+            const contextMessage: ChatMessage = {
+              id: messageId,
+              chatSessionId: activeSession.id,
+              content: `I'd also like to understand this text: "${textSelection.selectedText}"`,
+              senderType: 'user',
+              createdAt: new Date()
+            };
+            
+            setMessages(prev => [...prev, contextMessage]);
+          }
           
           // Clear the text selection state in parent component
           onTextSelectionProcessed?.();
@@ -165,9 +160,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           }))
         );
         
-        // Set initial highlighted context in state
+        // Set initial highlighted context in state with unique ID
         const initialHighlightedContext: HighlightedContext = {
-          id: crypto.randomUUID(),
+          id: crypto.randomUUID(), // Generate unique ID
           documentId: textSelection.documentId,
           documentTitle: document.title,
           pageNumber: textSelection.pageNumber,
@@ -450,8 +445,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         </div>
       </div>
-
-
 
       {/* Chat Content */}
       <div className="flex-1 overflow-hidden">

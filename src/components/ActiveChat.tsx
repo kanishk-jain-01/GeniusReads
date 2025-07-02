@@ -231,9 +231,9 @@ const ActiveChat: React.FC<ActiveChatProps> = ({
                 Selected Text Context{highlightedContexts.length > 1 ? 's' : ''}
               </h4>
               <div className="space-y-3">
-                {highlightedContexts.map((context) => (
+                {highlightedContexts.map((context, index) => (
                   <div
-                    key={context.id}
+                    key={`context-${context.id || `fallback-${index}`}`}
                     className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
                   >
                     <p className="text-blue-800 dark:text-blue-200 text-sm leading-relaxed italic mb-2">
@@ -250,9 +250,9 @@ const ActiveChat: React.FC<ActiveChatProps> = ({
 
           {/* Chat Messages */}
           <div className="space-y-1">
-            {messages.map((message) => (
+            {messages.map((message, index) => (
               <MessageBubble
-                key={message.id}
+                key={`message-${message.id || `fallback-${index}`}`}
                 message={message}
                 isStreaming={isStreaming && message.id === streamingMessageId}
                 streamingContent={isStreaming && message.id === streamingMessageId ? streamingContent : undefined}
