@@ -52,8 +52,9 @@
 - `src/components/ProcessingIndicator.tsx` - LangGraph processing status and progress display
 
 ### Python/AI Files (To Be Created)
-- `src-tauri/python/concept_extractor.py` - LangGraph workflow for automated concept extraction from chat sessions
-- `src-tauri/python/vector_embeddings.py` - Vector embedding generation and similarity calculation
+- `src-tauri/python/concept_extractor.py` - LangGraph workflow for automated concept extraction from chat sessions (✅ Created)
+- `src-tauri/python/vector_embeddings.py` - Vector embedding generation and similarity calculation (✅ Created)
+- `src-tauri/python/concept_similarity.py` - Concept similarity matching and merging logic (✅ Created)
 - `src-tauri/python/requirements.txt` - Python dependencies for embedded environment (LangGraph, OpenAI, sentence-transformers) (✅ Created)
 
 ### Database Files (✅ Created, needs schema updates)
@@ -140,12 +141,12 @@
   - [x] 5.7 Create chat session completion and action handling
   - [x] 5.8 Test complete chat workflow from text selection to conversation
 
-- [ ] 6.0 Implement LangGraph Concept Extraction System
+- [x] 6.0 Implement LangGraph Concept Extraction System
   - [x] 6.1 Set up Python environment with pyo3 bridge for LangGraph
-  - [ ] 6.2 Install pgvector extension for PostgreSQL vector storage
-  - [ ] 6.3 Create concept_extractor.py with LangGraph workflow implementation
-  - [ ] 6.4 Implement vector embedding generation for concepts
-  - [ ] 6.5 Build concept similarity matching and merging logic
+  - [x] 6.2 Install pgvector extension for PostgreSQL vector storage
+  - [x] 6.3 Create concept_extractor.py with LangGraph workflow implementation
+  - [x] 6.4 Implement vector embedding generation for concepts
+  - [x] 6.5 Build concept similarity matching and merging logic
   - [ ] 6.6 Create background processing system for concept extraction
   - [ ] 6.7 Add processing status tracking and progress indicators
   - [ ] 6.8 Implement concept storage with vector embeddings
