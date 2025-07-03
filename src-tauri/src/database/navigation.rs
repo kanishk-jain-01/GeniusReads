@@ -47,8 +47,8 @@ impl Database {
                 zoom_level = COALESCE($4, user_session_state.zoom_level),
                 scroll_position = COALESCE($5, user_session_state.scroll_position),
                 active_tab = COALESCE($6, user_session_state.active_tab),
-                active_chat_id = $7,
-                last_reading_position = $8,
+                active_chat_id = COALESCE($7, user_session_state.active_chat_id),
+                last_reading_position = COALESCE($8, user_session_state.last_reading_position),
                 updated_at = NOW()
             "#,
             singleton_key,
@@ -87,7 +87,7 @@ impl Database {
             Some(page),
             Some(zoom),
             Some(scroll),
-            None,
+            Some("reader"),
             None,
             Some(reading_position),
         )

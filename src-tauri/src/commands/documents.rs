@@ -83,10 +83,10 @@ pub async fn load_pdf_document(
             pdf_doc.total_pages as i32,
             serde_json::json!(pdf_doc.metadata),
         ).await {
-            Ok(_) => {
-                // Return document info for frontend
+            Ok(new_id) => {
+                // Return document info for frontend, using the ID from the database
                 Ok(serde_json::json!({
-                    "id": pdf_doc.id,
+                    "id": new_id,
                     "title": pdf_doc.title,
                     "filePath": pdf_doc.file_path,
                     "fileName": pdf_doc.file_name,

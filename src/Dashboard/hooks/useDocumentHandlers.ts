@@ -44,6 +44,14 @@ export const useDocumentHandlers = ({
       const documents = await getRecentDocuments();
       setRecentDocuments(documents);
       
+      // Save initial reading position
+      try {
+        await saveReadingPosition(document.id, document.currentPage, document.zoomLevel, 0);
+      } catch (error) {
+        console.error('Failed to save initial reading position:', error);
+        // Non-critical, so we don't need to show a toast
+      }
+      
       toast({
         title: "PDF Loaded",
         description: `Opened "${document.title}" with ${document.totalPages} pages.`,
@@ -127,19 +135,30 @@ export const useDocumentHandlers = ({
 
   // Save reading position when document changes or component unmounts
   useEffect(() => {
-    return () => {
+    const cleanup = async () => {
       if (currentDocument) {
-        saveReadingPosition(
-          currentDocument.id, 
-          currentDocument.currentPage, 
-          currentDocument.zoomLevel, 
-          0
-        ).catch(error => {
-          console.error('Failed to save reading position on cleanup:', error);
-        });
+        try {
+          // First, save the current state to the database
+          await updateDocumentState(
+            currentDocument.id,
+            currentDocument.currentPage,
+            currentDocument.zoomLevel
+          );
+          
+          // Then, refetch the documents to update the UI
+          const documents = await getRecentDocuments();
+          setRecentDocuments(documents);
+
+        } catch (error) {
+          console.error('Failed to save document state on cleanup:', error);
+        }
       }
     };
-  }, [currentDocument]);
+
+    return () => {
+      cleanup();
+    };
+  }, [currentDocument, setRecentDocuments]);
 
   return {
     handleUploadPDF,
