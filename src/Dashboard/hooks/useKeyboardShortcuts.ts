@@ -3,30 +3,25 @@ import { useKeyboardShortcuts as useBaseKeyboardShortcuts } from "@/hooks/use-ke
 import { getActiveChatSession } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import type { Document, TextSelection } from "@/lib/types";
-import type { ViewMode } from "../types";
+import { useDashboardStore } from "@/stores/dashboardStore";
 
 interface UseKeyboardShortcutsProps {
-  currentTextSelection?: TextSelection;
-  setCurrentTextSelection: (selection: TextSelection | undefined) => void;
-  setClearSelectionTrigger: (trigger: number | ((prev: number) => number)) => void;
-  setViewMode: (mode: ViewMode) => void;
-  currentDocument?: Document;
   recentDocuments: Document[];
-  setCurrentDocument: (doc: Document | undefined) => void;
-  viewMode: ViewMode;
 }
 
 export const useKeyboardShortcuts = ({
-  currentTextSelection,
-  setCurrentTextSelection,
-  setClearSelectionTrigger,
-  setViewMode,
-  currentDocument,
   recentDocuments,
-  setCurrentDocument,
-  viewMode
 }: UseKeyboardShortcutsProps) => {
   const { toast } = useToast();
+  const {
+    currentTextSelection,
+    setCurrentTextSelection,
+    setClearSelectionTrigger,
+    setViewMode,
+    currentDocument,
+    setCurrentDocument,
+    viewMode
+  } = useDashboardStore();
 
   const handleCmdK = useCallback((textSelection?: TextSelection) => {
     const hasTextSelection = textSelection || currentTextSelection;
@@ -96,7 +91,7 @@ export const useKeyboardShortcuts = ({
   const handleEscape = useCallback(() => {
     if (currentTextSelection) {
       setCurrentTextSelection(undefined);
-      setClearSelectionTrigger(prev => prev + 1);
+      setClearSelectionTrigger();
       toast({
         title: "Selection Cleared",
         description: "Text selection has been cleared.",

@@ -1,11 +1,10 @@
 import { ChatList } from "@/components/chat";
 import { useToast } from "@/hooks/use-toast";
-import type { Document, HighlightedContext } from "@/lib/types";
+import type { HighlightedContext } from "@/lib/types";
+import { useDashboardStore } from "@/stores/dashboardStore";
 
 interface ChatPageProps {
   activeTextSelection?: HighlightedContext;
-  currentDocument?: Document;
-  refreshTrigger: number;
   onChatSelect: (chatId: string) => void;
   onStartNewChat: () => void;
   onChatDelete: () => void;
@@ -13,13 +12,12 @@ interface ChatPageProps {
 
 export const ChatPage = ({
   activeTextSelection,
-  currentDocument,
-  refreshTrigger,
   onChatSelect,
   onStartNewChat,
   onChatDelete
 }: ChatPageProps) => {
   const { toast } = useToast();
+  const { currentDocument, chatListRefreshTrigger: refreshTrigger } = useDashboardStore();
 
   const handleChatDelete = (_chatId: string) => {
     onChatDelete();

@@ -6,7 +6,7 @@ import { ChatPage } from "./pages/ChatPage";
 import { ChatInterfacePage } from "./pages/ChatInterfacePage";
 import { KnowledgePage } from "./pages/KnowledgePage";
 import PreferencesPage from "./pages/PreferencesPage";
-import { useDashboardState } from "./hooks/useDashboardState";
+import { useDashboardStore } from "@/stores/dashboardStore";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useDashboardData } from "./hooks/useDashboardData";
 import { useDocumentHandlers } from "./hooks/useDocumentHandlers";
@@ -19,26 +19,9 @@ const Dashboard = () => {
     viewMode,
     setViewMode,
     currentDocument,
-    setCurrentDocument,
     currentTextSelection,
-    setCurrentTextSelection,
-    clearSelectionTrigger,
-    setClearSelectionTrigger,
-    viewingChatId,
-    setViewingChatId,
-    chatListRefreshTrigger,
-    setChatListRefreshTrigger,
-    concepts,
-    setConcepts,
-    conceptsLoading,
-    setConceptsLoading,
-    conceptSearchQuery,
-    setConceptSearchQuery,
-    searchQuery,
-    setSearchQuery,
     isUploadingPDF,
-    setIsUploadingPDF
-  } = useDashboardState();
+  } = useDashboardStore();
 
   const {
     recentDocuments,
@@ -55,12 +38,7 @@ const Dashboard = () => {
     handleDocumentLoad,
     handleTextSelection
   } = useDocumentHandlers({
-    currentDocument,
-    setCurrentDocument,
-    setCurrentTextSelection,
-    setViewMode,
     setRecentDocuments,
-    setIsUploadingPDF
   });
 
   const {
@@ -71,35 +49,16 @@ const Dashboard = () => {
     handleChatAnalyze,
     handleTextSelectionProcessed,
     refreshChatList
-  } = useChatHandlers({
-    setViewingChatId,
-    setViewMode,
-    setCurrentTextSelection,
-    setChatListRefreshTrigger,
-    setConcepts,
-    setConceptsLoading
-  });
+  } = useChatHandlers();
 
   const {
     loadConcepts,
     handleConceptClick,
     handleViewSource
-  } = useConceptHandlers({
-    setConcepts,
-    setConceptsLoading,
-    setViewingChatId,
-    setViewMode
-  });
+  } = useConceptHandlers();
 
   useKeyboardShortcuts({
-    currentTextSelection,
-    setCurrentTextSelection,
-    setClearSelectionTrigger,
-    setViewMode,
-    currentDocument,
     recentDocuments,
-    setCurrentDocument,
-    viewMode
   });
 
   // Load concepts when knowledge tab is accessed
@@ -133,11 +92,8 @@ const Dashboard = () => {
       case 'library':
         return (
           <LibraryPage
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
             recentDocuments={recentDocuments}
             loading={loading}
-            isUploadingPDF={isUploadingPDF}
             onUploadPDF={handleUploadPDF}
             onDocumentSelect={handleDocumentSelect}
           />
@@ -145,8 +101,6 @@ const Dashboard = () => {
       case 'reader':
         return (
           <ReaderPage
-            currentDocument={currentDocument}
-            clearSelectionTrigger={clearSelectionTrigger}
             onBackToLibrary={() => setViewMode('library')}
             onDocumentLoad={handleDocumentLoad}
             onPageChange={handlePageChange}
@@ -158,8 +112,6 @@ const Dashboard = () => {
         return (
           <ChatPage
             activeTextSelection={getHighlightedContext()}
-            currentDocument={currentDocument}
-            refreshTrigger={chatListRefreshTrigger}
             onChatSelect={handleChatSelect}
             onStartNewChat={handleStartNewChat}
             onChatDelete={refreshChatList}
@@ -168,10 +120,6 @@ const Dashboard = () => {
       case 'chat-interface':
         return (
           <ChatInterfacePage
-            textSelection={currentTextSelection}
-            document={currentDocument}
-            readOnly={!!viewingChatId}
-            chatSessionId={viewingChatId}
             onBack={handleChatBack}
             onEndChat={handleChatEnd}
             onAnalyze={handleChatAnalyze}
@@ -181,10 +129,6 @@ const Dashboard = () => {
       case 'knowledge':
         return (
           <KnowledgePage
-            concepts={concepts}
-            conceptsLoading={conceptsLoading}
-            conceptSearchQuery={conceptSearchQuery}
-            setConceptSearchQuery={setConceptSearchQuery}
             onConceptClick={handleConceptClick}
             onViewSource={handleViewSource}
           />

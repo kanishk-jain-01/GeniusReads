@@ -1,23 +1,16 @@
 import { useCallback } from "react";
 import { getExtractionConcepts, getConceptByIdDetailed } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import type { Concept } from "@/lib/types";
-import type { ViewMode } from "../types";
+import { useDashboardStore } from "@/stores/dashboardStore";
 
-interface UseConceptHandlersProps {
-  setConcepts: (concepts: Concept[]) => void;
-  setConceptsLoading: (loading: boolean) => void;
-  setViewingChatId: (id: string | undefined) => void;
-  setViewMode: (mode: ViewMode) => void;
-}
-
-export const useConceptHandlers = ({
-  setConcepts,
-  setConceptsLoading,
-  setViewingChatId,
-  setViewMode
-}: UseConceptHandlersProps) => {
+export const useConceptHandlers = () => {
   const { toast } = useToast();
+  const { 
+    setConcepts, 
+    setConceptsLoading, 
+    setViewingChatId, 
+    setViewMode 
+  } = useDashboardStore();
 
   const loadConcepts = useCallback(async () => {
     try {

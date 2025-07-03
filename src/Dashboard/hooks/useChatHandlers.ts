@@ -1,27 +1,18 @@
 import { useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { getExtractionConcepts } from "@/lib/api";
-import type { TextSelection, Concept } from "@/lib/types";
-import type { ViewMode } from "../types";
+import { useDashboardStore } from "@/stores/dashboardStore";
 
-interface UseChatHandlersProps {
-  setViewingChatId: (id: string | undefined) => void;
-  setViewMode: (mode: ViewMode) => void;
-  setCurrentTextSelection: (selection: TextSelection | undefined) => void;
-  setChatListRefreshTrigger: (trigger: number | ((prev: number) => number)) => void;
-  setConcepts: (concepts: Concept[]) => void;
-  setConceptsLoading: (loading: boolean) => void;
-}
-
-export const useChatHandlers = ({
-  setViewingChatId,
-  setViewMode,
-  setCurrentTextSelection,
-  setChatListRefreshTrigger,
-  setConcepts,
-  setConceptsLoading
-}: UseChatHandlersProps) => {
+export const useChatHandlers = () => {
   const { toast } = useToast();
+  const { 
+    setViewMode, 
+    setViewingChatId, 
+    setCurrentTextSelection,
+    setChatListRefreshTrigger,
+    setConcepts,
+    setConceptsLoading
+  } = useDashboardStore();
 
   const handleChatSelect = useCallback((chatId: string) => {
     setViewingChatId(chatId);
@@ -40,7 +31,7 @@ export const useChatHandlers = ({
 
   const handleChatEnd = useCallback(() => {
     setCurrentTextSelection(undefined);
-    setChatListRefreshTrigger(prev => prev + 1);
+    setChatListRefreshTrigger();
     setViewMode('chat');
     toast({
       title: "Chat Ended",
@@ -50,7 +41,7 @@ export const useChatHandlers = ({
 
   const handleChatAnalyze = useCallback(async () => {
     setCurrentTextSelection(undefined);
-    setChatListRefreshTrigger(prev => prev + 1);
+    setChatListRefreshTrigger();
     
     // Load concepts after analysis
     try {
@@ -75,7 +66,7 @@ export const useChatHandlers = ({
   }, [setCurrentTextSelection]);
 
   const refreshChatList = useCallback(() => {
-    setChatListRefreshTrigger(prev => prev + 1);
+    setChatListRefreshTrigger();
   }, [setChatListRefreshTrigger]);
 
   return {

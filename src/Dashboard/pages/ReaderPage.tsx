@@ -2,10 +2,9 @@ import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import PDFViewer from "@/components/PDFViewer";
 import type { Document, TextSelection } from "@/lib/types";
+import { useDashboardStore } from "@/stores/dashboardStore";
 
 interface ReaderPageProps {
-  currentDocument?: Document;
-  clearSelectionTrigger: number;
   onBackToLibrary: () => void;
   onDocumentLoad: (document: Document) => void;
   onPageChange: (page: number) => void;
@@ -14,14 +13,14 @@ interface ReaderPageProps {
 }
 
 export const ReaderPage = ({
-  currentDocument,
-  clearSelectionTrigger,
   onBackToLibrary,
   onDocumentLoad,
   onPageChange,
   onZoomChange,
   onTextSelect
 }: ReaderPageProps) => {
+  const { currentDocument, clearSelectionTrigger } = useDashboardStore();
+
   if (!currentDocument) {
     return (
       <div className="flex-1 flex items-center justify-center">

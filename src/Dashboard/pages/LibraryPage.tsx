@@ -11,26 +11,23 @@ import {
   Upload
 } from "lucide-react";
 import type { Document } from "@/lib/types";
+import { useDashboardStore } from "@/stores/dashboardStore";
 
 interface LibraryPageProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
   recentDocuments: Document[];
   loading: boolean;
-  isUploadingPDF: boolean;
   onUploadPDF: () => void;
   onDocumentSelect: (document: Document) => void;
 }
 
 export const LibraryPage = ({
-  searchQuery,
-  setSearchQuery,
   recentDocuments,
   loading,
-  isUploadingPDF,
   onUploadPDF,
   onDocumentSelect
 }: LibraryPageProps) => {
+  const { searchQuery, setSearchQuery, isUploadingPDF } = useDashboardStore();
+
   // Helper function to calculate reading progress
   const calculateProgress = (currentPage: number, totalPages: number): number => {
     if (totalPages === 0) return 0;

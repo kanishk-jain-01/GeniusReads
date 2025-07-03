@@ -9,26 +9,23 @@ import {
 } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import type { Document, TextSelection } from "@/lib/types";
-import type { ViewMode } from "../types";
+import { useDashboardStore } from "@/stores/dashboardStore";
 
 interface UseDocumentHandlersProps {
-  currentDocument?: Document;
-  setCurrentDocument: (doc: Document | undefined) => void;
-  setCurrentTextSelection: (selection: TextSelection | undefined) => void;
-  setViewMode: (mode: ViewMode) => void;
   setRecentDocuments: (docs: Document[]) => void;
-  setIsUploadingPDF: (uploading: boolean) => void;
 }
 
 export const useDocumentHandlers = ({
-  currentDocument,
-  setCurrentDocument,
-  setCurrentTextSelection,
-  setViewMode,
   setRecentDocuments,
-  setIsUploadingPDF
 }: UseDocumentHandlersProps) => {
   const { toast } = useToast();
+  const { 
+    currentDocument, 
+    setCurrentDocument, 
+    setCurrentTextSelection, 
+    setViewMode, 
+    setIsUploadingPDF 
+  } = useDashboardStore();
 
   const handleUploadPDF = useCallback(async () => {
     try {

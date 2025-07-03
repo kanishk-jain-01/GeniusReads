@@ -1,27 +1,27 @@
 import { ChatHeader, ActiveChat, useChatSession, useChatActions, useAnalysisTimer } from "@/components/chat";
-import type { TextSelection, Document } from "@/lib/types";
+import { useDashboardStore } from "@/stores/dashboardStore";
 
 interface ChatInterfacePageProps {
-  textSelection?: TextSelection;
-  document?: Document;
   onBack: () => void;
   onEndChat: () => void;
   onAnalyze: () => void;
   onTextSelectionProcessed?: () => void;
-  readOnly?: boolean;
-  chatSessionId?: string; // For viewing specific ended chats
 }
 
 export const ChatInterfacePage = ({
-  textSelection,
-  document,
   onBack,
   onEndChat,
   onAnalyze,
   onTextSelectionProcessed,
-  readOnly,
-  chatSessionId
 }: ChatInterfacePageProps) => {
+  const { 
+    currentTextSelection: textSelection, 
+    currentDocument: document,
+    viewingChatId: chatSessionId 
+  } = useDashboardStore();
+
+  const readOnly = !!chatSessionId;
+
   // Chat session management
   const {
     messages,

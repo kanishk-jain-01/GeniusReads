@@ -11,25 +11,24 @@ import {
   TrendingUp,
   ExternalLink
 } from "lucide-react";
-import type { Concept } from "@/lib/types";
+import { useDashboardStore } from "@/stores/dashboardStore";
 
 interface KnowledgePageProps {
-  concepts: Concept[];
-  conceptsLoading: boolean;
-  conceptSearchQuery: string;
-  setConceptSearchQuery: (query: string) => void;
   onConceptClick: (conceptId: string) => void;
   onViewSource: (conceptId: string) => void;
 }
 
 export const KnowledgePage = ({
-  concepts,
-  conceptsLoading,
-  conceptSearchQuery,
-  setConceptSearchQuery,
   onConceptClick,
   onViewSource
 }: KnowledgePageProps) => {
+  const {
+    concepts,
+    conceptsLoading,
+    conceptSearchQuery,
+    setConceptSearchQuery
+  } = useDashboardStore();
+
   // Helper function to format last accessed time
   const formatLastAccessed = (date: Date): string => {
     const now = new Date();
