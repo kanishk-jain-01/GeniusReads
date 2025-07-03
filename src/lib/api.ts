@@ -946,6 +946,21 @@ export const getConceptsForChatSession = async (chatSessionId: string): Promise<
 };
 
 /**
+ * Get all chats linked to a specific concept
+ */
+export const getChatsForConcept = async (conceptId: string): Promise<any[]> => {
+    try {
+        const chats = await invoke<any[]>('get_chats_for_concept', {
+            conceptId
+        });
+        return chats;
+    } catch (error) {
+        console.error('Failed to get chats for concept:', error);
+        throw error;
+    }
+};
+
+/**
  * Get detailed concept information by ID with enhanced source information
  */
 export const getConceptByIdDetailed = async (conceptId: string): Promise<any> => {

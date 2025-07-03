@@ -1,7 +1,8 @@
 import { useCallback } from "react";
-import { getExtractionConcepts, getConceptByIdDetailed } from "@/lib/api";
+import { getExtractionConcepts, getConceptById, getChatsForConcept, searchConceptsByText } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { useDashboardStore } from "@/stores/dashboardStore";
+import { Concept, ConceptDetail } from "@/lib/types";
 
 export const useConceptHandlers = () => {
   const { toast } = useToast();
@@ -9,7 +10,8 @@ export const useConceptHandlers = () => {
     setConcepts, 
     setConceptsLoading, 
     setViewingChatId, 
-    setViewMode 
+    setViewMode,
+    setCurrentConceptDetail,
   } = useDashboardStore();
 
   const loadConcepts = useCallback(async () => {
@@ -29,17 +31,40 @@ export const useConceptHandlers = () => {
     }
   }, [setConcepts, setConceptsLoading, toast]);
 
+  const searchConcepts = useCallback(async (query: string) => {
+    try {
+      setConceptsLoading(true);
+      const searchResults = await searchConceptsByText(query);
+      setConcepts(searchResults);
+    } catch (error) {
+      console.error('Failed to search concepts:', error);
+      toast({
+        title: "Search Failed",
+        description: "Could not perform concept search.",
+        variant: "destructive",
+      });
+    } finally {
+      setConceptsLoading(false);
+    }
+  }, [setConcepts, setConceptsLoading, toast]);
+
   const handleConceptClick = useCallback(async (conceptId: string) => {
     try {
-      const conceptDetail = await getConceptByIdDetailed(conceptId);
-      if (conceptDetail) {
-        console.log('Concept detail:', conceptDetail);
-        
-        const sourceCount = conceptDetail.sourceChats?.length || 0;
-        toast({
-          title: "Concept Details",
-          description: `"${conceptDetail.name}" found in ${sourceCount} conversation${sourceCount !== 1 ? 's' : ''}. Click "View Source" to navigate to original chat.`,
-        });
+      const concept = await getConceptById(conceptId);
+      if (concept) {
+        const sourceChats = await getChatsForConcept(conceptId);
+        const conceptDetail: ConceptDetail = {
+            ...(concept as Concept),
+            sourceChats: sourceChats.map((chat: any) => ({
+                id: chat.id,
+                title: chat.title,
+                relevanceScore: chat.relevanceScore,
+                createdAt: new Date(chat.createdAt),
+            })),
+        };
+
+        setCurrentConceptDetail(conceptDetail);
+        setViewMode('concept-detail');
       }
     } catch (error) {
       console.error('Failed to load concept details:', error);
@@ -49,27 +74,23 @@ export const useConceptHandlers = () => {
         variant: "destructive",
       });
     }
-  }, [toast]);
+  }, [toast, setCurrentConceptDetail, setViewMode]);
 
-  const handleViewSource = useCallback(async (conceptId: string) => {
+  const handleNavigateToSource = useCallback(async (conceptId: string) => {
     try {
-      const conceptDetail = await getConceptByIdDetailed(conceptId);
-      if (conceptDetail && conceptDetail.sourceChats && conceptDetail.sourceChats.length > 0) {
-        const primarySourceChat = conceptDetail.sourceChats[0];
-        
+      const sourceChats = await getChatsForConcept(conceptId);
+
+      if (sourceChats && sourceChats.length === 1) {
+        const primarySourceChat = sourceChats[0];
         setViewingChatId(primarySourceChat.id);
         setViewMode('chat-interface');
-        
         toast({
           title: "Navigating to Source",
           description: `Opening chat: "${primarySourceChat.title}"`,
         });
       } else {
-        toast({
-          title: "No Source Found",
-          description: "Could not find source conversation for this concept.",
-          variant: "destructive",
-        });
+        // If multiple sources, go to detail page for user to choose
+        handleConceptClick(conceptId);
       }
     } catch (error) {
       console.error('Failed to navigate to source:', error);
@@ -79,11 +100,12 @@ export const useConceptHandlers = () => {
         variant: "destructive",
       });
     }
-  }, [setViewingChatId, setViewMode, toast]);
+  }, [setViewingChatId, setViewMode, toast, handleConceptClick]);
 
   return {
     loadConcepts,
+    searchConcepts,
     handleConceptClick,
-    handleViewSource
+    handleNavigateToSource
   };
 }; 

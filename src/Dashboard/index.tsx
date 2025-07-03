@@ -6,6 +6,7 @@ import { ChatPage } from "./pages/ChatPage";
 import { ChatInterfacePage } from "./pages/ChatInterfacePage";
 import { KnowledgePage } from "./pages/KnowledgePage";
 import PreferencesPage from "./pages/PreferencesPage";
+import ConceptDetailPage from "./pages/ConceptDetailPage";
 import { useDashboardStore } from "@/stores/dashboardStore";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useDashboardData } from "./hooks/useDashboardData";
@@ -21,6 +22,8 @@ const Dashboard = () => {
     currentDocument,
     currentTextSelection,
     isUploadingPDF,
+    concepts,
+    setViewingChatId
   } = useDashboardStore();
 
   const {
@@ -53,8 +56,9 @@ const Dashboard = () => {
 
   const {
     loadConcepts,
+    searchConcepts,
     handleConceptClick,
-    handleViewSource
+    handleNavigateToSource
   } = useConceptHandlers();
 
   useKeyboardShortcuts({
@@ -129,9 +133,22 @@ const Dashboard = () => {
       case 'knowledge':
         return (
           <KnowledgePage
+            concepts={concepts}
             onConceptClick={handleConceptClick}
-            onViewSource={handleViewSource}
+            onViewSource={handleNavigateToSource}
+            searchConcepts={searchConcepts}
+            loadConcepts={loadConcepts}
           />
+        );
+      case 'concept-detail':
+        return (
+            <ConceptDetailPage
+                onBack={() => setViewMode('knowledge')}
+                onViewSource={(chatId) => {
+                    setViewingChatId(chatId);
+                    setViewMode('chat-interface');
+                }}
+            />
         );
       case 'preferences':
         return (

@@ -1,4 +1,4 @@
-export type ViewMode = 'library' | 'reader' | 'chat' | 'chat-interface' | 'knowledge' | 'preferences';
+export type ViewMode = 'library' | 'reader' | 'chat' | 'chat-interface' | 'knowledge' | 'preferences' | 'concept-detail';
 
 export interface DashboardStats {
   documentCount: number;

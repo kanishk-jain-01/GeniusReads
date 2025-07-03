@@ -122,4 +122,23 @@ pub async fn get_concepts_for_chat_session(
     } else {
         Err("Database not initialized".to_string())
     }
+}
+
+#[tauri::command]
+pub async fn get_chats_for_concept(
+    concept_id: String,
+    db: tauri::State<'_, DbState>,
+) -> Result<Vec<serde_json::Value>, String> {
+    let db_guard = db.lock().await;
+    if let Some(database) = db_guard.as_ref() {
+        let concept_uuid = uuid::Uuid::parse_str(&concept_id)
+            .map_err(|e| format!("Invalid concept UUID: {}", e))?;
+        
+        match database.get_chats_for_concept(concept_uuid).await {
+            Ok(chats) => Ok(chats),
+            Err(e) => Err(format!("Failed to get chats for concept: {}", e)),
+        }
+    } else {
+        Err("Database not initialized".to_string())
+    }
 } 

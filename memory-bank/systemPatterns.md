@@ -77,4 +77,16 @@ The `pgvector` extension is used to find related concepts.
 -   **Querying:** The application can find concepts similar to a given text by:
     1.  Generating an embedding for the search query.
     2.  Using a SQL query with the cosine similarity operator (`<=>`) to find the closest vectors in the `concepts` table.
-    3.  This is encapsulated in the `find_similar_concepts` PostgreSQL function for easy use. 
+    3.  This is encapsulated in the `find_similar_concepts` PostgreSQL function for easy use.
+
+## 5. Debounced Search for Responsive UI
+
+To ensure the UI remains responsive while searching the knowledge base, a debouncing pattern is used.
+
+-   **Trigger:** The user types into the search bar on the `Knowledge` tab.
+-   **Mechanism:**
+    1.  The search input is tied to a local state variable in the React component.
+    2.  A custom `useDebounce` hook is used to create a "debounced" version of the search query, which only updates after the user has stopped typing for a set duration (e.g., 300ms).
+    3.  A `useEffect` hook watches for changes in the debounced query.
+    4.  When the debounced query changes, a Tauri command (`search_concepts_by_text`) is called to fetch results from the backend.
+-   **Benefits:** This prevents sending a flood of API requests to the backend on every single keystroke, reducing database load and providing a smoother user experience. It replaces the initial, less scalable client-side filtering approach. 

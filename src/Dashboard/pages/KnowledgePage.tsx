@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,22 +13,39 @@ import {
   ExternalLink
 } from "lucide-react";
 import { useDashboardStore } from "@/stores/dashboardStore";
+import { useDebounce } from "@/hooks/use-debounce";
+import { Concept } from "@/lib/types";
 
 interface KnowledgePageProps {
+  concepts: Concept[];
   onConceptClick: (conceptId: string) => void;
   onViewSource: (conceptId: string) => void;
+  searchConcepts: (query: string) => void;
+  loadConcepts: () => void;
 }
 
 export const KnowledgePage = ({
+  concepts,
   onConceptClick,
-  onViewSource
+  onViewSource,
+  searchConcepts,
+  loadConcepts
 }: KnowledgePageProps) => {
   const {
-    concepts,
     conceptsLoading,
     conceptSearchQuery,
     setConceptSearchQuery
   } = useDashboardStore();
+
+  const debouncedSearchQuery = useDebounce(conceptSearchQuery, 300);
+
+  useEffect(() => {
+    if (debouncedSearchQuery) {
+      searchConcepts(debouncedSearchQuery);
+    } else {
+      loadConcepts();
+    }
+  }, [debouncedSearchQuery, searchConcepts, loadConcepts]);
 
   // Helper function to format last accessed time
   const formatLastAccessed = (date: Date): string => {
@@ -45,13 +63,6 @@ export const KnowledgePage = ({
       return `${days} days ago`;
     }
   };
-
-  const filteredConcepts = concepts.filter(concept => 
-    conceptSearchQuery === "" || 
-    concept.name.toLowerCase().includes(conceptSearchQuery.toLowerCase()) ||
-    concept.description.toLowerCase().includes(conceptSearchQuery.toLowerCase()) ||
-    concept.tags.some(tag => tag.toLowerCase().includes(conceptSearchQuery.toLowerCase()))
-  );
 
   return (
     <div className="flex-1 flex flex-col">
@@ -91,15 +102,17 @@ export const KnowledgePage = ({
           <div className="text-center py-12">
             <Brain className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
-              No Concepts Yet
+              {conceptSearchQuery ? "No Results Found" : "No Concepts Yet"}
             </h3>
             <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto">
-              Start conversations about your PDFs to build your knowledge base. Concepts will appear here after AI analysis.
+              {conceptSearchQuery
+                ? "Try a different search term."
+                : "Start conversations about your PDFs to build your knowledge base. Concepts will appear here after AI analysis."}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredConcepts.map((concept) => (
+            {concepts.map((concept) => (
               <Card key={concept.id} className="hover:shadow-md transition-all duration-200 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">

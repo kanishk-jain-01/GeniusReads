@@ -6,33 +6,37 @@ This document captures the current focus of development, recent decisions, and n
 
 ## 1. Current Development Focus
 
-The primary focus is on stabilizing the core user workflow: **Read -> Chat -> Analyze -> Knowledge**. The foundational pieces are in place, but the connections between them need to be refined for a smoother user experience.
+The primary focus has shifted from feature implementation to stabilization and testing. The core workflow (**Read -> Chat -> Analyze -> Knowledge**) is now feature-complete. The immediate goal is to ensure this entire pipeline is robust, performant, and bug-free before shipping.
 
--   **UI/UX Polish:** Improving the visual feedback and flow of the three main tabs.
--   **Error Handling:** Implementing robust error handling for the AI processing pipeline.
--   **Performance Tuning:** Ensuring the UI remains responsive, especially during background analysis.
+-   **End-to-End Testing:** Manually testing the full user journey to identify bugs and usability issues.
+-   **Performance Tuning:** Monitoring for and resolving any performance bottlenecks, especially in search and data loading.
+-   **Bug Fixing:** Addressing any issues discovered during the testing phase.
 
 ## 2. Recent Decisions & Changes
 
--   **Adopted "Database-First":** We have committed to using PostgreSQL as the single source of truth for all application state to simplify development and enhance data integrity.
--   **Finalized Core Shortcut:** The `CMD+K` shortcut is now implemented to transfer highlighted text from the `Library` to the active `Chat`. The `CMD+L` shortcut is implemented for toggling between the library and chat views.
--   **LangGraph for Concept Extraction:** The decision was made to use LangGraph for the AI pipeline due to its flexibility in defining stateful, multi-step AI workflows.
+-   **Adopted "Database-First":** We have committed to using PostgreSQL as the single source of truth for all application state.
+-   **Finalized Core Shortcut:** The `CMD+K` and `CMD+L` shortcuts are implemented for seamless navigation between reading and chatting.
+-   **LangGraph for Concept Extraction:** The decision was made to use LangGraph for the AI pipeline.
+-   **Implemented Knowledge Base:** The Knowledge tab is fully functional, including a concept list, a detail view, and debounced, API-driven search. Navigation from concepts back to their source chats is implemented.
 
 ## 3. Next Steps & Priorities
 
 ### High Priority:
-1.  **Implement Frontend for Analysis Status:** The UI needs to accurately reflect the state of a chat's analysis (`pending`, `processing`, `complete`, `failed`). This involves creating a polling mechanism from the frontend to a Rust command that checks the `langraph_processing` table.
-2.  **Build the "Knowledge" Tab UI:** Create the initial UI for the `Knowledge` tab, displaying the extracted concepts as cards.
-3.  **Refine Chat Context Management:** Ensure that adding multiple contexts to a single chat session is seamless and visually clear in the chat interface.
+1.  **Thorough Manual Testing:** Conduct comprehensive end-to-end testing of the entire application workflow. This includes:
+    -   Uploading and reading various PDFs.
+    -   Initiating chats from text selections.
+    -   Running the "Analyze" process on chats.
+    -   Searching and browsing concepts in the Knowledge Base.
+    -   Navigating from a concept to its detail page and back to the source chat.
+2.  **Implement Frontend for Analysis Status:** The UI needs to accurately reflect the state of a chat's analysis (`pending`, `processing`, `complete`, `failed`).
 
 ### Medium Priority:
+3.  **Error Handling in LangGraph:** Solidify the error handling for the Python-based AI pipeline. Errors should be caught, logged, and reflected in the UI.
 4.  **User Preferences Page:** Build the UI for users to enter their OpenAI API key.
-5.  **Error Handling in LangGraph:** What happens if the Python script fails? The error needs to be caught, logged to the database, and reflected in the UI.
-6.  **Comprehensive Seeding Script:** Create a script to populate the database with sample documents and chats for easier testing.
 
 ### Low Priority:
-7.  **Explore Concept Relationships:** Investigate how to use the `find_similar_concepts` function to show related concepts on a concept's detail page.
-8.  **Add Theming:** Implement the light/dark/system theme toggle.
+5.  **Comprehensive Seeding Script:** Create a script to populate the database with sample data for easier testing.
+6.  **Explore Concept Relationships:** Investigate using vector search to show related concepts on a concept's detail page.
 
 ## 4. Open Questions
 

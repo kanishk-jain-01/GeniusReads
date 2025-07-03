@@ -146,6 +146,17 @@ export interface Concept {
   avgRelevanceScore?: number;
 }
 
+export interface ConceptSourceChat {
+  id: string;
+  title: string;
+  relevanceScore: number;
+  createdAt: Date;
+}
+
+export interface ConceptDetail extends Concept {
+  sourceChats: ConceptSourceChat[];
+}
+
 export interface UserNote {
   id: string;
   documentId: string;

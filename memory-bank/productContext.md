@@ -29,10 +29,12 @@ The core philosophy is **"Learn, don't just read."** Every feature is designed t
 2.  **User:** Clicks the "Analyze" button at the end of the chat.
 3.  **System:** Shows a progress indicator as it processes the conversation in the background.
 4.  **System:** Navigates the user to the `Knowledge` tab upon completion.
-5.  **User:** Sees a new "Concept Card" for the topic they just discussed. They can click on it to see the definition, the chat that generated it, and a link back to the original PDF page.
+5.  **User:** Sees a new "Concept Card" for the topic they just discussed. They can click "Details" to navigate to a dedicated page for that concept.
 
 ### Journey 3: Revisiting and Connecting Knowledge
 1.  **User:** Weeks later, is reading a different document on a related topic.
 2.  **User:** Opens the `Knowledge` tab to see what they've already learned.
-3.  **System:** The knowledge base contains concepts from all previous reading sessions.
-4.  **User:** Clicks on a concept, refreshing their memory. They see that this concept is also related to another concept from a different book, creating a new mental connection. 
+3.  **System:** The knowledge base contains concepts from all previous reading sessions, which can be searched and filtered.
+4.  **User:** Clicks on a concept card's "Details" button.
+5.  **System:** Navigates to the Concept Detail page, showing the concept's description, tags, and a list of all source conversations it was extracted from.
+6.  **User:** Clicks "View Chat" on one of the sources to jump back to the original conversation for full context. 

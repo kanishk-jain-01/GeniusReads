@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { ViewMode } from '@/Dashboard/types';
-import type { Document, TextSelection, Concept } from '@/lib/types';
+import type { Document, TextSelection, Concept, ConceptDetail } from '@/lib/types';
 
 interface DashboardState {
   searchQuery: string;
@@ -14,6 +14,7 @@ interface DashboardState {
   concepts: Concept[];
   conceptsLoading: boolean;
   conceptSearchQuery: string;
+  currentConceptDetail?: ConceptDetail;
   
   setSearchQuery: (query: string) => void;
   setCurrentDocument: (doc?: Document) => void;
@@ -26,6 +27,7 @@ interface DashboardState {
   setConcepts: (concepts: Concept[]) => void;
   setConceptsLoading: (loading: boolean) => void;
   setConceptSearchQuery: (query: string) => void;
+  setCurrentConceptDetail: (concept?: ConceptDetail) => void;
 }
 
 export const useDashboardStore = create<DashboardState>()((set) => ({
@@ -40,6 +42,7 @@ export const useDashboardStore = create<DashboardState>()((set) => ({
   concepts: [],
   conceptsLoading: false,
   conceptSearchQuery: '',
+  currentConceptDetail: undefined,
 
   setSearchQuery: (query) => set({ searchQuery: query }),
   setCurrentDocument: (doc) => set({ currentDocument: doc }),
@@ -52,4 +55,5 @@ export const useDashboardStore = create<DashboardState>()((set) => ({
   setConcepts: (concepts) => set({ concepts: concepts }),
   setConceptsLoading: (loading) => set({ conceptsLoading: loading }),
   setConceptSearchQuery: (query) => set({ conceptSearchQuery: query }),
+  setCurrentConceptDetail: (concept) => set({ currentConceptDetail: concept }),
 })); 

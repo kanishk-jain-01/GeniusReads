@@ -59,6 +59,7 @@ pub fn run() {
             search_concepts_by_text,
             get_concept_chat_relationship,
             get_concepts_for_chat_session,
+            get_chats_for_concept,
             test_langraph_bridge
         ])
         .setup(|app| {

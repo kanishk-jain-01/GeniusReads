@@ -218,4 +218,33 @@ impl Database {
 
         Ok(concepts)
     }
+
+    /// Get chats for a concept
+    pub async fn get_chats_for_concept(&self, concept_id: Uuid) -> Result<Vec<serde_json::Value>> {
+        let chat_links = sqlx::query!(
+            r#"
+            SELECT cs.id, cs.title, ccl.relevance_score, ccl.created_at as link_created_at
+            FROM concept_chat_links ccl
+            JOIN chat_sessions cs ON ccl.chat_session_id = cs.id
+            WHERE ccl.concept_id = $1
+            ORDER BY ccl.relevance_score DESC
+            "#,
+            concept_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to get chats for concept")?;
+
+        let chats: Vec<serde_json::Value> = chat_links
+            .into_iter()
+            .map(|row| serde_json::json!({
+                "id": row.id,
+                "title": row.title,
+                "relevanceScore": row.relevance_score,
+                "createdAt": row.link_created_at.to_rfc3339()
+            }))
+            .collect();
+
+        Ok(chats)
+    }
 } 
