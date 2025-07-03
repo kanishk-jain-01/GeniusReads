@@ -32,7 +32,7 @@ flowchart TD
         O --> I
         K -->|No| P{"End Chat Options"}
         P -->|Save| Q["Store Chat in Database → Return to Reading"]
-        P -->|Save + Analyze| R["Store + Trigger LangGraph → Navigate to Knowledge Tab"]
+        P -->|Analyze| R["Store + Trigger LangGraph → Navigate to Knowledge Tab"]
         P -->|Delete| S["Discard Chat → Return to Reading"]
     end
     
