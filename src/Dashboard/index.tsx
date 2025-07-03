@@ -1,11 +1,11 @@
 import { useEffect } from "react";
-import { Sidebar } from "./components/Sidebar";
-import { LibraryView } from "./views/LibraryView";
-import { ReaderView } from "./views/ReaderView";
-import { ChatView } from "./views/ChatView";
-import { ChatInterfaceView } from "./views/ChatInterfaceView";
-import { KnowledgeView } from "./views/KnowledgeView";
-import { PreferencesView } from "./views/PreferencesView";
+import { Sidebar } from "@/components/Sidebar";
+import { LibraryPage } from "./pages/LibraryPage";
+import { ReaderPage } from "./pages/ReaderPage";
+import { ChatPage } from "./pages/ChatPage";
+import { ChatInterfacePage } from "./pages/ChatInterfacePage";
+import { KnowledgePage } from "./pages/KnowledgePage";
+import PreferencesPage from "./pages/PreferencesPage";
 import { useDashboardState } from "./hooks/useDashboardState";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { useDashboardData } from "./hooks/useDashboardData";
@@ -132,7 +132,7 @@ const Dashboard = () => {
     switch (viewMode) {
       case 'library':
         return (
-          <LibraryView
+          <LibraryPage
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             recentDocuments={recentDocuments}
@@ -144,7 +144,7 @@ const Dashboard = () => {
         );
       case 'reader':
         return (
-          <ReaderView
+          <ReaderPage
             currentDocument={currentDocument}
             clearSelectionTrigger={clearSelectionTrigger}
             onBackToLibrary={() => setViewMode('library')}
@@ -156,7 +156,7 @@ const Dashboard = () => {
         );
       case 'chat':
         return (
-          <ChatView
+          <ChatPage
             activeTextSelection={getHighlightedContext()}
             currentDocument={currentDocument}
             refreshTrigger={chatListRefreshTrigger}
@@ -167,7 +167,7 @@ const Dashboard = () => {
         );
       case 'chat-interface':
         return (
-          <ChatInterfaceView
+          <ChatInterfacePage
             textSelection={currentTextSelection}
             document={currentDocument}
             readOnly={!!viewingChatId}
@@ -180,7 +180,7 @@ const Dashboard = () => {
         );
       case 'knowledge':
         return (
-          <KnowledgeView
+          <KnowledgePage
             concepts={concepts}
             conceptsLoading={conceptsLoading}
             conceptSearchQuery={conceptSearchQuery}
@@ -191,7 +191,7 @@ const Dashboard = () => {
         );
       case 'preferences':
         return (
-          <PreferencesView onBack={() => setViewMode('library')} />
+          <PreferencesPage onBack={() => setViewMode('library')} />
         );
       default:
         return null;

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import type { Document } from "@/lib/types";
 
-interface LibraryViewProps {
+interface LibraryPageProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   recentDocuments: Document[];
@@ -22,7 +22,7 @@ interface LibraryViewProps {
   onDocumentSelect: (document: Document) => void;
 }
 
-export const LibraryView = ({
+export const LibraryPage = ({
   searchQuery,
   setSearchQuery,
   recentDocuments,
@@ -30,7 +30,7 @@ export const LibraryView = ({
   isUploadingPDF,
   onUploadPDF,
   onDocumentSelect
-}: LibraryViewProps) => {
+}: LibraryPageProps) => {
   // Helper function to calculate reading progress
   const calculateProgress = (currentPage: number, totalPages: number): number => {
     if (totalPages === 0) return 0;

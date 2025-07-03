@@ -2,7 +2,7 @@ import { ChatList } from "@/components/chat";
 import { useToast } from "@/hooks/use-toast";
 import type { Document, HighlightedContext } from "@/lib/types";
 
-interface ChatViewProps {
+interface ChatPageProps {
   activeTextSelection?: HighlightedContext;
   currentDocument?: Document;
   refreshTrigger: number;
@@ -11,14 +11,14 @@ interface ChatViewProps {
   onChatDelete: () => void;
 }
 
-export const ChatView = ({
+export const ChatPage = ({
   activeTextSelection,
   currentDocument,
   refreshTrigger,
   onChatSelect,
   onStartNewChat,
   onChatDelete
-}: ChatViewProps) => {
+}: ChatPageProps) => {
   const { toast } = useToast();
 
   const handleChatDelete = (_chatId: string) => {

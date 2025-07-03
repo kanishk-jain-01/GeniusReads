@@ -9,7 +9,7 @@ import {
   Library,
   Settings
 } from "lucide-react";
-import type { ViewMode, DashboardStats, SidebarItem, KnowledgeStat } from "../types";
+import type { ViewMode, DashboardStats, SidebarItem, KnowledgeStat } from "@/Dashboard/types";
 
 interface SidebarProps {
   viewMode: ViewMode;

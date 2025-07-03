@@ -10,7 +10,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useToast } from "@/hooks/use-toast";
 import { saveUserPreferences, getUserPreferences } from "@/lib/api";
 
-interface PreferencesProps {
+interface PreferencesPageProps {
   onBack: () => void;
 }
 
@@ -19,7 +19,7 @@ interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
 }
 
-const Preferences: React.FC<PreferencesProps> = ({ onBack }) => {
+const PreferencesPage: React.FC<PreferencesPageProps> = ({ onBack }) => {
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -215,4 +215,4 @@ const Preferences: React.FC<PreferencesProps> = ({ onBack }) => {
   );
 };
 
-export default Preferences; 
+export default PreferencesPage; 

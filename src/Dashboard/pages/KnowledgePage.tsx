@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import type { Concept } from "@/lib/types";
 
-interface KnowledgeViewProps {
+interface KnowledgePageProps {
   concepts: Concept[];
   conceptsLoading: boolean;
   conceptSearchQuery: string;
@@ -22,14 +22,14 @@ interface KnowledgeViewProps {
   onViewSource: (conceptId: string) => void;
 }
 
-export const KnowledgeView = ({
+export const KnowledgePage = ({
   concepts,
   conceptsLoading,
   conceptSearchQuery,
   setConceptSearchQuery,
   onConceptClick,
   onViewSource
-}: KnowledgeViewProps) => {
+}: KnowledgePageProps) => {
   // Helper function to format last accessed time
   const formatLastAccessed = (date: Date): string => {
     const now = new Date();

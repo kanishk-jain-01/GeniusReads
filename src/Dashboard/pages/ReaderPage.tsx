@@ -3,7 +3,7 @@ import { FileText } from "lucide-react";
 import PDFViewer from "@/components/PDFViewer";
 import type { Document, TextSelection } from "@/lib/types";
 
-interface ReaderViewProps {
+interface ReaderPageProps {
   currentDocument?: Document;
   clearSelectionTrigger: number;
   onBackToLibrary: () => void;
@@ -13,7 +13,7 @@ interface ReaderViewProps {
   onTextSelect: (selection: TextSelection) => void;
 }
 
-export const ReaderView = ({
+export const ReaderPage = ({
   currentDocument,
   clearSelectionTrigger,
   onBackToLibrary,
@@ -21,7 +21,7 @@ export const ReaderView = ({
   onPageChange,
   onZoomChange,
   onTextSelect
-}: ReaderViewProps) => {
+}: ReaderPageProps) => {
   if (!currentDocument) {
     return (
       <div className="flex-1 flex items-center justify-center">

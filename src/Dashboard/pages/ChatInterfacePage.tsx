@@ -1,7 +1,7 @@
 import { ChatHeader, ActiveChat, useChatSession, useChatActions, useAnalysisTimer } from "@/components/chat";
 import type { TextSelection, Document } from "@/lib/types";
 
-interface ChatInterfaceProps {
+interface ChatInterfacePageProps {
   textSelection?: TextSelection;
   document?: Document;
   onBack: () => void;
@@ -12,7 +12,7 @@ interface ChatInterfaceProps {
   chatSessionId?: string; // For viewing specific ended chats
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({
+export const ChatInterfacePage = ({
   textSelection,
   document,
   onBack,
@@ -21,7 +21,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onTextSelectionProcessed,
   readOnly,
   chatSessionId
-}) => {
+}: ChatInterfacePageProps) => {
   // Chat session management
   const {
     messages,
@@ -103,6 +103,4 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
     </div>
   );
-};
-
-export default ChatInterface; 
+}; 
