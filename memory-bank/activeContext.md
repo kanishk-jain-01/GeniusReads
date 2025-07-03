@@ -2,193 +2,203 @@
 
 ## Current Work Focus
 
-**MAJOR MILESTONE ACHIEVED: COMPLETE CONCEPT EXTRACTION SYSTEM WITH ENHANCED TRACEABILITY** ✅ **TASKS 6.7, 6.8, 6.9, 7.1 COMPLETE**
-**Status**: Foundation Complete → PDF System Complete → Text Selection Complete → Chat Interface Complete → OpenAI Integration Complete → **LangGraph Integration Complete** → **Knowledge Base Interface Operational** → **Concept-Chat Linking System Complete**
+**MAJOR FRONTEND REFACTORING COMPLETED: MODULAR DASHBOARD ARCHITECTURE** ✅ **COMPLETE**
+**Status**: Foundation Complete → PDF System Complete → Text Selection Complete → Chat Interface Complete → OpenAI Integration Complete → LangGraph Integration Complete → Knowledge Base Interface Operational → Concept-Chat Linking Complete → **Frontend Modularization Complete**
 
 ## Recent Activities
 
-### TODAY'S MAJOR ACHIEVEMENT - ✅ **TASK 6.9 COMPLETE**
+### TODAY'S MAJOR ACHIEVEMENT - ✅ **FRONTEND REFACTORING COMPLETE**
 
-**BREAKTHROUGH**: Successfully implemented concept-chat linking system with enhanced traceability, completing another critical component of the knowledge management pipeline.
+**BREAKTHROUGH**: Successfully completed major frontend refactoring with Dashboard-centric modular architecture, providing clean separation of concerns and professional code organization.
+
+#### **Frontend Modularization - ✅ COMPLETE - PROFESSIONAL ARCHITECTURE OPERATIONAL**
+
+**ACHIEVEMENT**: Transformed the frontend from a single-file approach to a beautifully organized modular architecture with Dashboard at the center.
+
+**New Architecture Overview**:
+```
+src/
+├── App.tsx                    # Minimal app wrapper with providers
+├── Dashboard/                 # Main application architecture
+│   ├── index.tsx             # Central Dashboard component
+│   ├── types.ts              # Dashboard-specific types
+│   ├── hooks/                # Modular hook system
+│   │   ├── useDashboardState.ts    # Centralized state management
+│   │   ├── useDashboardData.ts     # Data fetching and stats
+│   │   ├── useDocumentHandlers.ts  # PDF and document operations
+│   │   ├── useChatHandlers.ts      # Chat workflow management
+│   │   ├── useConceptHandlers.ts   # Knowledge base operations
+│   │   └── useKeyboardShortcuts.ts # Keyboard shortcut handling
+│   └── pages/                # Page components
+│       ├── LibraryPage.tsx         # Document library interface
+│       ├── ReaderPage.tsx          # PDF reading interface
+│       ├── ChatPage.tsx            # Chat list interface
+│       ├── ChatInterfacePage.tsx   # Active chat interface
+│       ├── KnowledgePage.tsx       # Knowledge base interface
+│       └── PreferencesPage.tsx     # User preferences
+├── components/               # Reusable components
+│   ├── ui/                  # shadcn/ui component library
+│   ├── chat/                # Chat-specific components
+│   ├── PDFViewer.tsx        # PDF viewing component
+│   ├── Sidebar.tsx          # Navigation sidebar
+│   └── ...                  # Other components
+├── hooks/                   # Global hooks
+├── lib/                     # Utilities and API
+└── ...                      # Other directories
+```
+
+**Key Improvements**:
+1. **🎯 Modular Hook System - IMPLEMENTED**
+   - **State Management**: `useDashboardState` centralizes all view state
+   - **Data Operations**: `useDashboardData` handles document and stats loading
+   - **Document Handlers**: `useDocumentHandlers` manages PDF operations
+   - **Chat Handlers**: `useChatHandlers` manages chat workflow
+   - **Concept Handlers**: `useConceptHandlers` manages knowledge operations
+   - **Keyboard Shortcuts**: `useKeyboardShortcuts` handles CMD+K/CMD+L
+   - **Result**: Clean separation of concerns with focused responsibilities
+
+2. **🎯 Page-Based Architecture - IMPLEMENTED**
+   - **LibraryPage**: Document library with search and upload
+   - **ReaderPage**: PDF reading with text selection
+   - **ChatPage**: Chat history and session management
+   - **ChatInterfacePage**: Active chat conversation interface
+   - **KnowledgePage**: Concept browsing and knowledge discovery
+   - **PreferencesPage**: User settings and API key management
+   - **Result**: Clean page separation with focused functionality
+
+3. **🎯 Central Dashboard Controller - IMPLEMENTED**
+   - **Single Entry Point**: Dashboard component orchestrates all views
+   - **State Coordination**: Centralized state management across all pages
+   - **Handler Coordination**: All page handlers coordinated through Dashboard
+   - **View Routing**: Clean switch-based view rendering
+   - **Result**: Professional application architecture with clear data flow
+
+4. **🎯 Professional Code Organization - IMPLEMENTED**
+   - **TypeScript Types**: Dedicated types file for Dashboard-specific interfaces
+   - **Hook Composition**: Modular hooks composed in Dashboard for clean architecture
+   - **Prop Passing**: Clean prop interfaces between Dashboard and pages
+   - **Error Handling**: Consistent error handling across all modules
+   - **Result**: Maintainable, scalable codebase ready for team development
+
+### PREVIOUS ACHIEVEMENTS (Earlier Sessions) - 100% COMPLETE ✅ **FOUNDATION ESTABLISHED**
 
 #### TASK 6.9: Concept-Chat Linking System - ✅ **COMPLETE - ENHANCED TRACEABILITY OPERATIONAL**
 
-**ACHIEVEMENT**: Successfully implemented comprehensive concept-chat linking system providing detailed traceability from concepts back to source conversations.
-
-**Implementation Details**:
-1. **🎯 Enhanced Database Functions - COMPLETED**
-   - **Enhanced `get_concept_by_id`**: Now returns detailed source information including sample messages and highlighted contexts
-   - **New `get_concept_chat_relationship`**: Provides detailed relationship information between specific concepts and chat sessions
-   - **New `get_concepts_for_chat_session`**: Returns all concepts linked to a specific chat session
-   - **Result**: Complete database layer for concept-chat relationship management
-
-2. **🎯 Frontend API Integration - COMPLETED**
-   - **New API Functions**: `getConceptChatRelationship`, `getConceptsForChatSession`
-   - **Enhanced Concept Retrieval**: `getConceptByIdDetailed` with full source information
-   - **Type Safety**: Proper TypeScript integration for relationship data
-   - **Error Handling**: Comprehensive error handling throughout API layer
-   - **Result**: Complete frontend API for concept-chat traceability
-
-3. **🎯 Knowledge Interface Enhancement - COMPLETED**
-   - **View Source Buttons**: Added "View Source" functionality to concept cards
-   - **Concept Detail View**: Enhanced concept interaction with source navigation
-   - **Source Information Display**: Sample messages and highlighted contexts shown in concept details
-   - **Navigation Integration**: Seamless navigation from concepts to source conversations
-   - **Result**: Professional concept browsing with complete source traceability
-
-4. **🎯 Database Configuration Resolution - COMPLETED**
-   - **SQLx Compile-time Issue**: Resolved DATABASE_URL configuration for development
-   - **Environment Setup**: Proper .env file configuration for seamless development
-   - **Foundation Check**: Confirmed all systems operational with successful validation
-   - **Development Workflow**: Smooth development experience restored
-   - **Result**: Stable development environment with proper database configuration
-
-### PREVIOUS ACHIEVEMENTS (Earlier Sessions) - 100% COMPLETE ✅ **FOUNDATION ESTABLISHED**
+**ACHIEVEMENT**: Successfully implemented concept-chat linking system with enhanced traceability, providing complete navigation from concepts back to source conversations.
 
 #### TASK 7.1: Knowledge Tab Implementation - ✅ **COMPLETE - CONCEPT DISPLAY OPERATIONAL**
 
 **ACHIEVEMENT**: Successfully transformed the Knowledge tab from empty state to fully functional concept display interface.
 
-**Implementation Details**:
-1. **🎯 Concept Type System - COMPLETED**
-   - **New Concept Interface**: Complete TypeScript type definition with all necessary fields
-   - **Database Integration**: Proper field mapping from database to frontend types
-   - **API Enhancement**: Updated `getExtractionConcepts` and `getConceptById` with type safety
-   - **Result**: Fully typed concept system ready for complex UI operations
+#### TASK 6.8: Vector Embeddings Implementation - ✅ **COMPLETE - SEMANTIC SEARCH OPERATIONAL**
 
-2. **🎯 Knowledge Tab Transformation - COMPLETED**
-   - **Concept Cards Display**: Beautiful card layout showing concept information
-   - **Real-time Loading**: Concepts loaded when Knowledge tab is accessed
-   - **Search Functionality**: Concept search with real-time filtering
-   - **Empty State Handling**: Graceful display when no concepts exist
-   - **Result**: Professional knowledge browsing interface replacing empty placeholder
-
-3. **🎯 Workflow Integration - COMPLETED**
-   - **Analysis Trigger**: "Analyze" button refreshes concepts after extraction
-   - **Automatic Navigation**: Users guided to Knowledge tab after analysis
-   - **State Management**: Proper loading states and error handling
-   - **User Experience**: Seamless flow from chat analysis to concept viewing
-   - **Result**: Complete user workflow from conversation to knowledge discovery
+**BREAKTHROUGH ACHIEVEMENT**: Implemented complete vector embedding system enabling semantic concept search and intelligent relationships.
 
 #### TASK 6.7: Processing Status Tracking - ✅ **COMPLETE - ENHANCED USER FEEDBACK**
 
 **ACHIEVEMENT**: Implemented comprehensive progress tracking and status indicators for concept extraction.
 
-#### TASK 6.8: Vector Embeddings Implementation - ✅ **COMPLETE - SEMANTIC SEARCH OPERATIONAL**
-
-**BREAKTHROUGH ACHIEVEMENT**: Implemented complete vector embedding system enabling semantic concept search and intelligent relationships.
-
 ## Active Decisions
 
-### Complete Chat Workflow with Auto-Save and Analysis ✅ **FULLY OPERATIONAL**
+### Complete Application Architecture ✅ **FULLY MODULAR AND OPERATIONAL**
 
-#### Current Chat Actions (Simplified from Documentation)
-- **Auto-Save**: All conversations automatically saved as messages are sent - no manual save required
-- **End Button**: Makes chat inactive and read-only, returns user to chat list or reading position
-- **Analyze Button**: Ends chat session + triggers LangGraph concept extraction + navigates to Knowledge tab
-- **Real-time Persistence**: Every message immediately stored in database
-- **Analysis Status Tracking**: 'none' → 'processing' → 'complete'/'failed' with progress indicators
+#### Current Application Structure (Post-Refactoring)
+- **Dashboard-Centric**: Single Dashboard component orchestrates all functionality
+- **Modular Hooks**: Specialized hooks for state, data, handlers, and shortcuts
+- **Page-Based Views**: Clean separation of Library, Reader, Chat, Knowledge, and Preferences
+- **Professional Organization**: TypeScript types, clean interfaces, and consistent patterns
+- **Scalable Architecture**: Ready for team development and feature expansion
 
 #### Production Ready Features
-- **Real Concept Extraction**: Working OpenAI GPT-4o-mini integration triggered by Analyze button
-- **Vector Embeddings**: 384-dimensional embeddings with semantic search
-- **Semantic Operations**: Find similar concepts and text-based search
-- **Background Processing**: Async concept extraction with detailed progress tracking
-- **Database Integration**: Complete concept storage with relationships
-- **Knowledge Interface**: Beautiful concept browsing with search functionality
-- **Concept-Chat Linking**: Enhanced traceability from concepts to source conversations
-- **Source Navigation**: "View Source" functionality with detailed relationship information
-- **Error Handling**: Robust error recovery throughout the pipeline
-- **User Experience**: Professional progress feedback and automatic navigation to Knowledge tab
+- **Complete PDF System**: Text selection, navigation, and state persistence
+- **Advanced Chat Interface**: OpenAI integration with streaming responses and auto-save
+- **Real Concept Extraction**: Working LangGraph integration with vector embeddings
+- **Semantic Search**: Vector-based concept discovery and relationships
+- **Knowledge Interface**: Professional concept browsing with source traceability
+- **Enhanced Navigation**: CMD+K/CMD+L shortcuts with seamless view transitions
+- **User Preferences**: API key management and theme selection
+- **Professional UI**: shadcn/ui components with consistent design system
 
-#### Enhanced Traceability Capabilities
-- **Source Information**: Concepts include sample messages and highlighted contexts
-- **Relationship Details**: Detailed information about concept-chat relationships
-- **Navigation System**: Seamless navigation from concepts back to source conversations
-- **Relevance Scoring**: Relationship relevance scores for better context understanding
-- **Bidirectional Linking**: Complete linking system between concepts and chat sessions
+#### Enhanced Modular Architecture Benefits
+- **Maintainability**: Clear separation of concerns with focused responsibilities
+- **Scalability**: Easy to add new features and pages without architectural changes
+- **Testability**: Modular hooks and components enable comprehensive testing
+- **Team Development**: Clear structure allows multiple developers to work simultaneously
+- **Code Quality**: Professional patterns and consistent organization throughout
 
 ## Next Steps
 
 ### Current Priority: Task 6.10 - Complete Pipeline Testing **READY TO START**
 
-**CONCEPT EXTRACTION SYSTEM WITH ENHANCED TRACEABILITY COMPLETE**: Full end-to-end concept extraction with semantic search and source navigation capabilities
-- ✅ **Chat Workflow**: Simplified to End/Analyze with auto-save functionality
-- ✅ **Concept-Chat Linking**: Complete traceability system with source navigation
-- ✅ **Vector Embeddings**: Complete semantic search and similarity operations
-- ✅ **Knowledge Interface**: Functional concept browsing with search
-- ✅ **Progress Tracking**: Professional progress indicators and status feedback
-- ✅ **Background Processing**: Complete async workflow with database status tracking
-- ✅ **LangGraph Integration**: Real OpenAI concept extraction from chat conversations
-- ✅ **Database Storage**: Full concept persistence with vector embeddings
-- ✅ **Frontend Integration**: "Analyze" button triggers complete workflow ending chat and navigating to Knowledge
-- ✅ **Development Environment**: Stable configuration with proper database setup
+**MODULAR ARCHITECTURE COMPLETE**: Professional Dashboard-centric frontend architecture with complete concept extraction system
+- ✅ **Modular Hook System**: Specialized hooks for all major functionality areas
+- ✅ **Page-Based Architecture**: Clean separation of all major application views
+- ✅ **Dashboard Controller**: Central orchestration of all application state and handlers
+- ✅ **Professional Organization**: TypeScript types, clean interfaces, and consistent patterns
+- ✅ **Concept Extraction System**: Complete LangGraph integration with vector embeddings
+- ✅ **Knowledge Interface**: Functional concept browsing with semantic search
+- ✅ **Source Traceability**: Complete concept-chat linking with navigation
+- ✅ **Enhanced Navigation**: Professional keyboard shortcuts and view transitions
 
 **Next Implementation Steps**:
-1. **Task 6.10**: Test complete concept extraction pipeline
+1. **Task 6.10**: Test complete concept extraction pipeline with new architecture
 2. **Task 7.2**: Create ConceptCard component with enhanced preview information
 3. **Task 7.3**: Implement ConceptDetail page showing source chats and book sections
 4. **Task 7.4**: Add advanced concept search and filtering functionality
 
-### Architecture Ready for Advanced Knowledge Features **ENHANCED WITH SOURCE TRACEABILITY**
+### Architecture Ready for Advanced Features **PROFESSIONAL MODULAR FOUNDATION**
 
-**Status**: LangGraph concept extraction with vector embeddings and complete source traceability is fully operational and ready for advanced knowledge management features
+**Status**: Complete modular frontend architecture with LangGraph concept extraction fully operational
+- ✅ **Dashboard Architecture**: Professional single-page application with modular design
+- ✅ **Hook System**: Specialized hooks for state management, data operations, and handlers
+- ✅ **Page System**: Clean separation of Library, Reader, Chat, Knowledge, and Preferences
 - ✅ **Working AI System**: Real concept extraction from conversations using OpenAI
 - ✅ **Vector Database**: pgvector extension with semantic search capabilities
-- ✅ **Semantic Operations**: Find similar concepts and text-based search
-- ✅ **Knowledge Interface**: Functional concept browsing with search
-- ✅ **Source Traceability**: Complete concept-chat linking with navigation
-- ✅ **Progress Tracking**: Professional progress indicators throughout workflow
-- ✅ **Background Processing**: Complete async workflow with status tracking
-- ✅ **Database Integration**: Full concept persistence with relationships
-- ✅ **Frontend API**: Complete API layer for concept and vector operations
-- ✅ **User Workflow**: Seamless experience from chat analysis to concept discovery
-- ✅ **Development Environment**: Stable configuration with proper database setup
+- ✅ **Knowledge Interface**: Functional concept browsing with search and source navigation
+- ✅ **Professional UI**: Complete shadcn/ui integration with consistent design system
+- ✅ **Development Ready**: Scalable architecture ready for team development
 
 ## Context for Next Session
 
 **Extraordinary Achievement**: 
-- **Task 6.9 Complete**: Concept-chat linking system with enhanced traceability operational
-- **Database Configuration**: Resolved SQLx compile-time issues with proper .env setup
-- **Foundation Check**: All systems validated and operational
-- **Development Stability**: Smooth development workflow restored
-- **Enhanced Traceability**: Users can now navigate from concepts back to source conversations
+- **Frontend Refactoring Complete**: Transformed from single-file to professional modular architecture
+- **Dashboard-Centric Design**: Central orchestration of all application functionality
+- **Modular Hook System**: Specialized hooks for all major functionality areas
+- **Page-Based Architecture**: Clean separation of all major application views
+- **Professional Organization**: TypeScript types, clean interfaces, and consistent patterns
+- **Scalable Foundation**: Ready for team development and feature expansion
 
-**Current Chat Workflow (Accurate Implementation)**:
-- **Auto-Save**: Conversations automatically persist as they happen
-- **End Button**: Makes chat read-only, preserves in history
-- **Analyze Button**: Ends chat + extracts concepts + navigates to Knowledge tab
-- **Analysis Status**: Tracks 'processing' → 'complete'/'failed' with progress UI
-- **Knowledge Discovery**: Automatic navigation to Knowledge tab after successful analysis
+**Current Application Architecture (Post-Refactoring)**:
+- **Dashboard Controller**: Central component orchestrating all views and state
+- **Modular State Management**: `useDashboardState` for centralized state coordination
+- **Specialized Handlers**: Dedicated hooks for documents, chat, concepts, and shortcuts
+- **Page-Based Views**: Clean separation of Library, Reader, Chat, Knowledge, and Preferences
+- **Professional Patterns**: Consistent TypeScript interfaces and error handling throughout
 
 **Technical Excellence**:
-- **Source Navigation**: "View Source" functionality with detailed relationship information
-- **Enhanced Database Functions**: Complete concept-chat relationship management
-- **API Integration**: Full frontend API for traceability operations
-- **Vector Embeddings**: 384-dimensional embeddings with HNSW optimization
-- **Semantic Search**: Natural language queries and concept similarity operations
-- **Knowledge Interface**: Beautiful concept cards with search functionality
-- **Progress Tracking**: Multi-stage progress with real-time feedback
-- **Background Processing**: Async concept extraction without blocking UI
-- **Database Integration**: Complete concept storage with vector operations
-- **Error Handling**: Robust error recovery throughout the pipeline
-- **User Experience**: Professional workflow with automatic navigation
-- **Development Environment**: Stable configuration with proper database setup
+- **Modular Architecture**: Clean separation of concerns with focused responsibilities
+- **Professional Organization**: TypeScript types, clean interfaces, and consistent patterns
+- **Scalable Design**: Easy to add new features and pages without architectural changes
+- **Team Ready**: Clear structure allows multiple developers to work simultaneously
+- **Maintainable Code**: Professional patterns and consistent organization throughout
+- **Enhanced User Experience**: Seamless navigation and professional UI components
+- **Complete AI Integration**: Working concept extraction with vector embeddings
+- **Source Traceability**: Complete concept-chat linking with navigation
 
-**Current Status**: **TASKS 6.7, 6.8, 6.9, 7.1 COMPLETE** - Concept extraction system with enhanced traceability operational
+**Current Status**: **FRONTEND REFACTORING COMPLETE** - Professional modular architecture operational with complete concept extraction system
 
-**Next Focus**: Test complete concept extraction pipeline (Task 6.10) to validate end-to-end functionality and identify any remaining issues or optimizations.
+**Next Focus**: Test complete concept extraction pipeline (Task 6.10) with the new modular architecture to validate end-to-end functionality and ensure all components work seamlessly together.
 
 **Key Success Factors**:
-1. **Enhanced Traceability**: Complete concept-chat linking with source navigation
-2. **Vector Embeddings**: Complete semantic search and similarity operations
-3. **Knowledge Interface**: Functional concept browsing with professional UI
-4. **Progress Tracking**: Enhanced user feedback throughout analysis workflow
-5. **Working AI Integration**: Real OpenAI concept extraction from chat conversations
-6. **Background Processing**: Complete async workflow with database status tracking
-7. **User Experience**: Seamless workflow from "Analyze" button to concept discovery
-8. **Error Resilience**: Comprehensive error handling throughout the pipeline
-9. **Production Ready**: Full integration ready for advanced knowledge management features
-10. **Development Stability**: Proper environment configuration for smooth development
+1. **Modular Architecture**: Professional Dashboard-centric design with specialized hooks
+2. **Page-Based Views**: Clean separation of all major application functionality
+3. **Professional Organization**: TypeScript types, clean interfaces, and consistent patterns
+4. **Scalable Foundation**: Ready for team development and feature expansion
+5. **Complete AI Integration**: Working concept extraction with vector embeddings
+6. **Knowledge Interface**: Professional concept browsing with source traceability
+7. **Enhanced Navigation**: Seamless view transitions with keyboard shortcuts
+8. **User Experience**: Professional UI with consistent design system
+9. **Maintainable Code**: Clear structure and professional patterns throughout
+10. **Development Ready**: Scalable architecture for continued development
 
-Today's session successfully completed the concept-chat linking system, providing users with complete traceability from extracted concepts back to their source conversations. Combined with the vector embedding system and knowledge interface, GeniusReads now offers a comprehensive knowledge management experience that rivals commercial applications. The resolution of the database configuration issue ensures a stable development environment for future enhancements. 
+Today's session successfully completed the major frontend refactoring, transforming GeniusReads from a single-file approach to a professional modular architecture with Dashboard at the center. The new structure provides clean separation of concerns, specialized hooks for different functionality areas, and page-based views that make the codebase maintainable and scalable. Combined with the existing concept extraction system and vector embeddings, GeniusReads now has a professional architecture that rivals commercial applications and is ready for team development. 

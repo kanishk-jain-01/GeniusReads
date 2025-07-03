@@ -14,42 +14,60 @@
 - `src-tauri/tauri.conf.json` - Tauri configuration for macOS app settings and file system permissions (✅ Configured)
 - `src-tauri/rustfmt.toml` - Rust code formatting configuration (✅ Created)
 
-### Frontend Core Files (✅ Three-Tab Architecture Ready)
-- `src/App.tsx` - Main React application with three-tab navigation (Library, Chat, Knowledge) (✅ Created, needs chat tab)
+### Frontend Core Files (✅ Modular Dashboard Architecture Complete)
+- `src/App.tsx` - Minimal app wrapper with providers (✅ Refactored to minimal wrapper)
 - `src/main.tsx` - React application entry point (✅ Created)
 - `src/index.css` - Global styles with TailwindCSS directives (✅ Updated)
 - `src/App.css` - Additional component styles (✅ Updated)
 - `src/vite-env.d.ts` - Vite TypeScript environment definitions (✅ Created)
 
-### Pages (✅ Four-View Structure)
-- `src/pages/Dashboard.tsx` - Main application with Library tab (PDF reading) and Chat tab (chat list) (✅ Created, ✅ Updated with ChatList component, ✅ Updated with Preferences navigation, ✅ Updated with Knowledge tab concept display)
-- `src/pages/ChatInterface.tsx` - Individual chat conversation interface (separate from chat list) (✅ Created, ✅ Updated with ActiveChat, ✅ Updated with analysis progress tracking)
-- `src/pages/KnowledgeBase.tsx` - Knowledge tab with concept cards and detailed concept pages (✅ Created, needs updates)
-- `src/pages/Preferences.tsx` - User preferences page with OpenAI API key management and theme selection (✅ Created)
+### Dashboard Architecture (✅ Professional Modular Structure Complete)
+- `src/Dashboard/index.tsx` - Central Dashboard orchestrator component (✅ Created, ✅ Refactored to modular architecture)
+- `src/Dashboard/types.ts` - Dashboard-specific TypeScript type definitions (✅ Created)
+- `src/Dashboard/hooks/useDashboardState.ts` - Centralized state management hook (✅ Created)
+- `src/Dashboard/hooks/useDashboardData.ts` - Data fetching and statistics hook (✅ Created)
+- `src/Dashboard/hooks/useDocumentHandlers.ts` - PDF and document operations hook (✅ Created)
+- `src/Dashboard/hooks/useChatHandlers.ts` - Chat workflow management hook (✅ Created)
+- `src/Dashboard/hooks/useConceptHandlers.ts` - Knowledge base operations hook (✅ Created)
+- `src/Dashboard/hooks/useKeyboardShortcuts.ts` - Keyboard shortcut handling hook (✅ Created)
+
+### Pages (✅ Clean Page-Based Architecture Complete)
+- `src/Dashboard/pages/LibraryPage.tsx` - Document library with search and upload (✅ Created, ✅ Refactored to page component)
+- `src/Dashboard/pages/ReaderPage.tsx` - PDF reading with text selection (✅ Created, ✅ Refactored to page component)
+- `src/Dashboard/pages/ChatPage.tsx` - Chat history and session management (✅ Created, ✅ Refactored to page component)
+- `src/Dashboard/pages/ChatInterfacePage.tsx` - Active chat conversation interface (✅ Created, ✅ Refactored to page component)
+- `src/Dashboard/pages/KnowledgePage.tsx` - Knowledge base with concept browsing (✅ Created, ✅ Refactored to page component)
+- `src/Dashboard/pages/PreferencesPage.tsx` - User preferences and API key management (✅ Created, ✅ Refactored to page component)
 
 ### shadcn/ui Components (✅ Complete Library Integrated)
 - `src/components/ui/` - Complete shadcn/ui component library (40+ components)
 
-### Custom Hooks (✅ Partially Created, needs chat-specific hooks)
+### Custom Hooks (✅ Complete Modular Hook System)
 - `src/hooks/use-mobile.tsx` - Mobile device detection hook (✅ Created)
 - `src/hooks/use-toast.ts` - Toast notification management hook (✅ Created)
-- `src/hooks/use-chat-session.ts` - Active chat session management hook
-- `src/hooks/use-navigation-state.ts` - Tab navigation and reading position state management
-- `src/hooks/use-keyboard-shortcuts.ts` - CMD+K and CMD+L keyboard shortcut handling
+- `src/hooks/use-keyboard-shortcuts.ts` - Base keyboard shortcut handling (✅ Created)
+- `src/Dashboard/hooks/useDashboardState.ts` - Centralized state management (✅ Created)
+- `src/Dashboard/hooks/useDashboardData.ts` - Data fetching and statistics (✅ Created)
+- `src/Dashboard/hooks/useDocumentHandlers.ts` - PDF and document operations (✅ Created)
+- `src/Dashboard/hooks/useChatHandlers.ts` - Chat workflow management (✅ Created)
+- `src/Dashboard/hooks/useConceptHandlers.ts` - Knowledge base operations (✅ Created)
+- `src/Dashboard/hooks/useKeyboardShortcuts.ts` - Dashboard keyboard shortcuts (✅ Created)
 
 ### Utilities and Libraries (✅ Complete with Vector Search)
 - `src/lib/utils.ts` - Utility functions for className merging and common operations (✅ Created)
 - `src/lib/api.ts` - Tauri command invocations with chat session and user preferences commands (✅ Created, ✅ Updated with preferences API, ✅ Updated with concept extraction API, ✅ Enhanced with vector similarity search)
 - `src/lib/types.ts` - TypeScript type definitions for chat sessions, concepts, and navigation state (✅ Created, ✅ Updated with Concept interface)
 
-### Feature Components (✅ PDF Ready, needs chat components)
-- `src/components/PDFViewer.tsx` - PDF display component with text selection and CMD+K integration (✅ Created, needs CMD+K)
-- `src/components/ChatList.tsx` - Paginated list of chat sessions with preview cards (✅ Created, ✅ Updated with processing indicators)
-- `src/components/ActiveChat.tsx` - ChatGPT-style conversation interface with streaming responses (✅ Created)
-- `src/components/HighlightedContext.tsx` - Display component for highlighted text contexts in chat (✅ Integrated into ActiveChat)
-- `src/components/ConceptCard.tsx` - Concept display cards for Knowledge tab
-- `src/components/ConceptDetail.tsx` - Detailed concept page showing source chats and book sections
+### Feature Components (✅ Complete Component System)
+- `src/components/PDFViewer.tsx` - PDF display component with text selection and navigation (✅ Created, ✅ CMD+K integration)
+- `src/components/chat/ChatList.tsx` - Paginated list of chat sessions with preview cards (✅ Created, ✅ Updated with processing indicators)
+- `src/components/chat/ActiveChat.tsx` - ChatGPT-style conversation interface with streaming responses (✅ Created)
+- `src/components/chat/ChatHeader.tsx` - Chat interface header component (✅ Created)
 - `src/components/ProcessingIndicator.tsx` - LangGraph processing status and progress display (✅ Created)
+- `src/components/Sidebar.tsx` - Navigation sidebar component (✅ Created)
+- `src/components/TextSelectionOverlay.tsx` - Text selection overlay system (✅ Created)
+- `src/components/theme-provider.tsx` - Theme management provider (✅ Created)
+- `src/components/theme-toggle.tsx` - Theme toggle component (✅ Created)
 
 ### Python/AI Files (To Be Created)
 - `src-tauri/python/concept_extractor.py` - LangGraph workflow for concept extraction (✅ Created)
@@ -74,15 +92,19 @@
 
 ### Notes
 
-- **Four-View Architecture**: Library (PDF reading) → Chat List (chat history) → Individual Chat (active conversation) → Knowledge (concept browsing)
-- **Database-First**: All application state stored in PostgreSQL, no caching layer for simplicity
-- **CMD+K Integration**: Text selection in Library tab triggers navigation DIRECTLY to active chat interface (not chat list)
-- **CMD+L Toggle**: Switch between active chat interface and current reading position while preserving state
+- **Dashboard-Centric Architecture**: Central Dashboard orchestrator with modular hook system and page-based views
+- **Modular Hook System**: Specialized hooks for state management, data operations, document handling, chat workflow, concept management, and keyboard shortcuts
+- **Page-Based Views**: Clean separation of Library, Reader, Chat, Chat Interface, Knowledge, and Preferences as dedicated page components
+- **Professional Organization**: TypeScript types, clean interfaces, and consistent patterns throughout
+- **Database-First**: All application state stored in PostgreSQL with modular frontend integration
+- **CMD+K Integration**: Text selection triggers navigation to active chat interface through specialized keyboard shortcut hook
+- **CMD+L Toggle**: Switch between views while preserving state through centralized state management
 - **Single Active Chat**: One active chat accumulates highlighted contexts from multiple documents
 - **Auto-Save**: All conversations automatically saved as messages are sent, no manual save required
 - **Chat Management**: "End" (read-only) and "Analyze" (end + extract concepts + navigate to Knowledge) buttons
 - **LangGraph Processing**: Background concept extraction triggered by "Analyze" button
 - **Vector Search**: pgvector extension for semantic concept similarity and search
+- **Scalable Foundation**: Ready for team development and feature expansion
 
 ## Tasks
 

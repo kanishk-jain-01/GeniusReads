@@ -63,10 +63,31 @@ GeniusReads is a macOS-native desktop application that revolutionizes technical 
 ```
 genius-reads/
 ├── src/                          # React frontend source
-│   ├── components/              # React components
-│   ├── hooks/                   # Custom React hooks
+│   ├── Dashboard/               # Main application architecture
+│   │   ├── index.tsx           # Central Dashboard orchestrator
+│   │   ├── types.ts            # Dashboard-specific types
+│   │   ├── hooks/              # Specialized modular hooks
+│   │   │   ├── useDashboardState.ts     # State management
+│   │   │   ├── useDashboardData.ts      # Data operations
+│   │   │   ├── useDocumentHandlers.ts   # Document workflow
+│   │   │   ├── useChatHandlers.ts       # Chat workflow
+│   │   │   ├── useConceptHandlers.ts    # Knowledge workflow
+│   │   │   └── useKeyboardShortcuts.ts  # Keyboard shortcuts
+│   │   └── pages/              # Page components
+│   │       ├── LibraryPage.tsx         # Document library
+│   │       ├── ReaderPage.tsx          # PDF reading
+│   │       ├── ChatPage.tsx            # Chat history
+│   │       ├── ChatInterfacePage.tsx   # Active chat
+│   │       ├── KnowledgePage.tsx       # Knowledge base
+│   │       └── PreferencesPage.tsx     # User settings
+│   ├── components/              # Reusable React components
+│   │   ├── ui/                 # shadcn/ui component library
+│   │   ├── chat/               # Chat-specific components
+│   │   ├── PDFViewer.tsx       # PDF viewing component
+│   │   └── Sidebar.tsx         # Navigation sidebar
+│   ├── hooks/                   # Global custom React hooks
 │   ├── lib/                     # Utilities and API clients
-│   └── assets/                  # Static assets
+│   └── App.tsx                  # Minimal app wrapper with providers
 ├── src-tauri/                   # Rust backend
 │   ├── src/                     # Rust source code
 │   ├── icons/                   # Application icons
