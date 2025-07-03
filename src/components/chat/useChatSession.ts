@@ -5,9 +5,7 @@ import {
   createChatSession, 
   addHighlightedContext, 
   getActiveChatSession,
-  getChatSessionById,
-  setActiveChatSession,
-  updateUserSessionState
+  getChatSessionById
 } from "@/lib/api";
 
 interface UseChatSessionProps {
@@ -183,14 +181,8 @@ export const useChatSession = ({
         
         setHighlightedContexts([initialHighlightedContext]);
         
-        // Set as active session
-        await setActiveChatSession(sessionId);
-        
-        // Update user session state
-        await updateUserSessionState({
-          activeTab: 'chat',
-          activeChatId: sessionId
-        });
+        // The backend now handles setting the active session and updating user state
+        // atomically within the `createChatSession` call.
         
         // Set initial message for input field
         setInitialMessage(`I'd also like to understand this text: "${textSelection.selectedText}"`);

@@ -5,23 +5,58 @@ use uuid::Uuid;
 use crate::database::{Database, ChatSession, ChatSessionForAnalysis, ChatMessage, HighlightedContext};
 
 impl Database {
-    /// Create a new chat session
-    pub async fn create_chat_session(&self, title: &str) -> Result<Uuid> {
+    /// Create a new chat session within a transaction
+    async fn create_chat_session_with_transaction(
+        tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        title: &str,
+    ) -> Result<Uuid> {
         let id = Uuid::new_v4();
 
         sqlx::query!(
             r#"
-            INSERT INTO chat_sessions (id, title)
-            VALUES ($1, $2)
+            INSERT INTO chat_sessions (id, title, is_active)
+            VALUES ($1, $2, true)
             "#,
             id,
             title
         )
-        .execute(&self.pool)
+        .execute(&mut **tx)
         .await
         .context("Failed to create chat session")?;
 
         Ok(id)
+    }
+
+    /// Create a new chat session and set it as active
+    pub async fn create_chat_session(&self, title: &str) -> Result<Uuid> {
+        let mut tx = self.pool.begin().await.context("Failed to begin transaction")?;
+
+        // Deactivate all other chat sessions
+        sqlx::query!("UPDATE chat_sessions SET is_active = false")
+            .execute(&mut *tx)
+            .await
+            .context("Failed to deactivate other chat sessions")?;
+        
+        // Create the new session as active
+        let new_session_id = Self::create_chat_session_with_transaction(&mut tx, title).await?;
+
+        // Update user session state to point to the new active chat
+        Self::update_user_session_state_with_transaction(
+            &mut tx,
+            None,
+            None,
+            None,
+            None,
+            Some("chat"),
+            Some(new_session_id),
+            None,
+        )
+        .await
+        .context("Failed to update user session state for new chat")?;
+        
+        tx.commit().await.context("Failed to commit transaction")?;
+
+        Ok(new_session_id)
     }
 
     /// Get all chat sessions
@@ -135,9 +170,11 @@ impl Database {
 
     /// Set active chat session
     pub async fn set_active_chat_session(&self, chat_session_id: Uuid) -> Result<()> {
+        let mut tx = self.pool.begin().await.context("Failed to begin transaction")?;
+
         // First, deactivate all chat sessions
         sqlx::query!("UPDATE chat_sessions SET is_active = false")
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await
             .context("Failed to deactivate chat sessions")?;
 
@@ -146,9 +183,23 @@ impl Database {
             "UPDATE chat_sessions SET is_active = true WHERE id = $1",
             chat_session_id
         )
-        .execute(&self.pool)
+        .execute(&mut *tx)
         .await
         .context("Failed to set active chat session")?;
+        
+        // Update user session state to point to the new active chat
+        Self::update_user_session_state_with_transaction(
+            &mut tx,
+            None,
+            None,
+            None,
+            None,
+            Some("chat"),
+            Some(chat_session_id),
+            None,
+        ).await.context("Failed to update user session state for active chat")?;
+        
+        tx.commit().await.context("Failed to commit transaction")?;
 
         Ok(())
     }
