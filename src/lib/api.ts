@@ -365,6 +365,7 @@ export const getActiveChatSession = async (): Promise<any | null> => {
       })),
       createdAt: new Date(result.created_at),
       updatedAt: new Date(result.updated_at),
+      analysisStatus: result.analysis_status,
       isActive: true
     };
   } catch (error) {
@@ -391,6 +392,7 @@ export const getChatSessionById = async (chatSessionId: string): Promise<any | n
       })),
       createdAt: new Date(result.created_at),
       updatedAt: new Date(result.updated_at),
+      analysisStatus: result.analysis_status,
       isActive: result.is_active || false
     };
   } catch (error) {

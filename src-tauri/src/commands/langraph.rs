@@ -114,9 +114,13 @@ pub async fn analyze_chat_session(
                 }
             }
             
-            // Update analysis status to 'completed'
-            database.update_chat_analysis_status(session_id, "completed").await
+            // Update analysis status to 'complete'
+            database.update_chat_analysis_status(session_id, "complete").await
                 .map_err(|e| format!("Failed to update analysis status: {}", e))?;
+            
+            // End the chat session (mark as inactive)
+            database.end_chat_session(session_id).await
+                .map_err(|e| format!("Failed to end chat session: {}", e))?;
             
             Ok(serde_json::json!({
                 "success": true,

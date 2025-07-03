@@ -115,6 +115,13 @@ const ChatList = ({
           color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
           showLoader: false
         };
+      case 'none':
+        return {
+          variant: 'outline' as const,
+          text: 'Unanalyzed',
+          color: 'border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400',
+          showLoader: false
+        };
       default:
         return { 
           variant: 'secondary' as const, 

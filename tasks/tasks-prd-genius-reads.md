@@ -56,7 +56,7 @@
   - [x] 5.7 Create chat session completion and action handling
   - [x] 5.8 Test complete chat workflow from text selection to conversation
 
-- [ ] 6.0 Implement LangGraph-based Concept Extraction
+- [x] 6.0 Implement LangGraph-based Concept Extraction
   - [x] 6.1 Set up Python environment with LangGraph dependencies
   - [x] 6.2 Create concept_extractor.py with LangGraph workflow  
   - [x] 6.3 Design concept storage schema with vector embeddings
@@ -66,7 +66,7 @@
   - [x] 6.7 Add processing status tracking and progress indicators
   - [x] 6.8 Implement concept storage with vector embeddings
   - [x] 6.9 Create concept-chat linking system with relevance scores
-  - [ ] 6.10 Test complete concept extraction pipeline
+  - [x] 6.10 Test complete concept extraction pipeline
 
 - [ ] 7.0 Build Knowledge Base Interface and Concept Management
   - [x] 7.1 Update KnowledgeBase page with concept card display

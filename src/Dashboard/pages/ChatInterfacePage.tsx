@@ -30,7 +30,8 @@ export const ChatInterfacePage = ({
     chatTitle,
     currentChatSessionId,
     initialMessage,
-    setInitialMessage
+    setInitialMessage,
+    analysisStatus
   } = useChatSession({
     textSelection,
     document,
@@ -80,6 +81,7 @@ export const ChatInterfacePage = ({
         analysisProgress={analysisProgress}
         analysisStage={analysisStage}
         analysisStartTime={analysisStartTime}
+        analysisStatus={analysisStatus}
         onBack={onBack}
         onEndChat={handleEndChat}
         onAnalyze={handleAnalyze}

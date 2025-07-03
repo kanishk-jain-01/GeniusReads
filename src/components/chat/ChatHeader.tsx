@@ -17,6 +17,7 @@ interface ChatHeaderProps {
   analysisProgress: number;
   analysisStage: string;
   analysisStartTime: number | null;
+  analysisStatus?: 'none' | 'pending' | 'processing' | 'complete' | 'failed';
   onBack: () => void;
   onEndChat: () => void;
   onAnalyze: () => void;
@@ -31,10 +32,13 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
   analysisProgress,
   analysisStage,
   analysisStartTime,
+  analysisStatus,
   onBack,
   onEndChat,
   onAnalyze
 }) => {
+  const isAnalyzed = analysisStatus === 'complete';
+
   return (
     <div className="p-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm">
       <div className="flex items-center justify-between">
@@ -61,32 +65,24 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         
         {/* Action Buttons */}
         <div className="flex items-center space-x-2">
-          {!readOnly ? (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onEndChat}
-                className="text-red-600 hover:text-red-700"
-                disabled={isAnalyzing}
-              >
-                <Square className="h-4 w-4 mr-2" />
-                End
-              </Button>
-              <Button
-                size="sm"
-                onClick={onAnalyze}
-                disabled={isAnalyzing}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:opacity-50"
-              >
-                {isAnalyzing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Brain className="h-4 w-4 mr-2" />
-                )}
-                {isAnalyzing ? "Analyzing..." : "Analyze"}
-              </Button>
-            </>
+          {!readOnly && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEndChat}
+              className="text-red-600 hover:text-red-700"
+              disabled={isAnalyzing || isAnalyzed}
+            >
+              <Square className="h-4 w-4 mr-2" />
+              End
+            </Button>
+          )}
+          
+          {isAnalyzed ? (
+            <Button size="sm" disabled className="bg-green-600">
+              <Brain className="h-4 w-4 mr-2" />
+              Analyzed
+            </Button>
           ) : (
             <Button
               size="sm"

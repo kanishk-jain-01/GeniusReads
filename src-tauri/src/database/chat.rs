@@ -88,7 +88,8 @@ impl Database {
                 "highlighted_contexts": row.highlighted_contexts,
                 "messages": row.messages,
                 "created_at": row.created_at,
-                "updated_at": row.updated_at
+                "updated_at": row.updated_at,
+                "analysis_status": row.analysis_status
             })))
         } else {
             Ok(None)
@@ -161,7 +162,8 @@ impl Database {
                 "messages": row.messages,
                 "is_active": row.is_active,
                 "created_at": row.created_at,
-                "updated_at": row.updated_at
+                "updated_at": row.updated_at,
+                "analysis_status": row.analysis_status
             })))
         } else {
             Ok(None)

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { TextSelection, Document, ChatMessage, HighlightedContext } from "@/lib/types";
+import type { TextSelection, Document, ChatMessage, HighlightedContext, ChatSession } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { 
   createChatSession, 
@@ -28,6 +28,7 @@ export const useChatSession = ({
   const [chatTitle, setChatTitle] = useState("");
   const [currentChatSessionId, setCurrentChatSessionId] = useState<string | null>(null);
   const [initialMessage, setInitialMessage] = useState<string>("");
+  const [analysisStatus, setAnalysisStatus] = useState<ChatSession['analysisStatus']>('none');
   const { toast } = useToast();
 
   // Initialize chat session
@@ -55,6 +56,7 @@ export const useChatSession = ({
       setChatTitle(chatSession.title);
       setMessages(chatSession.messages || []);
       setHighlightedContexts(chatSession.highlightedContexts || []);
+      setAnalysisStatus(chatSession.analysisStatus || 'none');
       
       toast({
         title: "Chat Loaded",
@@ -80,6 +82,7 @@ export const useChatSession = ({
         setCurrentChatSessionId(activeSession.id);
         setChatTitle(activeSession.title);
         setMessages(activeSession.messages || []);
+        setAnalysisStatus(activeSession.analysisStatus || 'none');
         
         // Ensure highlighted contexts have unique IDs for React rendering
         const existingContexts = (activeSession.highlightedContexts || []).map((context: HighlightedContext) => ({
@@ -210,6 +213,7 @@ export const useChatSession = ({
     currentChatSessionId,
     setCurrentChatSessionId,
     initialMessage,
-    setInitialMessage
+    setInitialMessage,
+    analysisStatus
   };
 }; 
