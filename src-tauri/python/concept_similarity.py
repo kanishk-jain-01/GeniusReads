@@ -40,7 +40,7 @@ class SimilarityConfig:
     
     # When a new concept is considered a "strong" match to an existing one,
     # meaning it should be linked rather than created anew.
-    STRONG_MATCH_THRESHOLD = 0.85
+    STRONG_MATCH_THRESHOLD = 0.70
     
     # The minimum similarity for a concept to even be considered related.
     # This can be used to find related concepts without creating a link.
