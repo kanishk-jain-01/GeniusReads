@@ -93,13 +93,13 @@ Database Storage → UI Updates → Knowledge Base Display
 - ✅ Active chat session management with automatic restoration
 
 ### 4. ChatGPT-Style Conversation Interface ✅ Complete Implementation
-**Pattern**: Message-based conversation with streaming support
+**Pattern**: Message-based conversation with streaming support and auto-save
 **Structure**:
 - ✅ ActiveChat component with message bubbles and avatars
-- ✅ Real-time message persistence to database
-- ✅ Streaming response infrastructure ready for AI integration
+- ✅ Real-time message persistence to database (auto-save)
+- ✅ Streaming response infrastructure with OpenAI integration
 - ✅ Context display for highlighted text selections
-- ✅ Action buttons for Save/Save+Analyze/Delete workflows
+- ✅ Action buttons for End (read-only) and Analyze (extract + navigate) workflows
 
 ### 5. Text Selection to Chat Workflow ✅ Complete Implementation
 **Pattern**: Seamless transition from reading to conversation

@@ -79,8 +79,9 @@
 - **CMD+K Integration**: Text selection in Library tab triggers navigation DIRECTLY to active chat interface (not chat list)
 - **CMD+L Toggle**: Switch between active chat interface and current reading position while preserving state
 - **Single Active Chat**: One active chat accumulates highlighted contexts from multiple documents
-- **Chat Management**: Save/Save+Analyze/Delete buttons make chat inactive and return to appropriate view
-- **LangGraph Processing**: Background concept extraction triggered by "Save + Analyze" choice
+- **Auto-Save**: All conversations automatically saved as messages are sent, no manual save required
+- **Chat Management**: "End" (read-only) and "Analyze" (end + extract concepts + navigate to Knowledge) buttons
+- **LangGraph Processing**: Background concept extraction triggered by "Analyze" button
 - **Vector Search**: pgvector extension for semantic concept similarity and search
 
 ## Tasks
@@ -126,10 +127,10 @@
   - [x] 4.6 Create HighlightedContext component for displaying selected text
   - [x] 4.7 Implement active chat session management (single active chat)
   - [x] 4.8 Add chat session storage and retrieval from database
-  - [x] 4.9 Create chat action buttons (Save/Save+Analyze/Delete)
-  - [x] 4.10 Update CMD+K to navigate directly to active chat interface
-  - [x] 4.11 Update CMD+L to toggle between active chat and reading position
-  - [x] 4.12 Implement database tracking for active chat and navigation state
+  - [x] 4.9 Create chat action buttons (End/Analyze with auto-save)
+- [x] 4.10 Update CMD+K to navigate directly to active chat interface
+- [x] 4.11 Update CMD+L to toggle between active chat and reading position
+- [x] 4.12 Implement database tracking for active chat and navigation state
 
 - [x] 5.0 Integrate AI Processing and OpenAI Chat ✅ **COMPLETE**
   - [x] 5.1 Set up OpenAI API integration for chat conversations

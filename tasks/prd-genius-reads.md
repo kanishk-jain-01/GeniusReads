@@ -20,7 +20,8 @@ GeniusReads is a MacOS-native desktop application that helps curious learners de
 - Highlight confusing text passages and press CMD+K to start an AI conversation about that content
 - Have natural conversations with AI about highlighted text, with the ability to add more highlighted contexts from any document
 - Use CMD+L to toggle between my current reading position and active chat without losing either context
-- Choose whether to save my conversations and optionally have them analyzed for concept extraction
+- Have my conversations automatically saved as I chat without needing to manually save
+- Choose to "End" my conversation (making it read-only) or "Analyze" it (ending + extracting concepts + navigating to Knowledge tab)
 - Browse my accumulated knowledge in the Knowledge tab to see concepts learned across all documents
 - Click on concepts to see the source conversations and book sections where I learned them
 - See real-time progress when my chats are being analyzed for concept extraction
@@ -61,23 +62,23 @@ GeniusReads is a MacOS-native desktop application that helps curious learners de
 20. CMD+K with selected text must navigate DIRECTLY to the active chat interface (bypassing chat list)
 21. CMD+L must toggle between the active chat interface and current reading position
 
-### Chat Management and Storage
-22. The system must provide three options when ending a chat: Save, Save + Analyze, or Delete
-23. The system must store chat conversations in local PostgreSQL database
-24. Save/Save+Analyze must make the chat inactive and return users to their exact reading position if accessed via CMD+K
-25. Save+Analyze must additionally navigate to Knowledge tab and trigger LangGraph concept extraction
-26. The system must return users to chat list page if chat was accessed directly from Chat tab
-27. Delete must remove the chat entirely and return to appropriate previous location
-28. The system must auto-save active chat drafts to prevent data loss
-29. The system must track active chat state and navigation history in the database
+### Chat Management and Auto-Save
+22. The system must automatically save all chat messages as they are sent (no manual save required)
+23. The system must provide two actions when managing a chat: "End" or "Analyze"
+24. The system must store chat conversations in local PostgreSQL database with real-time persistence
+25. "End" must make the chat inactive and read-only, returning users to chat list or reading position
+26. "Analyze" must end the chat session, trigger LangGraph concept extraction, and navigate to Knowledge tab
+27. The system must track active chat state and navigation history in the database
+28. The system must preserve all conversation history with proper analysis status tracking
 
 ### Knowledge Extraction and Analysis (Knowledge Tab)
-30. The system must use LangGraph to extract concepts from chat conversations when user chooses "Save + Analyze"
-31. The system must show real-time progress indicators during concept extraction process
-32. The system must store extracted concepts with vector embeddings using pgvector extension
-33. The system must display concepts as categorized cards in the Knowledge tab
-34. The system must make concept cards clickable, leading to detailed pages showing source chats and book sections
-35. The system must link concepts back to their source conversations and document locations
+29. The system must use LangGraph to extract concepts from chat conversations when user chooses "Analyze"
+30. The system must show real-time progress indicators during concept extraction process
+31. The system must store extracted concepts with vector embeddings using pgvector extension
+32. The system must display concepts as categorized cards in the Knowledge tab
+33. The system must make concept cards clickable, leading to detailed pages showing source chats and book sections
+34. The system must link concepts back to their source conversations and document locations
+35. The system must automatically navigate to Knowledge tab after successful analysis completion
 
 ### Data Persistence and Performance
 36. The system must use PostgreSQL for all data storage (no caching layer)
@@ -98,6 +99,7 @@ GeniusReads is a MacOS-native desktop application that helps curious learners de
 - **Voice input** - Text-based interactions only
 - **PDF editing capabilities** - Read-only PDF interaction
 - **Web search integration** - Pure AI conversation initially (future enhancement)
+- **Manual save operations** - All saving happens automatically
 
 ## Design Considerations
 
@@ -110,13 +112,15 @@ GeniusReads is a MacOS-native desktop application that helps curious learners de
 ### Chat Interface Design
 - **ChatGPT-style**: Message bubbles with streaming response animation
 - **Context Display**: Highlighted text shown with visual distinction and source metadata
-- **Action Buttons**: Clear Save/Save+Analyze/Delete options at end of conversations
+- **Auto-Save**: All messages automatically persisted as they're sent
+- **Action Buttons**: Clear "End" (read-only) and "Analyze" (extract + navigate) options
 - **Progress Indicators**: Real-time feedback during LangGraph processing
 
 ### Knowledge Base Design
 - **Card Layout**: Concept cards showing name, description, and source count
 - **Detailed Views**: Concept pages with source conversations and document references
 - **Loading States**: Progress indicators for background concept extraction
+- **Automatic Navigation**: Seamless transition from analysis to knowledge viewing
 
 ## Technical Considerations
 
@@ -132,6 +136,7 @@ GeniusReads is a MacOS-native desktop application that helps curious learners de
 - **Session Persistence**: User navigation state and active chats survive app restarts
 - **Performance**: Rely on PostgreSQL performance with proper indexing
 - **Simplicity**: Single source of truth, no cache invalidation complexity
+- **Real-time Persistence**: Messages saved immediately as they're sent
 
 ### Key Dependencies
 - `pyo3` for Python-Rust interoperability
@@ -147,6 +152,8 @@ Success will be determined by personal satisfaction and usability during develop
 - Smooth navigation between reading, chatting, and knowledge review
 - Effective concept extraction and knowledge base building
 - Intuitive user experience with minimal learning curve
+- Seamless auto-save functionality without user intervention
+- Clear and predictable behavior of End and Analyze actions
 
 ## Open Questions
 
@@ -159,6 +166,6 @@ Success will be determined by personal satisfaction and usability during develop
 
 ---
 
-**Document Status**: Updated for three-tab chat-based interface  
+**Document Status**: Updated for current auto-save workflow with End/Analyze actions  
 **Target Audience**: Junior developers  
 **Implementation Priority**: MVP features with database-first architecture 

@@ -80,10 +80,17 @@
 
 ## Active Decisions
 
-### Complete LangGraph Concept Extraction System ✅ **FULLY OPERATIONAL WITH ENHANCED TRACEABILITY**
+### Complete Chat Workflow with Auto-Save and Analysis ✅ **FULLY OPERATIONAL**
+
+#### Current Chat Actions (Simplified from Documentation)
+- **Auto-Save**: All conversations automatically saved as messages are sent - no manual save required
+- **End Button**: Makes chat inactive and read-only, returns user to chat list or reading position
+- **Analyze Button**: Ends chat session + triggers LangGraph concept extraction + navigates to Knowledge tab
+- **Real-time Persistence**: Every message immediately stored in database
+- **Analysis Status Tracking**: 'none' → 'processing' → 'complete'/'failed' with progress indicators
 
 #### Production Ready Features
-- **Real Concept Extraction**: Working OpenAI GPT-4o-mini integration
+- **Real Concept Extraction**: Working OpenAI GPT-4o-mini integration triggered by Analyze button
 - **Vector Embeddings**: 384-dimensional embeddings with semantic search
 - **Semantic Operations**: Find similar concepts and text-based search
 - **Background Processing**: Async concept extraction with detailed progress tracking
@@ -92,7 +99,7 @@
 - **Concept-Chat Linking**: Enhanced traceability from concepts to source conversations
 - **Source Navigation**: "View Source" functionality with detailed relationship information
 - **Error Handling**: Robust error recovery throughout the pipeline
-- **User Experience**: Professional progress feedback and automatic navigation
+- **User Experience**: Professional progress feedback and automatic navigation to Knowledge tab
 
 #### Enhanced Traceability Capabilities
 - **Source Information**: Concepts include sample messages and highlighted contexts
@@ -106,6 +113,7 @@
 ### Current Priority: Task 6.10 - Complete Pipeline Testing **READY TO START**
 
 **CONCEPT EXTRACTION SYSTEM WITH ENHANCED TRACEABILITY COMPLETE**: Full end-to-end concept extraction with semantic search and source navigation capabilities
+- ✅ **Chat Workflow**: Simplified to End/Analyze with auto-save functionality
 - ✅ **Concept-Chat Linking**: Complete traceability system with source navigation
 - ✅ **Vector Embeddings**: Complete semantic search and similarity operations
 - ✅ **Knowledge Interface**: Functional concept browsing with search
@@ -113,7 +121,7 @@
 - ✅ **Background Processing**: Complete async workflow with database status tracking
 - ✅ **LangGraph Integration**: Real OpenAI concept extraction from chat conversations
 - ✅ **Database Storage**: Full concept persistence with vector embeddings
-- ✅ **Frontend Integration**: "Analyze" button triggers complete workflow
+- ✅ **Frontend Integration**: "Analyze" button triggers complete workflow ending chat and navigating to Knowledge
 - ✅ **Development Environment**: Stable configuration with proper database setup
 
 **Next Implementation Steps**:
@@ -145,6 +153,13 @@
 - **Foundation Check**: All systems validated and operational
 - **Development Stability**: Smooth development workflow restored
 - **Enhanced Traceability**: Users can now navigate from concepts back to source conversations
+
+**Current Chat Workflow (Accurate Implementation)**:
+- **Auto-Save**: Conversations automatically persist as they happen
+- **End Button**: Makes chat read-only, preserves in history
+- **Analyze Button**: Ends chat + extracts concepts + navigates to Knowledge tab
+- **Analysis Status**: Tracks 'processing' → 'complete'/'failed' with progress UI
+- **Knowledge Discovery**: Automatic navigation to Knowledge tab after successful analysis
 
 **Technical Excellence**:
 - **Source Navigation**: "View Source" functionality with detailed relationship information
