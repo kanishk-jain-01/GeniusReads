@@ -20,7 +20,7 @@ pub struct ExtractedConcept {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConceptExtractionInput {
-    pub chat_session_id: Uuid,
+    pub chat_session_id: String,
     pub messages: Vec<ChatMessageForExtraction>,
     pub highlighted_contexts: Vec<HighlightedContextForExtraction>,
 }
@@ -60,25 +60,66 @@ pub struct LangGraphBridge {
 impl LangGraphBridge {
     /// Create a new LangGraph bridge instance
     pub fn new() -> Self {
+        println!("🔨 Creating new LangGraph bridge...");
+        
+        // Use absolute path to ensure Python module can be found
+        // Handle the case where cwd might already be in src-tauri
+        let current_dir = std::env::current_dir()
+            .unwrap_or_else(|_| std::path::PathBuf::from("."));
+        
+        let python_path = if current_dir.ends_with("src-tauri") {
+            // Already in src-tauri directory
+            current_dir.join("python")
+        } else {
+            // In project root, need to go into src-tauri
+            current_dir.join("src-tauri").join("python")
+        };
+        
+        let python_path_str = python_path.to_string_lossy().to_string();
+        
+        println!("📁 Python module path: {}", python_path_str);
+        
+        // Log the path for debugging
+        tracing::info!("LangGraph bridge using Python path: {}", python_path_str);
+        
         Self {
-            python_module_path: "src-tauri/python".to_string(),
+            python_module_path: python_path_str,
         }
     }
 
     /// Initialize the Python environment and load required modules
     pub fn initialize(&self) -> Result<()> {
         info!("Initializing Python environment for LangGraph");
+        info!("Python module path: {}", self.python_module_path);
         
         Python::with_gil(|py| -> Result<()> {
-            // Add the Python module path to sys.path
+            // Check if the path exists
+            let path_exists = std::path::Path::new(&self.python_module_path).exists();
+            info!("Python module path exists: {}", path_exists);
+            
+            // Get current Python executable and version
             let sys = py.import_bound("sys").map_err(|e| anyhow!("Failed to import sys: {}", e))?;
+            let executable: String = sys.getattr("executable")
+                .map_err(|e| anyhow!("Failed to get sys.executable: {}", e))?
+                .extract()
+                .map_err(|e| anyhow!("Failed to extract executable: {}", e))?;
+            info!("Python executable: {}", executable);
+            
+            // Add the Python module path to sys.path
             let path: Bound<PyList> = sys.getattr("path")
                 .map_err(|e| anyhow!("Failed to get sys.path: {}", e))?
                 .downcast_into()
                 .map_err(|e| anyhow!("sys.path is not a list: {}", e))?;
             
+            // Log current sys.path for debugging
+            let current_path: Vec<String> = path.extract()
+                .map_err(|e| anyhow!("Failed to extract sys.path: {}", e))?;
+            info!("Current sys.path (first 3): {:?}", &current_path[..std::cmp::min(3, current_path.len())]);
+            
             path.insert(0, &self.python_module_path)
                 .map_err(|e| anyhow!("Failed to add path to sys.path: {}", e))?;
+            
+            info!("Added {} to sys.path", self.python_module_path);
             
             // Test import of our concept extractor module
             match py.import_bound("concept_extractor") {
@@ -88,59 +129,91 @@ impl LangGraphBridge {
                 }
                 Err(e) => {
                     error!("Failed to load concept_extractor module: {}", e);
+                    error!("Python module path: {}", self.python_module_path);
+                    error!("Path exists: {}", path_exists);
+                    
+                    // Try to list files in the directory for debugging
+                    if let Ok(entries) = std::fs::read_dir(&self.python_module_path) {
+                        let files: Vec<String> = entries
+                            .filter_map(|entry| entry.ok())
+                            .map(|entry| entry.file_name().to_string_lossy().to_string())
+                            .collect();
+                        error!("Files in Python directory: {:?}", files);
+                    }
+                    
                     Err(anyhow!("Failed to load Python concept extractor: {}", e))
                 }
             }
         })
     }
 
-    /// Extract concepts from chat session data using LangGraph
-    pub fn extract_concepts(&self, input: ConceptExtractionInput) -> Result<ConceptExtractionResult> {
-        info!("Starting concept extraction for chat session: {}", input.chat_session_id);
+    /// Extract concepts from chat session using LangGraph workflow
+    pub fn extract_concepts(&self, input: &ConceptExtractionInput, openai_api_key: &str) -> Result<serde_json::Value> {
+        println!("🧠 Starting concept extraction for session: {}", input.chat_session_id);
         
-        let start_time = std::time::Instant::now();
-        
-        let result = Python::with_gil(|py| -> Result<ConceptExtractionResult> {
-            // Import the concept extractor module
+        Python::with_gil(|py| -> Result<serde_json::Value> {
+            // Set the OpenAI API key as an environment variable for the Python process
+            std::env::set_var("OPENAI_API_KEY", openai_api_key);
+            
+            // Also set it directly in Python's os.environ to ensure it's available
+            let os = py.import_bound("os").map_err(|e| anyhow!("Failed to import os: {}", e))?;
+            let environ = os.getattr("environ").map_err(|e| anyhow!("Failed to get os.environ: {}", e))?;
+            environ.set_item("OPENAI_API_KEY", openai_api_key)
+                .map_err(|e| anyhow!("Failed to set OPENAI_API_KEY in Python environ: {}", e))?;
+            
+            // Add the Python module path to sys.path
+            let sys = py.import_bound("sys").map_err(|e| anyhow!("Failed to import sys: {}", e))?;
+            let path_list = sys.getattr("path").map_err(|e| anyhow!("Failed to get sys.path: {}", e))?;
+            path_list.call_method1("insert", (0, &self.python_module_path))
+                .map_err(|e| anyhow!("Failed to add module path to sys.path: {}", e))?;
+            
+            // Import the concept_extractor module
             let concept_extractor = py.import_bound("concept_extractor")
                 .map_err(|e| anyhow!("Failed to import concept_extractor: {}", e))?;
             
-            // Convert input data to Python dictionary
-            let input_dict = self.input_to_python_dict(py, &input)
-                .map_err(|e| anyhow!("Failed to convert input to Python dict: {}", e))?;
+            // Convert input to Python format
+            let py_input = pyo3::types::PyDict::new_bound(py);
+            py_input.set_item("chat_session_id", &input.chat_session_id)
+                .map_err(|e| anyhow!("Failed to set chat_session_id: {}", e))?;
             
-            // Call the extract_concepts function
-            let extract_function = concept_extractor.getattr("extract_concepts")
-                .map_err(|e| anyhow!("Failed to get extract_concepts function: {}", e))?;
-            let py_result = extract_function.call1((input_dict,))
-                .map_err(|e| anyhow!("Failed to call extract_concepts: {}", e))?;
+            // Convert messages
+            let py_messages = pyo3::types::PyList::new_bound(py, input.messages.iter().map(|msg| {
+                let py_msg = pyo3::types::PyDict::new_bound(py);
+                let _ = py_msg.set_item("content", &msg.content);
+                let _ = py_msg.set_item("sender_type", &msg.sender_type);
+                let _ = py_msg.set_item("created_at", &msg.created_at);
+                py_msg
+            }));
+            py_input.set_item("messages", py_messages)
+                .map_err(|e| anyhow!("Failed to set messages: {}", e))?;
             
-            // Convert Python result back to Rust
-            self.python_result_to_rust(&py_result)
-                .map_err(|e| anyhow!("Failed to convert Python result: {}", e))
-        });
-
-        match result {
-            Ok(mut extraction_result) => {
-                extraction_result.processing_time_ms = start_time.elapsed().as_millis() as u64;
-                info!(
-                    "Concept extraction completed successfully. Found {} concepts in {}ms",
-                    extraction_result.total_concepts_found,
-                    extraction_result.processing_time_ms
-                );
-                Ok(extraction_result)
-            }
-            Err(e) => {
-                error!("Concept extraction failed: {}", e);
-                Ok(ConceptExtractionResult {
-                    concepts: vec![],
-                    processing_time_ms: start_time.elapsed().as_millis() as u64,
-                    total_concepts_found: 0,
-                    success: false,
-                    error_message: Some(format!("Extraction failed: {}", e)),
-                })
-            }
-        }
+            // Convert highlighted contexts
+            let py_contexts = pyo3::types::PyList::new_bound(py, input.highlighted_contexts.iter().map(|ctx| {
+                let py_ctx = pyo3::types::PyDict::new_bound(py);
+                let _ = py_ctx.set_item("document_title", &ctx.document_title);
+                let _ = py_ctx.set_item("page_number", ctx.page_number);
+                let _ = py_ctx.set_item("selected_text", &ctx.selected_text);
+                py_ctx
+            }));
+            py_input.set_item("highlighted_contexts", py_contexts)
+                .map_err(|e| anyhow!("Failed to set highlighted_contexts: {}", e))?;
+            
+            // Call the main extraction function
+            let result = concept_extractor.call_method1("extract_concepts_from_chat", (py_input,))
+                .map_err(|e| anyhow!("Failed to call extract_concepts_from_chat: {}", e))?;
+            
+            // Convert Python result to JSON
+            let result_str = result.str()
+                .map_err(|e| anyhow!("Failed to convert result to string: {}", e))?
+                .to_string();
+            
+            // Parse as JSON
+            let json_result: serde_json::Value = serde_json::from_str(&result_str)
+                .map_err(|e| anyhow!("Failed to parse result as JSON: {}", e))?;
+            
+            println!("✅ Concept extraction completed successfully");
+            Ok(json_result)
+        })
     }
 
     /// Generate vector embeddings for a list of concept descriptions
@@ -301,7 +374,7 @@ mod tests {
     #[test]
     fn test_concept_extraction_input_serialization() {
         let input = ConceptExtractionInput {
-            chat_session_id: Uuid::new_v4(),
+            chat_session_id: Uuid::new_v4().to_string(),
             messages: vec![
                 ChatMessageForExtraction {
                     content: "What is machine learning?".to_string(),

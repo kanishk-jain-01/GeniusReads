@@ -98,6 +98,17 @@ def extract_concepts_with_openai(state: ConceptExtractionState) -> ConceptExtrac
     logger.info("Extracting concepts using OpenAI")
     
     try:
+        # Check if OpenAI API key is available
+        import os
+        api_key = os.environ.get('OPENAI_API_KEY')
+        if not api_key:
+            logger.error("OPENAI_API_KEY environment variable not set")
+            state.error_message = "OpenAI API key not found in environment"
+            state.processing_stage = "error"
+            return state
+        
+        logger.info(f"OpenAI API key found (length: {len(api_key)})")
+        
         # Initialize OpenAI client
         llm = ChatOpenAI(
             model="gpt-4o-mini",
@@ -256,7 +267,7 @@ def create_concept_extraction_workflow():
 # Main Extraction Function (Called from Rust)
 # ============================================================================
 
-def extract_concepts(input_data: Dict[str, Any]) -> Dict[str, Any]:
+def extract_concepts_from_chat(input_data: Dict[str, Any]) -> str:
     """
     Main function called from Rust bridge for concept extraction
     
@@ -267,7 +278,7 @@ def extract_concepts(input_data: Dict[str, Any]) -> Dict[str, Any]:
             - highlighted_contexts: List of highlighted text contexts
     
     Returns:
-        Dictionary with extraction results:
+        JSON string with extraction results:
             - success: bool
             - concepts: List of extracted concepts
             - error_message: Optional error message
@@ -288,25 +299,52 @@ def extract_concepts(input_data: Dict[str, Any]) -> Dict[str, Any]:
         # Execute the workflow
         final_state = workflow.invoke(state)
         
+        # Extract values from the LangGraph state object
+        # LangGraph returns an AddableValuesDict, so we need to access the fields properly
+        success = final_state.get('success', False)
+        concepts = final_state.get('extracted_concepts', [])
+        processing_stage = final_state.get('processing_stage', 'unknown')
+        error_message = final_state.get('error_message', None)
+        
         # Prepare response
         response = {
-            'success': final_state.success,
-            'concepts': final_state.extracted_concepts,
-            'processing_stage': final_state.processing_stage,
-            'error_message': final_state.error_message
+            'success': success,
+            'concepts': concepts,
+            'processing_stage': processing_stage,
+            'error_message': error_message
         }
         
-        logger.info(f"Concept extraction completed. Success: {final_state.success}, Concepts: {len(final_state.extracted_concepts)}")
-        return response
+        logger.info(f"Concept extraction completed. Success: {success}, Concepts: {len(concepts)}")
+        return json.dumps(response)
         
     except Exception as e:
         logger.error(f"Unexpected error in concept extraction: {str(e)}")
-        return {
+        error_response = {
             'success': False,
             'concepts': [],
             'processing_stage': 'error',
             'error_message': f"Unexpected error: {str(e)}"
         }
+        return json.dumps(error_response)
+
+def extract_concepts(input_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Legacy function for backward compatibility
+    
+    Args:
+        input_data: Dictionary containing:
+            - chat_session_id: UUID string
+            - messages: List of chat messages
+            - highlighted_contexts: List of highlighted text contexts
+    
+    Returns:
+        Dictionary with extraction results:
+            - success: bool
+            - concepts: List of extracted concepts
+            - error_message: Optional error message
+    """
+    result_json = extract_concepts_from_chat(input_data)
+    return json.loads(result_json)
 
 # ============================================================================
 # Testing and Development Functions
