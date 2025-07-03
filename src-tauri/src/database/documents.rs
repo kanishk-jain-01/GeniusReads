@@ -1,7 +1,8 @@
 // Document database operations
 use anyhow::{Context, Result};
 use serde_json::Value;
-use sqlx::Row;
+use sqlx::postgres::PgRow;
+use sqlx::types::BigDecimal;
 use uuid::Uuid;
 use crate::database::{Database, Document};
 

@@ -1375,6 +1375,7 @@ dependencies = [
  "base64 0.22.1",
  "bigdecimal",
  "chrono",
+ "dotenvy",
  "pgvector",
  "pyo3",
  "serde",

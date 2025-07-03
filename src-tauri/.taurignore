@@ -1,0 +1,19 @@
+# Python cache files and directories
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# Python virtual environments
+venv/
+env/
+.env
+
+# Temporary files
+*.tmp
+*.temp
+
+# Build artifacts
+target/
+*.log 

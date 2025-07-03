@@ -2,6 +2,7 @@
 use anyhow::{Context, Result};
 use sqlx::{PgPool, Row};
 use crate::database::types::DatabaseStats;
+use std::env;
 
 pub struct Database {
     pub pool: PgPool,
@@ -19,8 +20,20 @@ impl Database {
 
     /// Create database connection with default local settings
     pub async fn new_local() -> Result<Self> {
-        let database_url = "postgresql://localhost/genius_reads";
-        Self::new(database_url).await
+        // Load environment variables from .env file in the root directory
+        dotenvy::dotenv().ok();
+
+        // Construct the database URL from environment variables
+        let database_url = env::var("DATABASE_URL")
+            .context("DATABASE_URL must be set in your .env file")?;
+        
+        tracing::info!("Connecting to database: {}", database_url);
+
+        let pool = PgPool::connect(&database_url)
+            .await
+            .context(format!("Failed to connect to database at {}", database_url))?;
+
+        Ok(Database { pool })
     }
 
     /// Test database connection

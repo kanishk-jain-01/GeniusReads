@@ -1,125 +1,122 @@
 """
 GeniusReads Vector Embeddings
 
-Vector embedding generation and similarity calculation using sentence-transformers.
-Provides 384-dimensional embeddings compatible with pgvector for concept similarity search.
+Vector embedding generation using OpenAI's embedding API.
+Provides embeddings compatible with pgvector for concept similarity search.
 """
 
 import logging
 import numpy as np
 from typing import List, Union, Tuple, Optional
-import warnings
-
-# Suppress sentence-transformers warnings for cleaner output
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
-
-try:
-    from sentence_transformers import SentenceTransformer
-    import torch
-    SENTENCE_TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    SENTENCE_TRANSFORMERS_AVAILABLE = False
-    logging.warning("sentence-transformers not available. Vector operations will be disabled.")
-
-from sklearn.metrics.pairwise import cosine_similarity
+import os
+import requests
 import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ============================================================================
-# Global Model Management
-# ============================================================================
-
-# Global model instance for efficient reuse
-_embedding_model = None
-_model_name = "all-MiniLM-L6-v2"  # 384-dimensional embeddings, good performance/size balance
-
-def get_embedding_model() -> Optional[SentenceTransformer]:
-    """Get or initialize the sentence transformer model"""
-    global _embedding_model
-    
-    if not SENTENCE_TRANSFORMERS_AVAILABLE:
-        logger.error("sentence-transformers library not available")
-        return None
-    
-    if _embedding_model is None:
-        try:
-            logger.info(f"Loading sentence transformer model: {_model_name}")
-            _embedding_model = SentenceTransformer(_model_name)
-            logger.info(f"Model loaded successfully. Embedding dimension: {_embedding_model.get_sentence_embedding_dimension()}")
-        except Exception as e:
-            logger.error(f"Failed to load sentence transformer model: {str(e)}")
-            return None
-    
-    return _embedding_model
+# OpenAI API configuration
+OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"  # 1536 dimensions, fast and cost-effective
+OPENAI_API_URL = "https://api.openai.com/v1/embeddings"
 
 # ============================================================================
-# Core Embedding Functions
+# OpenAI Embedding Functions
 # ============================================================================
 
-def generate_embeddings(texts: List[str]) -> List[List[float]]:
+def generate_embeddings_with_openai(texts: List[str], api_key: str) -> List[List[float]]:
     """
-    Generate vector embeddings for a list of texts
+    Generate vector embeddings using OpenAI's embedding API
     
     Args:
         texts: List of text strings to embed
+        api_key: OpenAI API key
         
     Returns:
-        List of 384-dimensional embedding vectors as lists of floats
+        List of embedding vectors as lists of floats
     """
     if not texts:
         logger.warning("Empty text list provided for embedding generation")
         return []
     
-    if not SENTENCE_TRANSFORMERS_AVAILABLE:
-        logger.error("Cannot generate embeddings: sentence-transformers not available")
-        return []
-    
-    model = get_embedding_model()
-    if model is None:
-        logger.error("Failed to load embedding model")
+    if not api_key:
+        logger.error("OpenAI API key not provided")
         return []
     
     try:
-        logger.info(f"Generating embeddings for {len(texts)} texts")
+        logger.info(f"Generating embeddings for {len(texts)} texts using OpenAI")
         
-        # Generate embeddings
-        embeddings = model.encode(texts, convert_to_tensor=False, show_progress_bar=False)
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
         
-        # Convert to list of lists (required for JSON serialization)
-        embedding_lists = []
-        for embedding in embeddings:
-            if isinstance(embedding, np.ndarray):
-                embedding_lists.append(embedding.tolist())
-            else:
-                embedding_lists.append(list(embedding))
+        data = {
+            "input": texts,
+            "model": OPENAI_EMBEDDING_MODEL
+        }
         
-        logger.info(f"Successfully generated {len(embedding_lists)} embeddings")
-        return embedding_lists
+        response = requests.post(OPENAI_API_URL, headers=headers, json=data)
+        response.raise_for_status()
+        
+        result = response.json()
+        embeddings = [item["embedding"] for item in result["data"]]
+        
+        logger.info(f"Successfully generated {len(embeddings)} embeddings")
+        return embeddings
         
     except Exception as e:
-        logger.error(f"Error generating embeddings: {str(e)}")
+        logger.error(f"Error generating embeddings with OpenAI: {str(e)}")
         return []
 
-def generate_single_embedding(text: str) -> Optional[List[float]]:
+def generate_single_embedding(text: str, api_key: str) -> Optional[List[float]]:
     """
-    Generate a vector embedding for a single text
+    Generate a vector embedding for a single text using OpenAI
     
     Args:
         text: Text string to embed
+        api_key: OpenAI API key
         
     Returns:
-        384-dimensional embedding vector as list of floats, or None if failed
+        Embedding vector as list of floats, or None if failed
     """
     if not text or not text.strip():
         logger.warning("Empty or whitespace-only text provided for embedding")
         return None
     
-    embeddings = generate_embeddings([text.strip()])
+    embeddings = generate_embeddings_with_openai([text.strip()], api_key)
     return embeddings[0] if embeddings else None
+
+# ============================================================================
+# Concept-Specific Functions
+# ============================================================================
+
+def generate_concept_embedding(concept_name: str, concept_description: str, api_key: str = None) -> Optional[List[float]]:
+    """
+    Generate embedding for a concept using both name and description
+    
+    Args:
+        concept_name: Name of the concept
+        concept_description: Description of the concept
+        api_key: OpenAI API key (will get from environment if not provided)
+        
+    Returns:
+        Embedding vector, or None if failed
+    """
+    if not concept_name or not concept_description:
+        logger.warning("Missing concept name or description for embedding generation")
+        return None
+    
+    # Get API key from environment if not provided
+    if not api_key:
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            logger.error("OpenAI API key not found in environment")
+            return None
+    
+    # Combine name and description for richer embedding
+    combined_text = f"{concept_name}: {concept_description}"
+    return generate_single_embedding(combined_text, api_key)
 
 # ============================================================================
 # Similarity Calculation Functions
@@ -146,11 +143,18 @@ def calculate_similarity(embedding1: List[float], embedding2: List[float]) -> fl
             return 0.0
         
         # Convert to numpy arrays
-        emb1 = np.array(embedding1).reshape(1, -1)
-        emb2 = np.array(embedding2).reshape(1, -1)
+        emb1 = np.array(embedding1)
+        emb2 = np.array(embedding2)
         
         # Calculate cosine similarity
-        similarity = cosine_similarity(emb1, emb2)[0][0]
+        dot_product = np.dot(emb1, emb2)
+        norm1 = np.linalg.norm(emb1)
+        norm2 = np.linalg.norm(emb2)
+        
+        if norm1 == 0 or norm2 == 0:
+            return 0.0
+        
+        similarity = dot_product / (norm1 * norm2)
         
         # Ensure result is between 0 and 1
         similarity = max(0.0, min(1.0, float(similarity)))
@@ -232,86 +236,16 @@ def find_most_similar(
         return []
 
 # ============================================================================
-# Concept-Specific Functions
-# ============================================================================
-
-def generate_concept_embedding(concept_name: str, concept_description: str) -> Optional[List[float]]:
-    """
-    Generate embedding for a concept using both name and description
-    
-    Args:
-        concept_name: Name of the concept
-        concept_description: Description of the concept
-        
-    Returns:
-        384-dimensional embedding vector, or None if failed
-    """
-    if not concept_name or not concept_description:
-        logger.warning("Missing concept name or description for embedding generation")
-        return None
-    
-    # Combine name and description for richer embedding
-    combined_text = f"{concept_name}: {concept_description}"
-    return generate_single_embedding(combined_text)
-
-def batch_generate_concept_embeddings(concepts: List[dict]) -> List[Optional[List[float]]]:
-    """
-    Generate embeddings for a batch of concepts
-    
-    Args:
-        concepts: List of concept dictionaries with 'name' and 'description' keys
-        
-    Returns:
-        List of embedding vectors (same order as input)
-    """
-    if not concepts:
-        return []
-    
-    try:
-        # Prepare combined texts
-        combined_texts = []
-        for concept in concepts:
-            name = concept.get('name', '').strip()
-            description = concept.get('description', '').strip()
-            
-            if name and description:
-                combined_texts.append(f"{name}: {description}")
-            elif name:
-                combined_texts.append(name)
-            elif description:
-                combined_texts.append(description)
-            else:
-                combined_texts.append("")  # Empty concept
-        
-        # Generate embeddings in batch (more efficient)
-        embeddings = generate_embeddings(combined_texts)
-        
-        # Convert empty strings to None
-        result = []
-        for i, embedding in enumerate(embeddings):
-            if combined_texts[i].strip():
-                result.append(embedding)
-            else:
-                result.append(None)
-        
-        logger.info(f"Generated embeddings for {len([e for e in result if e is not None])}/{len(concepts)} concepts")
-        return result
-        
-    except Exception as e:
-        logger.error(f"Error in batch concept embedding generation: {str(e)}")
-        return [None] * len(concepts)
-
-# ============================================================================
 # Utility Functions
 # ============================================================================
 
-def validate_embedding(embedding: List[float], expected_dim: int = 384) -> bool:
+def validate_embedding(embedding: List[float], expected_dim: int = 1536) -> bool:
     """
     Validate that an embedding has the correct format and dimensions
     
     Args:
         embedding: Embedding vector to validate
-        expected_dim: Expected dimension (default 384)
+        expected_dim: Expected dimension (1536 for OpenAI text-embedding-3-small)
         
     Returns:
         True if valid, False otherwise
@@ -384,48 +318,27 @@ def embedding_to_pgvector_format(embedding: List[float]) -> str:
         return "[]"
 
 # ============================================================================
-# Testing and Development Functions
+# Legacy/Compatibility Functions
 # ============================================================================
 
-def test_embedding_generation():
-    """Test function for development and debugging"""
-    test_texts = [
-        "Machine learning is a subset of artificial intelligence",
-        "Neural networks are inspired by biological neurons",
-        "Deep learning uses multiple layers of neural networks",
-        "Supervised learning requires labeled training data"
-    ]
+def generate_embeddings(texts: List[str]) -> List[List[float]]:
+    """
+    Legacy function for backwards compatibility
+    Uses OpenAI API with key from environment
+    """
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        logger.error("OpenAI API key not found in environment")
+        return []
     
-    print("Testing embedding generation...")
-    
-    # Test single embedding
-    single_embedding = generate_single_embedding(test_texts[0])
-    print(f"Single embedding dimension: {len(single_embedding) if single_embedding else 'None'}")
-    print(f"Single embedding valid: {validate_embedding(single_embedding) if single_embedding else False}")
-    
-    # Test batch embeddings
-    batch_embeddings = generate_embeddings(test_texts)
-    print(f"Batch embeddings count: {len(batch_embeddings)}")
-    
-    # Test similarity calculation
-    if len(batch_embeddings) >= 2:
-        similarity = calculate_similarity(batch_embeddings[0], batch_embeddings[1])
-        print(f"Similarity between first two embeddings: {similarity:.4f}")
-    
-    # Test concept embedding
-    concept_embedding = generate_concept_embedding(
-        "Machine Learning",
-        "A subset of AI that enables computers to learn from data"
-    )
-    print(f"Concept embedding valid: {validate_embedding(concept_embedding) if concept_embedding else False}")
-    
-    # Test pgvector format
-    if concept_embedding:
-        pgvector_str = embedding_to_pgvector_format(concept_embedding)
-        print(f"pgvector format length: {len(pgvector_str)}")
-    
-    print("Embedding tests completed!")
+    return generate_embeddings_with_openai(texts, api_key)
 
 if __name__ == "__main__":
-    # Run tests when executed directly
-    test_embedding_generation() 
+    # Simple test
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        test_embedding = generate_single_embedding("This is a test", api_key)
+        print(f"Test embedding dimension: {len(test_embedding) if test_embedding else 'None'}")
+        print(f"Test embedding valid: {validate_embedding(test_embedding) if test_embedding else False}")
+    else:
+        print("OPENAI_API_KEY not found in environment") 

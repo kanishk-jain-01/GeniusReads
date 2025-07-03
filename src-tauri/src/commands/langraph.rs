@@ -65,70 +65,44 @@ pub async fn analyze_chat_session(
             .unwrap_or(false);
             
         if success {
-            // Get the concepts array
+            // Get the concepts array from the extraction result
             let empty_vec = vec![];
-            let concepts = extraction_result.get("concepts")
+            let new_concepts = extraction_result.get("concepts")
                 .and_then(|v| v.as_array())
                 .unwrap_or(&empty_vec);
-            
-            // Save concepts to database
-            for concept in concepts {
-                if let (Some(name), Some(description)) = (
-                    concept.get("name").and_then(|v| v.as_str()),
-                    concept.get("description").and_then(|v| v.as_str())
-                ) {
-                    let confidence_score = concept.get("confidence_score")
-                        .and_then(|v| v.as_f64())
-                        .unwrap_or(0.5);
-                    
-                    let tags: Vec<String> = concept.get("tags")
-                        .and_then(|v| v.as_array())
-                        .map(|arr| arr.iter()
-                            .filter_map(|tag| tag.as_str().map(|s| s.to_string()))
-                            .collect())
-                        .unwrap_or_default();
-                    
-                    let related_concepts: Vec<String> = concept.get("related_concepts")
-                        .and_then(|v| v.as_array())
-                        .map(|arr| arr.iter()
-                            .filter_map(|rel| rel.as_str().map(|s| s.to_string()))
-                            .collect())
-                        .unwrap_or_default();
-                    
-                    // Save concept to database
-                    match database.store_extracted_concept(
-                        session_id,
-                        name,
-                        description,
-                        &tags,
-                        confidence_score,
-                        &related_concepts
-                    ).await {
-                        Ok(_) => {
-                            println!("✅ Saved concept: {}", name);
-                        }
-                        Err(e) => {
-                            println!("❌ Failed to save concept {}: {}", name, e);
-                        }
-                    }
-                }
+
+            // Fetch all existing concepts from the database for matching
+            let existing_concepts = database.get_all_concepts_for_matching().await
+                .map_err(|e| format!("Failed to fetch existing concepts: {}", e))?;
+
+            // Process new concepts against existing ones and save them
+            let processing_result = bridge.process_concepts_and_save(&session_id, new_concepts, &existing_concepts)
+                .map_err(|e| format!("Concept processing and saving failed: {}", e))?;
+
+            if processing_result.success {
+                // Update analysis status to 'complete'
+                database.update_chat_analysis_status(session_id, "complete").await
+                    .map_err(|e| format!("Failed to update analysis status: {}", e))?;
+                
+                // End the chat session (mark as inactive)
+                database.end_chat_session(session_id).await
+                    .map_err(|e| format!("Failed to end chat session: {}", e))?;
+
+                Ok(serde_json::json!({
+                    "success": true,
+                    "message": "Analysis completed successfully",
+                    "newConceptsCreated": processing_result.new_concepts_created,
+                    "conceptsLinked": processing_result.concepts_linked
+                }))
+            } else {
+                // The Python script failed, so update status to 'failed'
+                let py_error = processing_result.error_message.unwrap_or_else(|| "Unknown Python error".to_string());
+                database.update_chat_analysis_status(session_id, "failed").await
+                    .map_err(|e| format!("Failed to update analysis status: {}", e))?;
+                Err(format!("Concept processing failed in Python: {}", py_error))
             }
-            
-            // Update analysis status to 'complete'
-            database.update_chat_analysis_status(session_id, "complete").await
-                .map_err(|e| format!("Failed to update analysis status: {}", e))?;
-            
-            // End the chat session (mark as inactive)
-            database.end_chat_session(session_id).await
-                .map_err(|e| format!("Failed to end chat session: {}", e))?;
-            
-            Ok(serde_json::json!({
-                "success": true,
-                "message": "Analysis completed successfully",
-                "concepts_found": concepts.len()
-            }))
         } else {
-            // Update analysis status to 'failed'
+            // Initial concept extraction failed
             database.update_chat_analysis_status(session_id, "failed").await
                 .map_err(|e| format!("Failed to update analysis status: {}", e))?;
             

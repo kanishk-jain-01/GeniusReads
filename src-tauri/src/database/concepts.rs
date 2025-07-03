@@ -1,8 +1,17 @@
 // Concept extraction database operations
 use anyhow::{Context, Result};
-use serde_json::Value;
 use uuid::Uuid;
 use crate::database::{Database, ExtractedConcept};
+
+/// Represents a concept record specifically for similarity matching.
+/// Includes the embedding vector which is otherwise not always needed.
+#[derive(Debug, serde::Serialize)]
+pub struct ConceptForMatching {
+    pub id: Uuid,
+    pub name: String,
+    // The embedding is stored as a Vec<f32> in Rust
+    pub embedding: Vec<f32>,
+}
 
 impl Database {
     /// Store an extracted concept in the database
@@ -246,5 +255,48 @@ impl Database {
             .collect();
 
         Ok(chats)
+    }
+
+    /// Fetches all concepts from the database with their embeddings, for the purpose of similarity matching.
+    pub async fn get_all_concepts_for_matching(&self) -> Result<Vec<ConceptForMatching>> {
+        let rows = sqlx::query!(
+            r#"
+            SELECT id, name, embedding::TEXT AS embedding_text
+            FROM concepts
+            WHERE embedding IS NOT NULL
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await
+        .context("Failed to fetch concepts for matching")?;
+
+        let concepts: Vec<ConceptForMatching> = rows
+            .into_iter()
+            .filter_map(|row| {
+                // The embedding comes back from pgvector as a string like "[1.2,3.4,5.6]"
+                // We need to parse it into a Vec<f32>.
+                let parsed_embedding = row.embedding_text.as_ref().and_then(|text| {
+                    let trimmed = text.trim_matches(|c| c == '[' || c == ']');
+                    trimmed
+                        .split(',')
+                        .map(|s| s.parse::<f32>().ok())
+                        .collect::<Option<Vec<f32>>>()
+                });
+
+                if let Some(embedding) = parsed_embedding {
+                    Some(ConceptForMatching {
+                        id: row.id,
+                        name: row.name,
+                        embedding,
+                    })
+                } else {
+                    // Log a warning or handle the error for malformed embeddings
+                    eprintln!("Warning: Could not parse embedding for concept ID: {}", row.id);
+                    None
+                }
+            })
+            .collect();
+
+        Ok(concepts)
     }
 } 

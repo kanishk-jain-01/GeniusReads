@@ -1,9 +1,12 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use uuid::Uuid;
 use anyhow::{Result, anyhow};
-use tracing::{info, error};
+use tracing::info;
+
+use crate::database::concepts::ConceptForMatching;
 
 /// Represents a concept extracted from chat messages
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,6 +52,16 @@ pub struct ConceptExtractionResult {
     pub processing_time_ms: u64,
     pub total_concepts_found: usize,
     pub success: bool,
+    pub error_message: Option<String>,
+}
+
+/// Represents the final result after processing and saving concepts
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConceptProcessingResult {
+    pub success: bool,
+    pub new_concepts_created: usize,
+    pub concepts_linked: usize,
     pub error_message: Option<String>,
 }
 
@@ -122,28 +135,11 @@ impl LangGraphBridge {
             info!("Added {} to sys.path", self.python_module_path);
             
             // Test import of our concept extractor module
-            match py.import_bound("concept_extractor") {
-                Ok(_) => {
-                    info!("Successfully loaded concept_extractor module");
-                    Ok(())
-                }
-                Err(e) => {
-                    error!("Failed to load concept_extractor module: {}", e);
-                    error!("Python module path: {}", self.python_module_path);
-                    error!("Path exists: {}", path_exists);
-                    
-                    // Try to list files in the directory for debugging
-                    if let Ok(entries) = std::fs::read_dir(&self.python_module_path) {
-                        let files: Vec<String> = entries
-                            .filter_map(|entry| entry.ok())
-                            .map(|entry| entry.file_name().to_string_lossy().to_string())
-                            .collect();
-                        error!("Files in Python directory: {:?}", files);
-                    }
-                    
-                    Err(anyhow!("Failed to load Python concept extractor: {}", e))
-                }
-            }
+            py.import_bound("concept_extractor")?;
+            // Also test import of the similarity module
+            py.import_bound("concept_similarity")?;
+            
+            Ok(())
         })
     }
 
@@ -203,7 +199,7 @@ impl LangGraphBridge {
                 .map_err(|e| anyhow!("Failed to call extract_concepts_from_chat: {}", e))?;
             
             // Convert Python result to JSON
-            let result_str = result.str()
+            let result_str: String = result.str()
                 .map_err(|e| anyhow!("Failed to convert result to string: {}", e))?
                 .to_string();
             
@@ -213,6 +209,43 @@ impl LangGraphBridge {
             
             println!("✅ Concept extraction completed successfully");
             Ok(json_result)
+        })
+    }
+
+    /// Takes new concepts, compares them with existing ones, and saves them to the database.
+    /// This entire operation is handled by the Python script to leverage `pgvector` correctly.
+    pub fn process_concepts_and_save(
+        &self,
+        chat_session_id: &Uuid,
+        new_concepts: &[Value],
+        existing_concepts: &[ConceptForMatching],
+    ) -> Result<ConceptProcessingResult> {
+        info!(
+            "Processing {} new concepts against {} existing concepts for chat session {}",
+            new_concepts.len(),
+            existing_concepts.len(),
+            chat_session_id
+        );
+
+        Python::with_gil(|py| -> Result<ConceptProcessingResult> {
+            let concept_processor = py.import_bound("concept_processor")?;
+
+            // Serialize the structs to JSON strings to pass them to Python
+            let new_concepts_json = serde_json::to_string(new_concepts)?;
+            let existing_concepts_json = serde_json::to_string(existing_concepts)?;
+
+            let py_result = concept_processor.call_method1(
+                "process_and_store_concepts",
+                (
+                    chat_session_id.to_string(),
+                    new_concepts_json,
+                    existing_concepts_json,
+                ),
+            )?;
+
+            let result_str: String = py_result.extract()?;
+            serde_json::from_str(&result_str)
+                .map_err(|e| anyhow!("Failed to deserialize concept processing result: {}", e))
         })
     }
 

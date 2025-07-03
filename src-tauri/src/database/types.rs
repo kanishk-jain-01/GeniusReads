@@ -1,5 +1,5 @@
 // Database data structures
-use anyhow::Result;
+use serde::{Deserialize, Serialize};
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use serde_json::Value;
