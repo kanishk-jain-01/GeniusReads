@@ -109,6 +109,19 @@ def process_and_store_concepts(chat_session_id: str, new_concepts_json: str, exi
                         """,
                         (best_match.existing_concept_id, chat_session_id, best_match.similarity_score)
                     )
+
+                    # Also, increment the source_chat_count for the existing concept
+                    cur.execute(
+                        """
+                        UPDATE concepts
+                        SET 
+                            source_chat_count = source_chat_count + 1,
+                            updated_at = NOW()
+                        WHERE id = %s;
+                        """,
+                        (best_match.existing_concept_id,)
+                    )
+                    
                     results["conceptsLinked"] += 1
                 else:
                     # No strong match, create a new concept
