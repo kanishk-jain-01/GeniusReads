@@ -896,14 +896,26 @@ export const searchConceptsByText = async (
   queryText: string, 
   similarityThreshold?: number, 
   maxResults?: number
-): Promise<any[]> => {
+): Promise<Concept[]> => {
   try {
     const result = await invoke<any[]>('search_concepts_by_text', { 
       queryText, 
       similarityThreshold, 
       maxResults 
     });
-    return result;
+    return result.map((concept: any) => ({
+      id: concept.id,
+      name: concept.name,
+      description: concept.description,
+      tags: concept.tags || [],
+      confidenceScore: concept.confidence_score || 0,
+      sourceChatCount: concept.source_chat_count || 0,
+      createdAt: new Date(concept.created_at),
+      updatedAt: new Date(concept.updated_at),
+      sourceChatTitles: concept.source_chat_titles || [],
+      linkedChatCount: concept.linked_chat_count || 0,
+      avgRelevanceScore: concept.avg_relevance_score || 0
+    }));
   } catch (error) {
     console.error('Failed to search concepts by text:', error);
     throw new Error(`Failed to search concepts by text: ${error}`);
