@@ -1,3 +1,6 @@
+-- Add vector extension
+CREATE EXTENSION IF NOT EXISTS "vector";
+
 -- GeniusReads Concept Extraction Schema with pgvector Support
 -- Migration 002: Adds concept tables for LangGraph-based knowledge extraction
 -- Requires: pgvector extension (installed in previous step)

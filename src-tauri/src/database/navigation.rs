@@ -29,61 +29,40 @@ impl Database {
         active_chat_id: Option<Uuid>,
         last_reading_position: Option<Value>,
     ) -> Result<()> {
-        // First try to get existing state
-        let existing_state = self.get_user_session_state().await?;
+        // Use a single, unique key to ensure only one session row exists.
+        // The value 't' is arbitrary; its purpose is to be a constant
+        // for the UNIQUE constraint.
+        let singleton_key = true;
 
-        if let Some(state) = existing_state {
-            // Update existing state
-            sqlx::query!(
-                r#"
-                UPDATE user_session_state 
-                SET 
-                    current_document_id = COALESCE($2, current_document_id),
-                    current_page = COALESCE($3, current_page),
-                    zoom_level = COALESCE($4, zoom_level),
-                    scroll_position = COALESCE($5, scroll_position),
-                    active_tab = COALESCE($6, active_tab),
-                    active_chat_id = COALESCE($7, active_chat_id),
-                    last_reading_position = COALESCE($8, last_reading_position),
-                    updated_at = NOW()
-                WHERE id = $1
-                "#,
-                state.id,
-                current_document_id,
-                current_page,
-                zoom_level,
-                scroll_position,
-                active_tab,
-                active_chat_id,
-                last_reading_position
+        sqlx::query!(
+            r#"
+            INSERT INTO user_session_state (
+                singleton_key, current_document_id, current_page, zoom_level, 
+                scroll_position, active_tab, active_chat_id, last_reading_position
             )
-            .execute(&self.pool)
-            .await
-            .context("Failed to update user session state")?;
-        } else {
-            // Create new state
-            let id = Uuid::new_v4();
-            sqlx::query!(
-                r#"
-                INSERT INTO user_session_state (
-                    id, current_document_id, current_page, zoom_level, 
-                    scroll_position, active_tab, active_chat_id, last_reading_position
-                )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-                "#,
-                id,
-                current_document_id,
-                current_page.unwrap_or(1),
-                zoom_level.unwrap_or(100),
-                scroll_position.unwrap_or(0),
-                active_tab.unwrap_or("library"),
-                active_chat_id,
-                last_reading_position
-            )
-            .execute(&self.pool)
-            .await
-            .context("Failed to create user session state")?;
-        }
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (singleton_key) DO UPDATE SET
+                current_document_id = COALESCE($2, user_session_state.current_document_id),
+                current_page = COALESCE($3, user_session_state.current_page),
+                zoom_level = COALESCE($4, user_session_state.zoom_level),
+                scroll_position = COALESCE($5, user_session_state.scroll_position),
+                active_tab = COALESCE($6, user_session_state.active_tab),
+                active_chat_id = $7,
+                last_reading_position = $8,
+                updated_at = NOW()
+            "#,
+            singleton_key,
+            current_document_id,
+            current_page,
+            zoom_level,
+            scroll_position,
+            active_tab,
+            active_chat_id,
+            last_reading_position
+        )
+        .execute(&self.pool)
+        .await
+        .context("Failed to create or update user session state")?;
 
         Ok(())
     }

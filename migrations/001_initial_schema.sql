@@ -242,6 +242,7 @@ CREATE TABLE highlighted_contexts (
 -- ============================================================================
 CREATE TABLE user_session_state (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    singleton_key BOOLEAN UNIQUE NOT NULL DEFAULT true, -- Ensures only one row can exist
     current_document_id UUID REFERENCES documents(id) ON DELETE SET NULL,
     current_page INTEGER NOT NULL DEFAULT 1,
     zoom_level INTEGER NOT NULL DEFAULT 100,
@@ -263,6 +264,7 @@ CREATE TABLE user_session_state (
 -- ============================================================================
 CREATE TABLE user_preferences (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    singleton_key BOOLEAN UNIQUE NOT NULL DEFAULT true, -- Ensures only one row can exist
     openai_api_key TEXT, -- Encrypted API key for OpenAI
     theme VARCHAR(10) NOT NULL DEFAULT 'system',
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -413,14 +415,19 @@ GROUP BY d.id, d.title, d.current_page, d.total_pages, d.last_accessed;
 
 -- View for knowledge corpus summary
 CREATE VIEW knowledge_summary AS
-SELECT 
+SELECT
     d.id as document_id,
     d.title as document_title,
     COUNT(DISTINCT k.id) as total_concepts,
     COUNT(DISTINCT k.concept) as unique_concepts,
     AVG(k.confidence) as avg_confidence,
     MAX(k.created_at) as last_learned,
-    array_agg(DISTINCT unnest(k.tags)) FILTER (WHERE array_length(k.tags, 1) > 0) as all_tags
+    (
+        SELECT array_agg(DISTINCT tag)
+        FROM knowledge_entries ke
+        CROSS JOIN LATERAL unnest(ke.tags) as tag
+        WHERE ke.document_id = d.id
+    ) as all_tags
 FROM documents d
 LEFT JOIN knowledge_entries k ON d.id = k.document_id
 GROUP BY d.id, d.title;

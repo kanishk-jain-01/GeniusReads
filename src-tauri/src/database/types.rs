@@ -112,6 +112,7 @@ pub struct HighlightedContext {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct UserSessionState {
     pub id: Uuid,
+    pub singleton_key: bool,
     pub current_document_id: Option<Uuid>,
     pub current_page: i32,
     pub zoom_level: i32,
@@ -119,6 +120,16 @@ pub struct UserSessionState {
     pub active_tab: String,
     pub active_chat_id: Option<Uuid>,
     pub last_reading_position: Option<Value>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct UserPreferences {
+    pub id: Uuid,
+    pub singleton_key: bool,
+    pub openai_api_key: Option<String>,
+    pub theme: String,
+    pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
