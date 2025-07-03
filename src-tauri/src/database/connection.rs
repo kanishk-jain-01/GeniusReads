@@ -40,9 +40,9 @@ impl Database {
             r#"
             SELECT 
                 (SELECT COUNT(*) FROM documents) as document_count,
-                (SELECT COUNT(*) FROM questions) as question_count,
-                (SELECT COUNT(*) FROM ai_responses) as response_count,
-                (SELECT COUNT(*) FROM knowledge_entries) as knowledge_count,
+                (SELECT COUNT(*) FROM chat_messages WHERE sender_type = 'user') as question_count,
+                (SELECT COUNT(*) FROM chat_messages WHERE sender_type = 'assistant') as response_count,
+                (SELECT COUNT(*) FROM concepts) as knowledge_count,
                 (SELECT COUNT(*) FROM user_notes) as note_count
         "#,
         )
