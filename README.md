@@ -2,7 +2,7 @@
 
 GeniusReads is a local-first, AI-powered PDF reader for macOS designed to help you deeply understand technical documents. It transforms your reading into an interactive experience by allowing you to have AI-driven conversations about the content and automatically builds a personal, searchable knowledge base from your discussions.
 
-![GeniusReads Screenshot](placeholder.png) <!--- TODO: Add a real screenshot -->
+![GeniusReads Screenshot](public/screenshot.png)
 
 ## Core Features
 
